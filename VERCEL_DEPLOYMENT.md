@@ -79,23 +79,44 @@ After your first deployment:
 1. **Enable Authentication in Supabase:**
    - Go to Supabase Dashboard → Authentication → Settings
    - Configure email provider or your preferred auth method
+   - Make sure email auth is enabled
 
 2. **Sign up for an account:**
-   - Visit your Vercel deployment URL
-   - Create an account using Supabase Auth
+   - Visit your Vercel deployment URL: https://opusgraph.vercel.app
+   - Create an account using Supabase Auth (you may need to enable sign-up in Authentication → Settings)
 
 3. **Make yourself a super admin:**
+   
+   **Option A: Using the helper script (recommended)**
+   - Go to Supabase Dashboard → SQL Editor
+   - Open the file `supabase/scripts/setup-admin.sql` from this repo
+   - Edit the email in Option B (replace `'your-email@example.com'` with your actual email)
+   - Run the script
+   
+   **Option B: Manual SQL**
    - Go to Supabase Dashboard → SQL Editor
    - Run this query (replace `YOUR-EMAIL` with your auth email):
    
    ```sql
-   -- First, get your user ID
+   -- Find your user ID
    SELECT id, email FROM auth.users WHERE email = 'YOUR-EMAIL';
    
-   -- Then, set yourself as super admin (replace USER_ID with the id from above)
+   -- Copy the UUID from above, then run this (replace USER_ID with the UUID):
    INSERT INTO user_profile(user_id, first_name, last_name, admin_role)
    VALUES ('USER_ID', 'Your Name', '', 'super_admin')
    ON CONFLICT (user_id) DO UPDATE SET admin_role='super_admin';
+   ```
+   
+   **Quick one-liner (if you know your email):**
+   ```sql
+   DO $$
+   DECLARE user_uuid uuid;
+   BEGIN
+     SELECT id INTO user_uuid FROM auth.users WHERE email = 'YOUR-EMAIL@example.com';
+     INSERT INTO user_profile(user_id, first_name, last_name, admin_role)
+     VALUES (user_uuid, 'Your Name', '', 'super_admin')
+     ON CONFLICT (user_id) DO UPDATE SET admin_role='super_admin';
+   END $$;
    ```
 
 ### 6. Configure Authentication Redirects
