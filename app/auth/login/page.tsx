@@ -30,7 +30,9 @@ export default function LoginPage() {
       setError(error.message);
       setLoading(false);
     } else {
-      router.push("/admin/works/new");
+      // Redirect to original destination or admin dashboard
+      const redirect = new URLSearchParams(window.location.search).get("redirect") || "/admin/works/new";
+      router.push(redirect);
       router.refresh();
     }
   };
