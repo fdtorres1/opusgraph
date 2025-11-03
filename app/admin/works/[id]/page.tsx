@@ -2,9 +2,10 @@
 import { createServerSupabase } from "@/lib/supabase/server";
 import WorkEditor from "./work-editor";
 
-export default async function WorkPage({ params }: { params: { id: string }}) {
+export default async function WorkPage({ params }: { params: Promise<{ id: string }> }) {
   const supabase = createServerSupabase();
-  const isNew = params.id === "new";
+  const { id: paramId } = await params;
+  const isNew = paramId === "new";
 
   let initial: any = null;
   let ensembles: { id: string; label: string }[] = [];
@@ -21,7 +22,7 @@ export default async function WorkPage({ params }: { params: { id: string }}) {
         work_source(id, url, title, display_order),
         work_recording(id, url, provider, embed_url, display_order)
       `)
-      .eq("id", params.id)
+      .eq("id", paramId)
       .single();
 
     initial = data ?? null;

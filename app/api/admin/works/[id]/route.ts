@@ -7,9 +7,9 @@ import { detectRecording } from "@/lib/recording";
 
 const Id = z.string().uuid();
 
-export async function GET(_: NextRequest, { params }: { params: { id: string }}) {
+export async function GET(_: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const supabase = createServerSupabase();
-  const id = params.id;
+  const { id } = await params;
 
   const { data, error } = await supabase
     .from("work")
@@ -31,13 +31,13 @@ export async function GET(_: NextRequest, { params }: { params: { id: string }})
   return NextResponse.json({ work: data });
 }
 
-export async function PATCH(req: NextRequest, { params }: { params: { id: string }}) {
+export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const supabase = createServerSupabase();
   const { data: { user } } = await supabase.auth.getUser();
 
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const id = params.id;
+  const { id } = await params;
 
   try {
     Id.parse(id);

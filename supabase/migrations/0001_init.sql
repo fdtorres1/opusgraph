@@ -527,36 +527,46 @@ alter table admin_comment enable row level security;
 alter table revision enable row level security;
 
 -- READ: admins + contributors can read all
-create policy if not exists read_composer_admin on composer
+drop policy if exists read_composer_admin on composer;
+create policy read_composer_admin on composer
 for select using (role_is_contributor_or_above());
 
-create policy if not exists read_work_admin on work
+drop policy if exists read_work_admin on work;
+create policy read_work_admin on work
 for select using (role_is_contributor_or_above());
 
-create policy if not exists read_comment_admin on admin_comment
+drop policy if exists read_comment_admin on admin_comment;
+create policy read_comment_admin on admin_comment
 for select using (role_is_contributor_or_above());
 
-create policy if not exists read_revision_admin on revision
+drop policy if exists read_revision_admin on revision;
+create policy read_revision_admin on revision
 for select using (role_is_contributor_or_above());
 
 -- READ: members (active subscription) may read only published
-create policy if not exists read_composer_members on composer
+drop policy if exists read_composer_members on composer;
+create policy read_composer_members on composer
 for select using (has_active_subscription() and status='published');
 
-create policy if not exists read_work_members on work
+drop policy if exists read_work_members on work;
+create policy read_work_members on work
 for select using (has_active_subscription() and status='published');
 
 -- WRITE: contributors/admins
-create policy if not exists write_composer_admin on composer
+drop policy if exists write_composer_admin on composer;
+create policy write_composer_admin on composer
 for all using (role_is_contributor_or_above()) with check (role_is_contributor_or_above());
 
-create policy if not exists write_work_admin on work
+drop policy if exists write_work_admin on work;
+create policy write_work_admin on work
 for all using (role_is_contributor_or_above()) with check (role_is_contributor_or_above());
 
-create policy if not exists write_comment_admin on admin_comment
+drop policy if exists write_comment_admin on admin_comment;
+create policy write_comment_admin on admin_comment
 for all using (role_is_contributor_or_above()) with check (role_is_contributor_or_above());
 
-create policy if not exists write_revision_admin on revision
+drop policy if exists write_revision_admin on revision;
+create policy write_revision_admin on revision
 for all using (role_is_contributor_or_above()) with check (role_is_contributor_or_above());
 
 -- =========
