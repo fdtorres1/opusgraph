@@ -133,15 +133,24 @@ Access the admin interface at `/admin/works/new` to create new works or `/admin/
 
 ## Roadmap
 
-- [ ] Composer editor page (mirroring work editor functionality)
-- [ ] CSV import functionality with duplicate detection
-- [ ] Public search interface
-- [ ] Subscription management (Stripe integration)
-- [ ] Team and institutional access
-- [ ] Activity panel UI
-- [ ] Review queue management interface
-- [ ] Location search with Google Places/Nominatim
-- [ ] Full-text search with PostgreSQL
+See [ROADMAP.md](./ROADMAP.md) for detailed roadmap and feature planning.
+
+### Quick Overview
+
+**Completed (MVP v1.0):**
+- ✅ Project setup and deployment
+- ✅ Database schema and migrations
+- ✅ Admin work editor with autosave
+- ✅ API routes and typeahead search
+- ✅ Recording embeds and activity tracking
+
+**Next Up:**
+- Composer editor page
+- CSV import functionality
+- Activity panel UI
+- Review queue management
+- Public search interface
+- Stripe subscription integration
 
 ## Development
 
