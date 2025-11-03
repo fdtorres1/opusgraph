@@ -3,7 +3,7 @@ import { createServerSupabase } from "@/lib/supabase/server";
 import WorkEditor from "./work-editor";
 
 export default async function WorkPage({ params }: { params: Promise<{ id: string }> }) {
-  const supabase = createServerSupabase();
+  const supabase = await createServerSupabase();
   const { id: paramId } = await params;
   const isNew = paramId === "new";
 

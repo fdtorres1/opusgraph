@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createServerSupabase } from "@/lib/supabase/server";
 
 export async function GET(req: NextRequest) {
-  const supabase = createServerSupabase();
+  const supabase = await createServerSupabase();
   const q = new URL(req.url).searchParams.get("q") ?? "";
 
   const { data, error } = await supabase
