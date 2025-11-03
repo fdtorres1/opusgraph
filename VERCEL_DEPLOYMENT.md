@@ -2,6 +2,8 @@
 
 ## Quick Setup Steps
 
+✅ **Deployed**: https://opusgraph.vercel.app
+
 Since you've already connected your repository to Vercel, follow these steps:
 
 ### 1. Configure Environment Variables
