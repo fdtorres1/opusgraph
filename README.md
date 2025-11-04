@@ -88,19 +88,25 @@ npm run dev
 opusgraph/
 ├── app/
 │   ├── admin/              # Admin interface pages
-│   │   └── works/         # Work editor pages
-│   ├── api/               # API routes
-│   │   └── admin/         # Admin API endpoints
+│   │   ├── layout.tsx      # Admin layout with sidebar
+│   │   ├── page.tsx        # Dashboard
+│   │   ├── composers/      # Composer pages
+│   │   ├── works/          # Work editor pages
+│   │   ├── activity/       # Activity panel
+│   │   └── review/         # Review queue
+│   ├── api/                # API routes
+│   │   └── admin/          # Admin API endpoints
 │   └── ...
 ├── components/
-│   └── ui/                # shadcn/ui components
+│   ├── admin-sidebar.tsx   # Sidebar navigation component
+│   └── ui/                 # shadcn/ui components
 ├── lib/
-│   ├── supabase/          # Supabase client utilities
-│   ├── validators/        # Zod schemas
-│   ├── recording.ts       # Recording URL detection
-│   └── duration.ts        # Duration formatting/parsing
+│   ├── supabase/           # Supabase client utilities
+│   ├── validators/         # Zod schemas
+│   ├── recording.ts        # Recording URL detection
+│   └── duration.ts         # Duration formatting/parsing
 ├── supabase/
-│   └── migrations/        # Database migrations
+│   └── migrations/         # Database migrations
 └── ...
 ```
 
@@ -121,10 +127,21 @@ See `supabase/migrations/0001_init.sql` for the complete schema.
 
 ## Admin Interface
 
-Access the admin dashboard at `/admin` or navigate directly to:
-- **Composers**: `/admin/composers/new` to create or `/admin/composers/[id]` to edit
-- **Works**: `/admin/works/new` to create or `/admin/works/[id]` to edit
-- **Activity**: `/admin/activity` to view activity feed
+Access the admin dashboard at `/admin` with a collapsible sidebar navigation. The sidebar provides quick access to:
+
+- **Dashboard**: `/admin` - Overview with statistics and recent activity
+- **Composers**: 
+  - List: `/admin/composers` - View all composers
+  - Create: `/admin/composers/new` - Create new composer
+  - Edit: `/admin/composers/[id]` - Edit existing composer
+- **Works**:
+  - List: `/admin/works` - View all works
+  - Create: `/admin/works/new` - Create new work
+  - Edit: `/admin/works/[id]` - Edit existing work
+- **Activity**: `/admin/activity` - View activity feed with filtering
+- **Review Queue**: `/admin/review` - Manage review flags
+
+The sidebar collapses to icon-only mode for a compact view, with tooltips showing full labels on hover. Use the toggle button (or `Ctrl/Cmd + B`) to expand/collapse.
 
 ### Key Features:
 
@@ -143,14 +160,17 @@ See [ROADMAP.md](./ROADMAP.md) for detailed roadmap and feature planning.
 
 ### Quick Overview
 
-**Completed (MVP v1.0):**
+**Completed (MVP v1.0 - v1.2.0):**
 - ✅ Project setup and deployment
 - ✅ Database schema and migrations
 - ✅ Admin work editor with autosave
 - ✅ Admin composer editor with autosave
 - ✅ Activity panel UI with filtering
 - ✅ Authentication (login/signup)
-- ✅ Admin dashboard
+- ✅ Admin dashboard with statistics
+- ✅ Collapsible sidebar navigation
+- ✅ List pages for composers and works
+- ✅ Review queue page
 - ✅ API routes and typeahead search
 - ✅ Recording embeds and activity tracking
 

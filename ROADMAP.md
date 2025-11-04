@@ -1,6 +1,6 @@
 # OpusGraph Roadmap
 
-## ✅ Completed (MVP v1.0)
+## ✅ Completed (MVP v1.0 - v1.2.0)
 
 - [x] **Project Setup** - Next.js 16 with TypeScript and App Router
 - [x] **Database Schema** - Complete Supabase migration with all tables, functions, and RLS policies
@@ -10,10 +10,13 @@
 - [x] **Typeahead Search** - Composer, publisher, and country search functionality
 - [x] **Recording Embeds** - Automatic detection and embedding for YouTube, Spotify, Apple Music, SoundCloud
 - [x] **Activity Tracking** - Revision history and activity feed (database schema)
-- [x] **Activity Panel UI** - Admin activity feed with filtering, grouping, and infinite scroll
+- [x] **Activity Panel UI** - Admin activity feed with filtering, grouping, and infinite scroll with local timestamps
+- [x] **Admin Dashboard** - Enhanced dashboard with statistics (composer/work counts, review flags) and recent activity preview
+- [x] **Sidebar Navigation** - Collapsible left sidebar with icon-only mode, tooltips, and keyboard shortcuts
+- [x] **List Pages** - Composers and Works list pages with grid view and status badges
+- [x] **Review Queue Page** - Basic review queue page for managing review flags
 - [x] **Review System** - Duplicate detection functions and review flag schema
 - [x] **Authentication** - Login/signup pages with Supabase Auth
-- [x] **Admin Dashboard** - Landing page for admin interface
 - [x] **Deployment** - Vercel deployment with Next.js 16 compatibility
 - [x] **GitHub Integration** - Repository, project board, and issue tracking
 
@@ -141,8 +144,9 @@
 
 ## Version History
 
-- **v1.0.0** (Current) - MVP with admin work editor and basic infrastructure
-- **v1.1.0** (Current) - Composer editor and activity panel ✅
-- **v1.2.0** (Planned) - CSV import and review queue
+- **v1.0.0** - MVP with admin work editor and basic infrastructure ✅
+- **v1.1.0** - Composer editor, activity panel, and enhanced dashboard ✅
+- **v1.2.0** - Sidebar navigation, list pages, and review queue page ✅
+- **v1.3.0** (Planned) - CSV import and review queue management
 - **v2.0.0** (Planned) - Public features and subscriptions
 
