@@ -154,6 +154,7 @@ The sidebar collapses to icon-only mode for a compact view, with tooltips showin
 - **Typeahead Search**: Composer, publisher, and country search functionality
 - **Location Search**: Google Places and Nominatim integration for birth/death place selection
 - **CSV Import**: Bulk import composers or works with validation, duplicate detection, and field mapping
+- **Public Search**: Public-facing search interface at `/search` with typeahead and detail pages
 - **Activity Tracking**: All changes logged in revision table with visual activity feed
 - **Activity Panel**: View all revisions, comments, and review flags with filtering
 
@@ -163,7 +164,7 @@ See [ROADMAP.md](./ROADMAP.md) for detailed roadmap and feature planning.
 
 ### Quick Overview
 
-**Completed (MVP v1.0 - v1.5.0):**
+**Completed (MVP v1.0 - v1.6.0):**
 - ✅ Project setup and deployment
 - ✅ Database schema and migrations
 - ✅ Admin work editor with autosave
@@ -176,11 +177,11 @@ See [ROADMAP.md](./ROADMAP.md) for detailed roadmap and feature planning.
 - ✅ Review queue management with filtering and merge
 - ✅ Location search integration (Google Places + Nominatim)
 - ✅ CSV import functionality with validation and duplicate detection
+- ✅ Public search interface with typeahead and detail pages
 - ✅ API routes and typeahead search
 - ✅ Recording embeds and activity tracking
 
 **Next Up:**
-- Public search interface
 - Stripe subscription integration
 
 ## Development

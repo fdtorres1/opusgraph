@@ -1,6 +1,6 @@
 # OpusGraph Roadmap
 
-## ✅ Completed (MVP v1.0 - v1.5.0)
+## ✅ Completed (MVP v1.0 - v1.6.0)
 
 - [x] **Project Setup** - Next.js 16 with TypeScript and App Router
 - [x] **Database Schema** - Complete Supabase migration with all tables, functions, and RLS policies
@@ -86,13 +86,16 @@
 
 ### Phase 3: Public Features
 
-- [ ] **Public Search Interface** - Public-facing search page
-  - Public search page at `/search`
-  - Calls `public_min_works` and `public_min_composers` RPCs
-  - Typeahead search functionality
-  - Results display (name only for public)
-  - Links to composer/work detail pages with sign-in prompt
-  - *Issue: [#3](https://github.com/fdtorres1/opusgraph/issues/3)*
+- [x] **Public Search Interface** - Public-facing search page ✅
+  - Public search page at `/search` with typeahead functionality
+  - Calls `public_min_works` and `public_min_composers` RPCs via `/api/public/search`
+  - Typeahead search with 300ms debounce
+  - Tab-based filtering (All/Composers/Works) with result counts
+  - Results display (name only for public users)
+  - Links to composer/work detail pages with sign-in prompts
+  - Public detail pages showing names only with subscription prompts
+  - Search button added to homepage
+  - *Issue: [#3](https://github.com/fdtorres1/opusgraph/issues/3) - Completed*
 
 - [ ] **Public Detail Pages** - Composer and work detail pages
   - Show names only for public users
@@ -158,5 +161,6 @@
 - **v1.3.0** - Review queue management with filtering, comparison, and merge ✅
 - **v1.4.0** - Location search integration with Google Places and Nominatim ✅
 - **v1.5.0** - CSV import functionality with validation and duplicate detection ✅
-- **v2.0.0** (Planned) - Public features and subscriptions
+- **v1.6.0** - Public search interface with typeahead and detail pages ✅
+- **v2.0.0** (Planned) - Subscription features and Stripe integration
 

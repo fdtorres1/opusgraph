@@ -8,8 +8,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Planned
-- Public Search Interface
 - Stripe Integration
+
+## [1.6.0] - 2025-01-27
+
+### Added
+- Public Search Interface at `/search` with typeahead functionality
+- Public API endpoint (`/api/public/search`) using public RPCs
+- Search results UI with tabs for All/Composers/Works
+- Public composer detail pages (`/composers/[id]`) showing names only with sign-in prompts
+- Public work detail pages (`/works/[id]`) showing work names and composer links with sign-in prompts
+- Public Supabase client for unauthenticated access
+- Search button added to homepage as primary action
+- Debounced search with 300ms delay
+- Loading states and empty state messages
+- Navigation between search results and detail pages
+
+### Changed
+- Homepage now features Search as primary call-to-action
+- Public users can browse composer and work names without authentication
+- Full details require sign-in/sign-up (foundation for subscription model)
+
+### Technical
+- Uses `public_min_composers` and `public_min_works` RPC functions
+- Public client created with anon key for unauthenticated access
+- Tab-based filtering (All/Composers/Works) with result counts
+- Responsive design with proper loading and error states
 
 ## [1.5.0] - 2025-01-27
 
@@ -136,7 +160,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - React Hook Form with Zod validation
 - TypeScript throughout
 
-[Unreleased]: https://github.com/fdtorres1/opusgraph/compare/v1.5.0...HEAD
+[Unreleased]: https://github.com/fdtorres1/opusgraph/compare/v1.6.0...HEAD
+[1.6.0]: https://github.com/fdtorres1/opusgraph/compare/v1.5.0...v1.6.0
 [1.5.0]: https://github.com/fdtorres1/opusgraph/compare/v1.4.0...v1.5.0
 [1.4.0]: https://github.com/fdtorres1/opusgraph/compare/v1.3.0...v1.4.0
 [1.3.0]: https://github.com/fdtorres1/opusgraph/compare/v1.2.0...v1.3.0
