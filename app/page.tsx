@@ -13,15 +13,13 @@ export default function Home() {
         </p>
         <div className="flex gap-4 justify-center">
           <Button asChild size="lg">
+            <Link href="/search">Search</Link>
+          </Button>
+          <Button asChild variant="outline" size="lg">
             <Link href="/auth/login">Sign In</Link>
           </Button>
           <Button asChild variant="outline" size="lg">
             <Link href="/auth/signup">Sign Up</Link>
-          </Button>
-          <Button asChild variant="ghost" size="lg">
-            <Link href="https://github.com/fdtorres1/opusgraph" target="_blank" rel="noopener noreferrer">
-              View on GitHub
-            </Link>
           </Button>
         </div>
         <div className="mt-16 grid grid-cols-1 md:grid-cols-3 gap-8 max-w-4xl mx-auto">
