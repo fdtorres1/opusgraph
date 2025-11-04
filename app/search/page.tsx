@@ -2,6 +2,7 @@
 import { PublicSearch } from "./public-search";
 import { PublicHeader } from "@/components/public-header";
 import { createServerSupabase } from "@/lib/supabase/server";
+import Link from "next/link";
 
 export default async function SearchPage() {
   const supabase = await createServerSupabase();
