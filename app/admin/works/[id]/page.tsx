@@ -29,9 +29,7 @@ export default async function WorkPage({ params }: { params: Promise<{ id: strin
   }
 
   return (
-    <div className="p-6">
-      <WorkEditor initial={initial} isNew={isNew} ensembles={ensembles} />
-    </div>
+    <WorkEditor initial={initial} isNew={isNew} ensembles={ensembles} />
   );
 }
 

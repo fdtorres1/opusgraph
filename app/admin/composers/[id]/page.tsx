@@ -33,9 +33,7 @@ export default async function ComposerPage({ params }: { params: Promise<{ id: s
   }
 
   return (
-    <div className="p-6">
-      <ComposerEditor initial={initial} isNew={isNew} genders={genders} countries={countries} />
-    </div>
+    <ComposerEditor initial={initial} isNew={isNew} genders={genders} countries={countries} />
   );
 }
 
