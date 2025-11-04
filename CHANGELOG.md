@@ -10,6 +10,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Planned
 - Stripe Integration
 
+## [1.7.3] - 2025-01-27
+
+### 🔒 Security
+- **CRITICAL FIX**: New signups no longer receive admin access by default
+- Added database trigger to automatically create `user_profile` with `admin_role='none'` for all new signups
+- Individual users (role='none') are now blocked from accessing `/admin` routes via middleware
+- Auth callback and login now redirect based on user role:
+  - Individual users → `/search`
+  - Admin/Contributor users → `/admin`
+
+### Added
+- Database migration `0002_auto_create_user_profile.sql` with trigger and backfill
+- Auth helper functions in `lib/auth.ts` for role checking
+- Backfill for existing users without profiles (sets them to `admin_role='none'`)
+
+### Changed
+- Middleware now checks user role before allowing `/admin` route access
+- Login redirect logic now checks user role instead of defaulting to `/admin`
+- Auth callback redirect logic now respects user role
+
+### Migration Required
+⚠️ **IMPORTANT**: Run `supabase/migrations/0002_auto_create_user_profile.sql` in Supabase Dashboard → SQL Editor to apply the security fix.
+
 ## [1.7.2] - 2025-01-27
 
 ### Added
@@ -199,7 +222,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - React Hook Form with Zod validation
 - TypeScript throughout
 
-[Unreleased]: https://github.com/fdtorres1/opusgraph/compare/v1.7.2...HEAD
+[Unreleased]: https://github.com/fdtorres1/opusgraph/compare/v1.7.3...HEAD
+[1.7.3]: https://github.com/fdtorres1/opusgraph/compare/v1.7.2...v1.7.3
 [1.7.2]: https://github.com/fdtorres1/opusgraph/compare/v1.7.1...v1.7.2
 [1.7.1]: https://github.com/fdtorres1/opusgraph/compare/v1.7.0...v1.7.1
 [1.7.0]: https://github.com/fdtorres1/opusgraph/compare/v1.6.0...v1.7.0
