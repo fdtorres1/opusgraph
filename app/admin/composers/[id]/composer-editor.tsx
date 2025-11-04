@@ -86,21 +86,38 @@ export default function ComposerEditor({ initial, isNew, genders, countries }: P
     if (!composerId) return;
 
     const doSave = async () => {
+      const firstName = debounced.first_name?.trim() || "";
+      const lastName = debounced.last_name?.trim() || "";
+      
+      // Skip save if both names are empty (validation will fail)
+      if (!firstName && !lastName) {
+        // Don't save yet, but don't show error - user is still typing
+        return;
+      }
+
       setSaving("saving");
       const res = await fetch(`/api/admin/composers/${composerId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           ...debounced,
-          first_name: debounced.first_name?.trim() || "",
-          last_name: debounced.last_name?.trim() || "",
+          first_name: firstName,
+          last_name: lastName,
           birth_year: debounced.birth_year?.trim() || null,
           death_year: debounced.death_year?.trim() || null,
           gender_self_describe: debounced.gender_self_describe?.trim() || null,
         }),
       });
 
-      if (!res.ok) { setSaving("error"); return; }
+      if (!res.ok) { 
+        const errorData = await res.json().catch(() => ({}));
+        setSaving("error");
+        // Show validation error if both names are empty
+        if (errorData.error?.includes("first_name or last_name")) {
+          // Error is already clear from validation
+        }
+        return; 
+      }
 
       const json = await res.json();
       lastSavedRef.current = json.composer;

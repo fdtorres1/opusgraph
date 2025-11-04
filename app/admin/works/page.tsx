@@ -29,6 +29,7 @@ export default async function WorksPage() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {works?.map((work) => {
           const composer = Array.isArray(work.composer) ? work.composer[0] : work.composer;
+          const workName = work.work_name?.trim() || "(Untitled Draft)";
           return (
             <Card key={work.id}>
               <CardHeader>
@@ -38,7 +39,7 @@ export default async function WorksPage() {
                       href={`/admin/works/${work.id}`}
                       className="hover:underline"
                     >
-                      {work.work_name || "Untitled Work"}
+                      {workName}
                     </Link>
                   </CardTitle>
                   <Badge variant={work.status === "published" ? "default" : "secondary"}>
@@ -47,7 +48,7 @@ export default async function WorksPage() {
                 </div>
                 {composer && (
                   <p className="text-sm text-zinc-500 mt-1">
-                    by {composer.first_name} {composer.last_name}
+                    by {composer.first_name || ""} {composer.last_name || ""}
                   </p>
                 )}
               </CardHeader>

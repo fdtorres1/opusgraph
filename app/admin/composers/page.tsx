@@ -24,25 +24,33 @@ export default async function ComposersPage() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {composers?.map((composer) => (
-          <Card key={composer.id}>
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-lg">
-                  <Link
-                    href={`/admin/composers/${composer.id}`}
-                    className="hover:underline"
-                  >
-                    {composer.first_name} {composer.last_name}
-                  </Link>
-                </CardTitle>
-                <Badge variant={composer.status === "published" ? "default" : "secondary"}>
-                  {composer.status}
-                </Badge>
-              </div>
-            </CardHeader>
-          </Card>
-        ))}
+        {composers?.map((composer) => {
+          const firstName = composer.first_name?.trim() || "";
+          const lastName = composer.last_name?.trim() || "";
+          const displayName = firstName || lastName 
+            ? `${firstName} ${lastName}`.trim()
+            : "(Untitled Draft)";
+          
+          return (
+            <Card key={composer.id}>
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-lg">
+                    <Link
+                      href={`/admin/composers/${composer.id}`}
+                      className="hover:underline"
+                    >
+                      {displayName}
+                    </Link>
+                  </CardTitle>
+                  <Badge variant={composer.status === "published" ? "default" : "secondary"}>
+                    {composer.status}
+                  </Badge>
+                </div>
+              </CardHeader>
+            </Card>
+          );
+        })}
 
         {(!composers || composers.length === 0) && (
           <div className="col-span-full text-center py-12 text-zinc-500">

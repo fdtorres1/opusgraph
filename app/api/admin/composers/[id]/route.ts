@@ -1,6 +1,7 @@
 // app/api/admin/composers/[id]/route.ts
 import { NextRequest, NextResponse } from "next/server";
 import { createServerSupabase } from "@/lib/supabase/server";
+import { ComposerPayload } from "@/lib/validators/composer";
 
 export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const supabase = await createServerSupabase();
@@ -47,14 +48,36 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
-  const p = await req.json();
+  const body = await req.json();
+  
+  // Validate payload
+  const validation = ComposerPayload.safeParse(body);
+  if (!validation.success) {
+    return NextResponse.json(
+      { error: "Validation failed", details: validation.error.flatten() },
+      { status: 400 }
+    );
+  }
+  
+  const p = validation.data;
   const before = await supabase.from("composer").select("status").eq("id", id).single().then(r => r.data);
+
+  // Ensure at least one name is provided (trimmed)
+  const firstName = (p.first_name?.trim() || "").trim();
+  const lastName = (p.last_name?.trim() || "").trim();
+  
+  if (!firstName && !lastName) {
+    return NextResponse.json(
+      { error: "At least one of first_name or last_name must be provided" },
+      { status: 400 }
+    );
+  }
 
   const { data: updated, error: upErr } = await supabase
     .from("composer")
     .update({
-      first_name: p.first_name,
-      last_name: p.last_name,
+      first_name: firstName || "",
+      last_name: lastName || "",
       birth_year: p.birth_year ? parseInt(p.birth_year, 10) : null,
       birth_place_id: p.birth_place_id || null,
       death_year: p.death_year ? parseInt(p.death_year, 10) : null,

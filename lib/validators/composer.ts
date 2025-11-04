@@ -24,7 +24,17 @@ export const ComposerPayload = z.object({
     is_primary: z.boolean().optional(),
     display_order: z.number().int().nonnegative().optional(),
   })).optional(),
-});
+}).refine(
+  (data) => {
+    const firstName = data.first_name?.trim() || "";
+    const lastName = data.last_name?.trim() || "";
+    return firstName.length > 0 || lastName.length > 0;
+  },
+  {
+    message: "At least one of first_name or last_name must be provided",
+    path: ["first_name"], // Error shows on first_name field
+  }
+);
 
 export type ComposerPayloadType = z.infer<typeof ComposerPayload>;
 
