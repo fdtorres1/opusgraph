@@ -9,7 +9,7 @@ A classical music database application for discovering, preserving, and managing
 - **Composer Management**: Create and manage composer profiles with biographical information, nationalities, and links
 - **Work Cataloging**: Catalog musical works with detailed metadata including instrumentation, duration, recordings, and sources
 - **Admin Interface**: Rich admin interface with autosave, draft/publish workflow, and activity tracking
-- **Public Access**: Public users can view composer and work names; full details require subscription
+- **Public Access**: Public users can view composer and work names; authenticated users can view full details
 - **Review System**: Automated duplicate detection and review flags for quality assurance
 - **Activity Feed**: Track all changes, comments, and review flags in a centralized activity panel
 

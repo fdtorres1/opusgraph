@@ -9,6 +9,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Planned
 - Stripe Integration
+- Browse all composers and works pages
+
+## [1.7.5] - 2025-01-XX
+
+### Added
+- **Authenticated Detail Views**: Individual users can now view full composer and work details on public pages
+- **Public Header**: Added logout button and user email to customer-facing pages
+- **RLS Policies**: Added database policies to allow Individual users to read published content
+- Public header component with logout functionality appears on search, composer, and work detail pages when authenticated
+
+### Changed
+- Public detail pages now fetch and display full data when user is authenticated (instead of redirecting to admin)
+- Search page hides sign-in prompts when user is logged in
+- Authenticated users see full details in public-facing UI (not admin UI)
+
+### Fixed
+- Type errors with Supabase array responses for foreign key relationships
+- Normalized birth_place/death_place arrays to single objects in composer detail
+- Normalized composer/publisher/ensemble arrays to single objects in work detail
+
+### Technical
+- Database migration `0004_individual_user_read_policy.sql` adds RLS policies for Individual users
+- New components: `AuthenticatedComposerDetail`, `AuthenticatedWorkDetail`, `PublicHeader`
+- Public pages check authentication and fetch appropriate data based on user status
 
 ## [1.7.4] - 2025-01-27
 
