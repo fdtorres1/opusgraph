@@ -1,73 +1,60 @@
 // app/admin/review/page.tsx
 import { createServerSupabase } from "@/lib/supabase/server";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import Link from "next/link";
+import { ReviewQueue } from "./review-queue";
 
 export default async function ReviewPage() {
   const supabase = await createServerSupabase();
   
+  // Fetch all review flags with entity names
   const { data: flags } = await supabase
     .from("review_flag")
     .select(`
-      id, reason, status, created_at, notes,
+      id, reason, status, created_at, details,
       entity_type, entity_id
     `)
-    .eq("status", "open")
     .order("created_at", { ascending: false });
 
-  return (
-    <div>
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-3xl font-bold">Review Queue</h1>
-      </div>
+  // Fetch entity names for composers and works
+  const composerIds = flags?.filter(f => f.entity_type === "composer").map(f => f.entity_id) || [];
+  const workIds = flags?.filter(f => f.entity_type === "work").map(f => f.entity_id) || [];
 
-      {flags && flags.length > 0 ? (
-        <div className="space-y-4">
-          {flags.map((flag) => (
-            <Card key={flag.id}>
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <CardTitle className="text-lg">
-                    {flag.entity_type === "composer" ? (
-                      <Link
-                        href={`/admin/composers/${flag.entity_id}`}
-                        className="hover:underline"
-                      >
-                        Composer Review
-                      </Link>
-                    ) : (
-                      <Link
-                        href={`/admin/works/${flag.entity_id}`}
-                        className="hover:underline"
-                      >
-                        Work Review
-                      </Link>
-                    )}
-                  </CardTitle>
-                  <Badge variant="destructive">Open</Badge>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <p className="text-sm text-zinc-600 mb-2">
-                  <strong>Reason:</strong> {flag.reason}
-                </p>
-                {flag.notes && (
-                  <p className="text-sm text-zinc-600">
-                    <strong>Notes:</strong> {flag.notes}
-                  </p>
-                )}
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      ) : (
-        <div className="text-center py-12 text-zinc-500">
-          <p className="text-lg">No items in the review queue.</p>
-          <p className="text-sm mt-2">All items have been reviewed.</p>
-        </div>
-      )}
-    </div>
-  );
+  const composers = composerIds.length > 0
+    ? await supabase
+        .from("composer")
+        .select("id, first_name, last_name")
+        .in("id", composerIds)
+    : { data: [] };
+
+  const works = workIds.length > 0
+    ? await supabase
+        .from("work")
+        .select("id, work_name")
+        .in("id", workIds)
+    : { data: [] };
+
+  // Map entity names to flags
+  const flagsWithNames = flags?.map(flag => {
+    let entity_name: string | undefined;
+    if (flag.entity_type === "composer") {
+      const composer = composers.data?.find(c => c.id === flag.entity_id);
+      entity_name = composer ? `${composer.first_name} ${composer.last_name}` : undefined;
+    } else {
+      const work = works.data?.find(w => w.id === flag.entity_id);
+      entity_name = work?.work_name || undefined;
+    }
+
+    // Extract duplicate IDs from details if present
+    let duplicate_ids: string[] | undefined;
+    if (flag.details && typeof flag.details === "object" && "duplicate_ids" in flag.details) {
+      duplicate_ids = (flag.details as any).duplicate_ids;
+    }
+
+    return {
+      ...flag,
+      entity_name,
+      duplicate_ids,
+    };
+  }) || [];
+
+  return <ReviewQueue initialFlags={flagsWithNames} />;
 }
-
