@@ -182,6 +182,9 @@ See [ROADMAP.md](./ROADMAP.md) for detailed roadmap and feature planning.
 - ✅ Delete functionality for composers and works
 - ✅ API routes and typeahead search
 - ✅ Recording embeds and activity tracking
+- ✅ Authenticated detail views for Individual users
+- ✅ Browse all composers and works pages
+- ✅ Public navigation and header with logout
 
 **Next Up:**
 - Stripe subscription integration

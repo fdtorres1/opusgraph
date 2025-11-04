@@ -9,30 +9,36 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Planned
 - Stripe Integration
-- Browse all composers and works pages
 
-## [1.7.5] - 2025-01-XX
+## [1.7.5] - 2025-01-27
 
 ### Added
 - **Authenticated Detail Views**: Individual users can now view full composer and work details on public pages
-- **Public Header**: Added logout button and user email to customer-facing pages
+- **Public Header**: Added logout button and user email to customer-facing pages with navigation menu
+- **Browse All Composers Page** (`/composers`): List all published composers with links to detail pages
+- **Browse All Works Page** (`/works`): List all published works with links to detail pages
+- **Navigation Links**: Added Search, Composers, and Works links in PublicHeader (desktop)
+- **Quick Links**: Added "Browse All Composers" and "Browse All Works" links on search page
 - **RLS Policies**: Added database policies to allow Individual users to read published content
-- Public header component with logout functionality appears on search, composer, and work detail pages when authenticated
 
 ### Changed
 - Public detail pages now fetch and display full data when user is authenticated (instead of redirecting to admin)
 - Search page hides sign-in prompts when user is logged in
 - Authenticated users see full details in public-facing UI (not admin UI)
+- PublicHeader now includes navigation menu for authenticated users
+- Improved navigation flow between search, browse, and detail pages
 
 ### Fixed
 - Type errors with Supabase array responses for foreign key relationships
 - Normalized birth_place/death_place arrays to single objects in composer detail
 - Normalized composer/publisher/ensemble arrays to single objects in work detail
+- Missing `Link` import in search page causing build error
 
 ### Technical
 - Database migration `0004_individual_user_read_policy.sql` adds RLS policies for Individual users
 - New components: `AuthenticatedComposerDetail`, `AuthenticatedWorkDetail`, `PublicHeader`
 - Public pages check authentication and fetch appropriate data based on user status
+- Browse pages use existing public RPCs (`public_min_composers`, `public_min_works`)
 
 ## [1.7.4] - 2025-01-27
 
@@ -271,7 +277,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - React Hook Form with Zod validation
 - TypeScript throughout
 
-[Unreleased]: https://github.com/fdtorres1/opusgraph/compare/v1.7.4...HEAD
+[Unreleased]: https://github.com/fdtorres1/opusgraph/compare/v1.7.5...HEAD
+[1.7.5]: https://github.com/fdtorres1/opusgraph/compare/v1.7.4...v1.7.5
 [1.7.4]: https://github.com/fdtorres1/opusgraph/compare/v1.7.3...v1.7.4
 [1.7.3]: https://github.com/fdtorres1/opusgraph/compare/v1.7.2...v1.7.3
 [1.7.2]: https://github.com/fdtorres1/opusgraph/compare/v1.7.1...v1.7.2
