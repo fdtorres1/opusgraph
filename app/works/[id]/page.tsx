@@ -50,7 +50,21 @@ export default async function PublicWorkPage({
       );
     }
 
-    return <AuthenticatedWorkDetail work={work} />;
+    // Normalize composer, publisher, and ensemble from arrays to single objects
+    const normalizedWork = {
+      ...work,
+      composer: Array.isArray(work.composer)
+        ? (work.composer[0] || null)
+        : work.composer,
+      publisher: Array.isArray(work.publisher)
+        ? (work.publisher[0] || null)
+        : work.publisher,
+      ensemble: Array.isArray(work.ensemble)
+        ? (work.ensemble[0] || null)
+        : work.ensemble,
+    };
+
+    return <AuthenticatedWorkDetail work={normalizedWork} />;
   }
 
   // User is not authenticated - show public view with sign-in prompt

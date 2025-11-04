@@ -48,7 +48,18 @@ export default async function PublicComposerPage({
       );
     }
 
-    return <AuthenticatedComposerDetail composer={composer} />;
+    // Normalize birth_place and death_place from arrays to single objects
+    const normalizedComposer = {
+      ...composer,
+      birth_place: Array.isArray(composer.birth_place) 
+        ? (composer.birth_place[0] || null)
+        : composer.birth_place,
+      death_place: Array.isArray(composer.death_place)
+        ? (composer.death_place[0] || null)
+        : composer.death_place,
+    };
+
+    return <AuthenticatedComposerDetail composer={normalizedComposer} />;
   }
 
   // User is not authenticated - show public view with sign-in prompt
