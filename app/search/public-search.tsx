@@ -8,6 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import Link from "next/link";
 import { Search, Loader2, User, Music } from "lucide-react";
+import { createClient } from "@/lib/supabase/client";
 
 type ComposerResult = {
   id: string;
@@ -27,6 +28,16 @@ export function PublicSearch() {
   const [works, setWorks] = useState<WorkResult[]>([]);
   const [loading, setLoading] = useState(false);
   const [activeTab, setActiveTab] = useState("all");
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+
+  useEffect(() => {
+    async function checkAuth() {
+      const supabase = createClient();
+      const { data: { user } } = await supabase.auth.getUser();
+      setIsAuthenticated(!!user);
+    }
+    checkAuth();
+  }, []);
 
   useEffect(() => {
     if (query.length < 2) {
@@ -191,7 +202,9 @@ export function PublicSearch() {
       {query.length < 2 && (
         <div className="text-center py-12 text-zinc-500">
           <p>Start typing to search for composers and works</p>
-          <p className="text-sm mt-2">Results show names only. Sign in to view full details.</p>
+          {!isAuthenticated && (
+            <p className="text-sm mt-2">Results show names only. Sign in to view full details.</p>
+          )}
         </div>
       )}
     </div>
