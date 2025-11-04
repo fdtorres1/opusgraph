@@ -121,15 +121,21 @@ See `supabase/migrations/0001_init.sql` for the complete schema.
 
 ## Admin Interface
 
-Access the admin interface at `/admin/works/new` to create new works or `/admin/works/[id]` to edit existing works.
+Access the admin dashboard at `/admin` or navigate directly to:
+- **Composers**: `/admin/composers/new` to create or `/admin/composers/[id]` to edit
+- **Works**: `/admin/works/new` to create or `/admin/works/[id]` to edit
+- **Activity**: `/admin/activity` to view activity feed
 
 ### Key Features:
 
 - **Autosave**: Changes are automatically saved after 800ms of inactivity
 - **Draft/Published**: Toggle between draft and published status
+- **Composer Management**: Full CRUD with birth/death info, nationalities, links, and gender identity
+- **Work Management**: Full CRUD with instrumentation, recordings, sources, and publisher links
 - **Sources & Recordings**: Add multiple sources and recordings with automatic embed detection
-- **Composer/Publisher Search**: Typeahead search for linking related entities
-- **Activity Tracking**: All changes are logged in the revision table
+- **Typeahead Search**: Composer, publisher, and country search functionality
+- **Activity Tracking**: All changes logged in revision table with visual activity feed
+- **Activity Panel**: View all revisions, comments, and review flags with filtering
 
 ## Roadmap
 
@@ -141,14 +147,17 @@ See [ROADMAP.md](./ROADMAP.md) for detailed roadmap and feature planning.
 - ✅ Project setup and deployment
 - ✅ Database schema and migrations
 - ✅ Admin work editor with autosave
+- ✅ Admin composer editor with autosave
+- ✅ Activity panel UI with filtering
+- ✅ Authentication (login/signup)
+- ✅ Admin dashboard
 - ✅ API routes and typeahead search
 - ✅ Recording embeds and activity tracking
 
 **Next Up:**
-- Composer editor page
-- CSV import functionality
-- Activity panel UI
 - Review queue management
+- CSV import functionality
+- Location search integration
 - Public search interface
 - Stripe subscription integration
 

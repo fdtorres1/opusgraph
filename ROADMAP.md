@@ -5,11 +5,15 @@
 - [x] **Project Setup** - Next.js 16 with TypeScript and App Router
 - [x] **Database Schema** - Complete Supabase migration with all tables, functions, and RLS policies
 - [x] **Admin Work Editor** - Full-featured work editor with autosave, draft/publish, sources, and recordings
-- [x] **API Routes** - RESTful API for CRUD operations on works
-- [x] **Typeahead Search** - Composer and publisher search functionality
+- [x] **Admin Composer Editor** - Full-featured composer editor with autosave, draft/publish, nationalities, links, and gender identity
+- [x] **API Routes** - RESTful API for CRUD operations on works and composers
+- [x] **Typeahead Search** - Composer, publisher, and country search functionality
 - [x] **Recording Embeds** - Automatic detection and embedding for YouTube, Spotify, Apple Music, SoundCloud
 - [x] **Activity Tracking** - Revision history and activity feed (database schema)
+- [x] **Activity Panel UI** - Admin activity feed with filtering, grouping, and infinite scroll
 - [x] **Review System** - Duplicate detection functions and review flag schema
+- [x] **Authentication** - Login/signup pages with Supabase Auth
+- [x] **Admin Dashboard** - Landing page for admin interface
 - [x] **Deployment** - Vercel deployment with Next.js 16 compatibility
 - [x] **GitHub Integration** - Repository, project board, and issue tracking
 
@@ -21,7 +25,7 @@
 
 ### Phase 1: Core Admin Features
 
-- [ ] **Composer Editor Page** - Admin interface for managing composer profiles
+- [x] **Composer Editor Page** - Admin interface for managing composer profiles ✅
   - Autosave functionality
   - Draft/Published toggle
   - Birth/death year and place management
@@ -29,15 +33,17 @@
   - Composer links management
   - Gender identity selection
   - Activity tracking
-  - *Issue: [#1](https://github.com/fdtorres1/opusgraph/issues/1)*
+  - *Issue: [#1](https://github.com/fdtorres1/opusgraph/issues/1) - Completed*
 
-- [ ] **Activity Panel UI** - Admin activity feed interface
+- [x] **Activity Panel UI** - Admin activity feed interface ✅
   - Read from `activity_event` view
   - Group by date
   - Infinite scroll
   - Filter by event type (revision, comment, review_flag)
+  - Filter by entity type (composer, work)
   - Clickable links to related entities
-  - *Issue: [#4](https://github.com/fdtorres1/opusgraph/issues/4)*
+  - Actual timestamps in local timezone
+  - *Issue: [#4](https://github.com/fdtorres1/opusgraph/issues/4) - Completed*
 
 - [ ] **Review Queue Management** - UI for managing review flags
   - Review queue page at `/admin/review`
@@ -136,7 +142,7 @@
 ## Version History
 
 - **v1.0.0** (Current) - MVP with admin work editor and basic infrastructure
-- **v1.1.0** (Planned) - Composer editor and activity panel
+- **v1.1.0** (Current) - Composer editor and activity panel ✅
 - **v1.2.0** (Planned) - CSV import and review queue
 - **v2.0.0** (Planned) - Public features and subscriptions
 
