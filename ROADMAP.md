@@ -163,5 +163,6 @@
 - **v1.5.0** - CSV import functionality with validation and duplicate detection ✅
 - **v1.6.0** - Public search interface with typeahead and detail pages ✅
 - **v1.7.0** - Delete functionality for composers and works with confirmation dialogs ✅
+- **v1.7.1** - Bug fixes: login redirect and clickable header ✅
 - **v2.0.0** (Planned) - Subscription features and Stripe integration
 

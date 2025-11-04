@@ -10,6 +10,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Planned
 - Stripe Integration
 
+## [1.7.1] - 2025-01-27
+
+### Fixed
+- Login redirect now sends all admin/contributor users to dashboard (`/admin`) instead of create work page
+- Auth callback redirect now defaults to dashboard instead of create work page
+- "OpusGraph Admin" header text is now clickable and returns to dashboard
+- Added hover underline on header link for better UX
+
 ## [1.7.0] - 2025-01-27
 
 ### Added
@@ -178,7 +186,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - React Hook Form with Zod validation
 - TypeScript throughout
 
-[Unreleased]: https://github.com/fdtorres1/opusgraph/compare/v1.7.0...HEAD
+[Unreleased]: https://github.com/fdtorres1/opusgraph/compare/v1.7.1...HEAD
+[1.7.1]: https://github.com/fdtorres1/opusgraph/compare/v1.7.0...v1.7.1
 [1.7.0]: https://github.com/fdtorres1/opusgraph/compare/v1.6.0...v1.7.0
 [1.6.0]: https://github.com/fdtorres1/opusgraph/compare/v1.5.0...v1.6.0
 [1.5.0]: https://github.com/fdtorres1/opusgraph/compare/v1.4.0...v1.5.0
