@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { ArrowLeft, Calendar, Music, Clock, ExternalLink } from "lucide-react";
 import { detectRecording } from "@/lib/recording";
+import { PublicHeader } from "@/components/public-header";
 
 type Work = {
   id: string;
@@ -34,24 +35,26 @@ export function AuthenticatedWorkDetail({ work }: { work: Work }) {
   const recordings = (work.work_recording || []).sort((a, b) => (a.display_order || 0) - (b.display_order || 0));
 
   return (
-    <div className="container mx-auto px-4 py-8 max-w-4xl">
-      <div className="mb-6">
-        <Button asChild variant="ghost" className="mb-4">
-          <Link href="/search">
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            Back to Search
-          </Link>
-        </Button>
-        <h1 className="text-4xl font-bold">{work.work_name || "Untitled Work"}</h1>
-        {work.composer && (
-          <p className="text-xl text-zinc-600 mt-2">
-            by{" "}
-            <Link href={`/composers/${work.composer.id}`} className="hover:underline">
-              {work.composer.first_name} {work.composer.last_name}
+    <>
+      <PublicHeader />
+      <div className="container mx-auto px-4 py-8 max-w-4xl">
+        <div className="mb-6">
+          <Button asChild variant="ghost" className="mb-4">
+            <Link href="/search">
+              <ArrowLeft className="mr-2 h-4 w-4" />
+              Back to Search
             </Link>
-          </p>
-        )}
-      </div>
+          </Button>
+          <h1 className="text-4xl font-bold">{work.work_name || "Untitled Work"}</h1>
+          {work.composer && (
+            <p className="text-xl text-zinc-600 mt-2">
+              by{" "}
+              <Link href={`/composers/${work.composer.id}`} className="hover:underline">
+                {work.composer.first_name} {work.composer.last_name}
+              </Link>
+            </p>
+          )}
+        </div>
 
       <div className="space-y-6">
         {/* Basic Information */}
@@ -187,7 +190,8 @@ export function AuthenticatedWorkDetail({ work }: { work: Work }) {
           </Card>
         )}
       </div>
-    </div>
+      </div>
+    </>
   );
 }
 

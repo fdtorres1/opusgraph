@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { ArrowLeft, Calendar, MapPin, Globe, ExternalLink } from "lucide-react";
+import { PublicHeader } from "@/components/public-header";
 
 type Composer = {
   id: string;
@@ -24,18 +25,20 @@ export function AuthenticatedComposerDetail({ composer }: { composer: Composer }
   const nationalities = composer.composer_nationality || [];
 
   return (
-    <div className="container mx-auto px-4 py-8 max-w-4xl">
-      <div className="mb-6">
-        <Button asChild variant="ghost" className="mb-4">
-          <Link href="/search">
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            Back to Search
-          </Link>
-        </Button>
-        <h1 className="text-4xl font-bold">
-          {composer.first_name} {composer.last_name}
-        </h1>
-      </div>
+    <>
+      <PublicHeader />
+      <div className="container mx-auto px-4 py-8 max-w-4xl">
+        <div className="mb-6">
+          <Button asChild variant="ghost" className="mb-4">
+            <Link href="/search">
+              <ArrowLeft className="mr-2 h-4 w-4" />
+              Back to Search
+            </Link>
+          </Button>
+          <h1 className="text-4xl font-bold">
+            {composer.first_name} {composer.last_name}
+          </h1>
+        </div>
 
       <div className="space-y-6">
         {/* Basic Information */}
@@ -113,7 +116,8 @@ export function AuthenticatedComposerDetail({ composer }: { composer: Composer }
           </Card>
         )}
       </div>
-    </div>
+      </div>
+    </>
   );
 }
 
