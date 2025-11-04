@@ -10,6 +10,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Planned
 - Stripe Integration
 
+## [1.7.4] - 2025-01-27
+
+### Performance
+- **Search Performance Optimization**: Significant improvements to search speed and responsiveness
+- Added GIN trigram indexes for composer and work name searches with accent-insensitive support
+- Created `unaccent_immutable()` function for use in index expressions
+- Added partial indexes on `status='published'` for faster filtering
+- Search queries now run in parallel using `Promise.all` (composers and works searched simultaneously)
+- Reduced debounce delay from 300ms to 150ms for more responsive search experience
+- Added `LIMIT 50` and `ORDER BY` to search functions for consistent, sorted results
+
+### Changed
+- Search API endpoint now executes composer and works queries in parallel instead of sequentially
+- Search debounce reduced from 300ms to 150ms for faster response to user input
+
+### Technical
+- Database migration `0003_search_indexes.sql` adds performance indexes
+- Trigram indexes enable efficient LIKE queries even with leading wildcards
+- Partial indexes only index published records for better performance
+
+### Expected Performance Improvements
+- 70-90% faster: Trigram GIN indexes accelerate LIKE queries
+- 50% faster: Parallel queries reduce total time when searching both types
+- More responsive: Reduced debounce provides immediate feedback
+
 ## [1.7.3] - 2025-01-27
 
 ### 🔒 Security
@@ -222,7 +247,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - React Hook Form with Zod validation
 - TypeScript throughout
 
-[Unreleased]: https://github.com/fdtorres1/opusgraph/compare/v1.7.3...HEAD
+[Unreleased]: https://github.com/fdtorres1/opusgraph/compare/v1.7.4...HEAD
+[1.7.4]: https://github.com/fdtorres1/opusgraph/compare/v1.7.3...v1.7.4
 [1.7.3]: https://github.com/fdtorres1/opusgraph/compare/v1.7.2...v1.7.3
 [1.7.2]: https://github.com/fdtorres1/opusgraph/compare/v1.7.1...v1.7.2
 [1.7.1]: https://github.com/fdtorres1/opusgraph/compare/v1.7.0...v1.7.1
