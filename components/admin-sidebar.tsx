@@ -22,6 +22,7 @@ import {
   Activity,
   Flag,
   FileText,
+  Upload,
 } from "lucide-react";
 
 const menuItems = [
@@ -69,6 +70,11 @@ const menuItems = [
     title: "Review Queue",
     url: "/admin/review",
     icon: Flag,
+  },
+  {
+    title: "CSV Import",
+    url: "/admin/import",
+    icon: Upload,
   },
 ];
 
