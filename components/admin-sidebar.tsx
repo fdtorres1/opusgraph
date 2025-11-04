@@ -88,34 +88,36 @@ export function AdminSidebar() {
               if (item.children) {
                 return (
                   <SidebarMenuItem key={item.title}>
-                    <SidebarMenuButton asChild isActive={isActive}>
+                    <SidebarMenuButton asChild isActive={isActive} tooltip={item.title}>
                       <Link href={item.url}>
                         <Icon />
-                        <span>{item.title}</span>
+                        <span className="group-data-[collapsible=icon]:hidden">{item.title}</span>
                       </Link>
                     </SidebarMenuButton>
-                    {item.children.map((child) => {
-                      const childActive = pathname === child.url;
-                      return (
-                        <SidebarMenuItem key={child.title}>
-                          <SidebarMenuButton asChild isActive={childActive} className="ml-6">
-                            <Link href={child.url}>
-                              <span>{child.title}</span>
-                            </Link>
-                          </SidebarMenuButton>
-                        </SidebarMenuItem>
-                      );
-                    })}
+                    <div className="group-data-[collapsible=icon]:hidden">
+                      {item.children.map((child) => {
+                        const childActive = pathname === child.url;
+                        return (
+                          <SidebarMenuItem key={child.title}>
+                            <SidebarMenuButton asChild isActive={childActive} className="ml-6">
+                              <Link href={child.url}>
+                                <span>{child.title}</span>
+                              </Link>
+                            </SidebarMenuButton>
+                          </SidebarMenuItem>
+                        );
+                      })}
+                    </div>
                   </SidebarMenuItem>
                 );
               }
 
               return (
                 <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton asChild isActive={isActive}>
+                  <SidebarMenuButton asChild isActive={isActive} tooltip={item.title}>
                     <Link href={item.url}>
                       <Icon />
-                      <span>{item.title}</span>
+                      <span className="group-data-[collapsible=icon]:hidden">{item.title}</span>
                     </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
