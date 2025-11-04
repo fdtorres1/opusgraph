@@ -1,6 +1,6 @@
 # OpusGraph Roadmap
 
-## ✅ Completed (MVP v1.0 - v1.6.0)
+## ✅ Completed (MVP v1.0 - v1.7.0)
 
 - [x] **Project Setup** - Next.js 16 with TypeScript and App Router
 - [x] **Database Schema** - Complete Supabase migration with all tables, functions, and RLS policies
@@ -162,5 +162,6 @@
 - **v1.4.0** - Location search integration with Google Places and Nominatim ✅
 - **v1.5.0** - CSV import functionality with validation and duplicate detection ✅
 - **v1.6.0** - Public search interface with typeahead and detail pages ✅
+- **v1.7.0** - Delete functionality for composers and works with confirmation dialogs ✅
 - **v2.0.0** (Planned) - Subscription features and Stripe integration
 

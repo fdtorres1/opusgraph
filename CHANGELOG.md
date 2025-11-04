@@ -10,6 +10,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Planned
 - Stripe Integration
 
+## [1.7.0] - 2025-01-27
+
+### Added
+- Delete buttons (trash icon) to composer and work editor pages
+- DELETE API endpoints for composers and works with admin-only access
+- Confirmation dialogs before deletion with clear warnings
+- Deletion logging in activity feed via revision table
+
+### Changed
+- Delete buttons only visible when editing existing entries (not new)
+- Admin-only deletion (super_admin and admin roles only, contributors cannot delete)
+
+### Technical
+- Cascade deletes handled by database foreign keys
+- Proper authorization checks on DELETE endpoints
+- Error handling with user-friendly messages
+- Redirect to list pages after successful deletion
+
 ## [1.6.0] - 2025-01-27
 
 ### Added
@@ -160,7 +178,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - React Hook Form with Zod validation
 - TypeScript throughout
 
-[Unreleased]: https://github.com/fdtorres1/opusgraph/compare/v1.6.0...HEAD
+[Unreleased]: https://github.com/fdtorres1/opusgraph/compare/v1.7.0...HEAD
+[1.7.0]: https://github.com/fdtorres1/opusgraph/compare/v1.6.0...v1.7.0
 [1.6.0]: https://github.com/fdtorres1/opusgraph/compare/v1.5.0...v1.6.0
 [1.5.0]: https://github.com/fdtorres1/opusgraph/compare/v1.4.0...v1.5.0
 [1.4.0]: https://github.com/fdtorres1/opusgraph/compare/v1.3.0...v1.4.0

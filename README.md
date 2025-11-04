@@ -155,6 +155,7 @@ The sidebar collapses to icon-only mode for a compact view, with tooltips showin
 - **Location Search**: Google Places and Nominatim integration for birth/death place selection
 - **CSV Import**: Bulk import composers or works with validation, duplicate detection, and field mapping
 - **Public Search**: Public-facing search interface at `/search` with typeahead and detail pages
+- **Delete Functionality**: Delete composers and works with confirmation dialogs and admin-only access
 - **Activity Tracking**: All changes logged in revision table with visual activity feed
 - **Activity Panel**: View all revisions, comments, and review flags with filtering
 
@@ -164,7 +165,7 @@ See [ROADMAP.md](./ROADMAP.md) for detailed roadmap and feature planning.
 
 ### Quick Overview
 
-**Completed (MVP v1.0 - v1.6.0):**
+**Completed (MVP v1.0 - v1.7.0):**
 - ✅ Project setup and deployment
 - ✅ Database schema and migrations
 - ✅ Admin work editor with autosave
@@ -178,6 +179,7 @@ See [ROADMAP.md](./ROADMAP.md) for detailed roadmap and feature planning.
 - ✅ Location search integration (Google Places + Nominatim)
 - ✅ CSV import functionality with validation and duplicate detection
 - ✅ Public search interface with typeahead and detail pages
+- ✅ Delete functionality for composers and works
 - ✅ API routes and typeahead search
 - ✅ Recording embeds and activity tracking
 
