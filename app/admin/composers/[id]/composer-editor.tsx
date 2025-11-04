@@ -14,6 +14,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import { useRouter } from "next/navigation";
+import { LocationSearch } from "@/components/location-search";
 
 type Props = {
   initial: any | null;
@@ -186,11 +187,11 @@ export default function ComposerEditor({ initial, isNew, genders, countries }: P
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label>Birth Place</Label>
-              <PlaceSelector value={watch("birth_place_id") ?? ""} onSelect={(id) => setValue("birth_place_id", id)} />
+              <PlaceSelector value={watch("birth_place_id") || undefined} onSelect={(id) => setValue("birth_place_id", id)} />
             </div>
             <div className="space-y-2">
               <Label>Death Place</Label>
-              <PlaceSelector value={watch("death_place_id") ?? ""} onSelect={(id) => setValue("death_place_id", id)} />
+              <PlaceSelector value={watch("death_place_id") || undefined} onSelect={(id) => setValue("death_place_id", id)} />
             </div>
           </div>
 
@@ -300,14 +301,13 @@ export default function ComposerEditor({ initial, isNew, genders, countries }: P
   );
 }
 
-/** Simple place selector (placeholder - will need location search integration later) */
-function PlaceSelector({ value, onSelect }: { value: string; onSelect: (id: string) => void }) {
-  // For now, just a text input. Location search integration will come later
+/** Place selector using location search */
+function PlaceSelector({ value, onSelect }: { value: string | undefined; onSelect: (id: string | undefined) => void }) {
   return (
-    <Input
-      placeholder="Location search (coming soon)"
-      value=""
-      disabled
+    <LocationSearch
+      value={value}
+      onSelect={onSelect}
+      placeholder="Search for a location..."
     />
   );
 }
