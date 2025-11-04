@@ -8,11 +8,35 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Planned
-- Review Queue Management
 - CSV Import Functionality
 - Public Search Interface
 - Location Search Integration
 - Stripe Integration
+
+## [1.3.0] - 2025-01-27
+
+### Added
+- Enhanced Review Queue Management UI with filtering and actions
+- Filter review flags by reason (possible_duplicate, incomplete, etc.)
+- Filter review flags by status (open, resolved, dismissed)
+- Side-by-side comparison modal for duplicate flags
+- Resolve and dismiss actions for review flags
+- Merge functionality for duplicate composers and works
+- API endpoints for review actions (resolve, dismiss, compare, merge)
+- Activity tracking for review actions
+- Entity name display in review queue
+- Detailed entity information in comparison view
+
+### Changed
+- Review queue page now shows all flags with enhanced UI
+- Improved review flag cards with badges and action buttons
+- Better duplicate comparison with expandable full data view
+
+### Technical
+- Client component with real-time state management
+- Merge API handles composer and work deduplication
+- Automatic data migration when merging duplicates
+- Revision logging for all review actions
 
 ## [1.2.0] - 2025-01-27
 
@@ -70,7 +94,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - React Hook Form with Zod validation
 - TypeScript throughout
 
-[Unreleased]: https://github.com/fdtorres1/opusgraph/compare/v1.2.0...HEAD
+[Unreleased]: https://github.com/fdtorres1/opusgraph/compare/v1.3.0...HEAD
+[1.3.0]: https://github.com/fdtorres1/opusgraph/compare/v1.2.0...v1.3.0
 [1.2.0]: https://github.com/fdtorres1/opusgraph/compare/v1.1.0...v1.2.0
 [1.1.0]: https://github.com/fdtorres1/opusgraph/compare/v1.0.0...v1.1.0
 [1.0.0]: https://github.com/fdtorres1/opusgraph/releases/tag/v1.0.0

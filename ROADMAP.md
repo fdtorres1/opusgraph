@@ -1,6 +1,6 @@
 # OpusGraph Roadmap
 
-## ✅ Completed (MVP v1.0 - v1.2.0)
+## ✅ Completed (MVP v1.0 - v1.3.0)
 
 - [x] **Project Setup** - Next.js 16 with TypeScript and App Router
 - [x] **Database Schema** - Complete Supabase migration with all tables, functions, and RLS policies
@@ -15,6 +15,7 @@
 - [x] **Sidebar Navigation** - Collapsible left sidebar with icon-only mode, tooltips, and keyboard shortcuts
 - [x] **List Pages** - Composers and Works list pages with grid view and status badges
 - [x] **Review Queue Page** - Basic review queue page for managing review flags
+- [x] **Review Queue Management** - Enhanced review queue with filtering, comparison, and merge functionality
 - [x] **Review System** - Duplicate detection functions and review flag schema
 - [x] **Authentication** - Login/signup pages with Supabase Auth
 - [x] **Deployment** - Vercel deployment with Next.js 16 compatibility
@@ -48,13 +49,16 @@
   - Actual timestamps in local timezone
   - *Issue: [#4](https://github.com/fdtorres1/opusgraph/issues/4) - Completed*
 
-- [ ] **Review Queue Management** - UI for managing review flags
+- [x] **Review Queue Management** - UI for managing review flags ✅
   - Review queue page at `/admin/review`
   - List all open `review_flag` entries
   - Filter by reason (possible_duplicate, incomplete, etc.)
+  - Filter by status (open, resolved, dismissed)
   - Side-by-side comparison modal for duplicates
-  - Accept/merge/dismiss actions
-  - *Issue: [#5](https://github.com/fdtorres1/opusgraph/issues/5)*
+  - Resolve/dismiss/merge actions
+  - Entity name display and detailed comparison view
+  - Activity tracking for review actions
+  - *Issue: [#5](https://github.com/fdtorres1/opusgraph/issues/5) - Completed*
 
 ### Phase 2: Data Import & Management
 
@@ -147,6 +151,7 @@
 - **v1.0.0** - MVP with admin work editor and basic infrastructure ✅
 - **v1.1.0** - Composer editor, activity panel, and enhanced dashboard ✅
 - **v1.2.0** - Sidebar navigation, list pages, and review queue page ✅
-- **v1.3.0** (Planned) - CSV import and review queue management
+- **v1.3.0** - Review queue management with filtering, comparison, and merge ✅
+- **v1.4.0** (Planned) - CSV import functionality
 - **v2.0.0** (Planned) - Public features and subscriptions
 

@@ -139,7 +139,7 @@ Access the admin dashboard at `/admin` with a collapsible sidebar navigation. Th
   - Create: `/admin/works/new` - Create new work
   - Edit: `/admin/works/[id]` - Edit existing work
 - **Activity**: `/admin/activity` - View activity feed with filtering
-- **Review Queue**: `/admin/review` - Manage review flags
+- **Review Queue**: `/admin/review` - Manage review flags with filtering, comparison, and merge functionality
 
 The sidebar collapses to icon-only mode for a compact view, with tooltips showing full labels on hover. Use the toggle button (or `Ctrl/Cmd + B`) to expand/collapse.
 
@@ -160,7 +160,7 @@ See [ROADMAP.md](./ROADMAP.md) for detailed roadmap and feature planning.
 
 ### Quick Overview
 
-**Completed (MVP v1.0 - v1.2.0):**
+**Completed (MVP v1.0 - v1.3.0):**
 - ✅ Project setup and deployment
 - ✅ Database schema and migrations
 - ✅ Admin work editor with autosave
@@ -170,12 +170,11 @@ See [ROADMAP.md](./ROADMAP.md) for detailed roadmap and feature planning.
 - ✅ Admin dashboard with statistics
 - ✅ Collapsible sidebar navigation
 - ✅ List pages for composers and works
-- ✅ Review queue page
+- ✅ Review queue management with filtering and merge
 - ✅ API routes and typeahead search
 - ✅ Recording embeds and activity tracking
 
 **Next Up:**
-- Review queue management
 - CSV import functionality
 - Location search integration
 - Public search interface
