@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import Link from "next/link";
-import { formatDistanceToNow } from "date-fns/formatDistanceToNow";
+import { format } from "date-fns/format";
 
 type ActivityEvent = {
   id: string;
@@ -162,7 +162,7 @@ export default function ActivityPage() {
                       </span>
                     </div>
                     <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">
-                      {formatDistanceToNow(new Date(event.occurred_at), { addSuffix: true })}
+                      {format(new Date(event.occurred_at), "MMM d, yyyy 'at' h:mm a")}
                     </p>
                   </div>
                 </div>
