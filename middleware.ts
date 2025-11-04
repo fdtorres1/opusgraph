@@ -34,12 +34,28 @@ export async function middleware(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser();
 
-  // Protect admin routes
-  if (request.nextUrl.pathname.startsWith("/admin") && !user) {
-    const url = request.nextUrl.clone();
-    url.pathname = "/auth/login";
-    url.searchParams.set("redirect", request.nextUrl.pathname);
-    return NextResponse.redirect(url);
+  // Protect admin routes - require authentication AND admin/contributor role
+  if (request.nextUrl.pathname.startsWith("/admin")) {
+    if (!user) {
+      const url = request.nextUrl.clone();
+      url.pathname = "/auth/login";
+      url.searchParams.set("redirect", request.nextUrl.pathname);
+      return NextResponse.redirect(url);
+    }
+
+    // Check if user has admin/contributor role
+    const { data: profile } = await supabase
+      .from("user_profile")
+      .select("admin_role")
+      .eq("user_id", user.id)
+      .single();
+
+    if (!profile || !["super_admin", "admin", "contributor"].includes(profile.admin_role || "none")) {
+      // User is an Individual (role='none') or has no profile - redirect to search page
+      const url = request.nextUrl.clone();
+      url.pathname = "/search";
+      return NextResponse.redirect(url);
+    }
   }
 
   return supabaseResponse;

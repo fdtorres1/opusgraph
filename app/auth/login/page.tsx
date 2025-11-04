@@ -30,9 +30,35 @@ export default function LoginPage() {
       setError(error.message);
       setLoading(false);
     } else {
-      // Redirect to original destination or admin dashboard
-      const redirect = new URLSearchParams(window.location.search).get("redirect") || "/admin";
-      router.push(redirect);
+      // Check user role to determine redirect
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (user) {
+        const { data: profile } = await supabase
+          .from("user_profile")
+          .select("admin_role")
+          .eq("user_id", user.id)
+          .single();
+
+        const adminRole = profile?.admin_role || "none";
+        const hasAdminAccess = ["super_admin", "admin", "contributor"].includes(adminRole);
+
+        const requestedRedirect = new URLSearchParams(window.location.search).get("redirect");
+        
+        // If user requested /admin but doesn't have access, redirect to search
+        if (requestedRedirect?.startsWith("/admin") && !hasAdminAccess) {
+          router.push("/search");
+        } else if (requestedRedirect) {
+          router.push(requestedRedirect);
+        } else if (hasAdminAccess) {
+          router.push("/admin");
+        } else {
+          router.push("/search");
+        }
+      } else {
+        // Fallback to search if user check fails
+        router.push("/search");
+      }
       router.refresh();
     }
   };
