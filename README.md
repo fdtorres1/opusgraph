@@ -181,7 +181,6 @@ See [ROADMAP.md](./ROADMAP.md) for detailed roadmap and feature planning.
 
 **Next Up:**
 - Public search interface
-- Public search interface
 - Stripe subscription integration
 
 ## Development
