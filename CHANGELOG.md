@@ -8,9 +8,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Planned
-- CSV Import Functionality
 - Public Search Interface
 - Stripe Integration
+
+## [1.5.0] - 2025-01-27
+
+### Added
+- CSV Import Functionality with multi-step wizard
+- CSV upload and parsing with PapaParse
+- Field mapping UI for CSV columns to database fields
+- Validation endpoint with duplicate detection
+- Import execution endpoint with transactional upsert
+- Auto-flag duplicates for review when not skipping
+- Import results report with row-level success/failure details
+- Support for importing both composers and works
+- CSV Import page added to sidebar navigation
+
+### Changed
+- Import workflow now includes validation step before execution
+- Duplicate handling: option to skip or auto-flag for review
+
+### Technical
+- PapaParse library for CSV parsing
+- Row-level validation (years, URLs, durations, country codes)
+- Integration with existing duplicate detection functions
+- Activity tracking for all imports via revision table
+- Error handling and validation for all supported fields
 
 ## [1.4.0] - 2025-01-27
 
@@ -113,7 +136,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - React Hook Form with Zod validation
 - TypeScript throughout
 
-[Unreleased]: https://github.com/fdtorres1/opusgraph/compare/v1.4.0...HEAD
+[Unreleased]: https://github.com/fdtorres1/opusgraph/compare/v1.5.0...HEAD
+[1.5.0]: https://github.com/fdtorres1/opusgraph/compare/v1.4.0...v1.5.0
 [1.4.0]: https://github.com/fdtorres1/opusgraph/compare/v1.3.0...v1.4.0
 [1.3.0]: https://github.com/fdtorres1/opusgraph/compare/v1.2.0...v1.3.0
 [1.2.0]: https://github.com/fdtorres1/opusgraph/compare/v1.1.0...v1.2.0

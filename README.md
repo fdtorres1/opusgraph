@@ -140,6 +140,7 @@ Access the admin dashboard at `/admin` with a collapsible sidebar navigation. Th
   - Edit: `/admin/works/[id]` - Edit existing work
 - **Activity**: `/admin/activity` - View activity feed with filtering
 - **Review Queue**: `/admin/review` - Manage review flags with filtering, comparison, and merge functionality
+- **CSV Import**: `/admin/import` - Bulk import composers or works from CSV files
 
 The sidebar collapses to icon-only mode for a compact view, with tooltips showing full labels on hover. Use the toggle button (or `Ctrl/Cmd + B`) to expand/collapse.
 
@@ -152,6 +153,7 @@ The sidebar collapses to icon-only mode for a compact view, with tooltips showin
 - **Sources & Recordings**: Add multiple sources and recordings with automatic embed detection
 - **Typeahead Search**: Composer, publisher, and country search functionality
 - **Location Search**: Google Places and Nominatim integration for birth/death place selection
+- **CSV Import**: Bulk import composers or works with validation, duplicate detection, and field mapping
 - **Activity Tracking**: All changes logged in revision table with visual activity feed
 - **Activity Panel**: View all revisions, comments, and review flags with filtering
 
@@ -161,7 +163,7 @@ See [ROADMAP.md](./ROADMAP.md) for detailed roadmap and feature planning.
 
 ### Quick Overview
 
-**Completed (MVP v1.0 - v1.4.0):**
+**Completed (MVP v1.0 - v1.5.0):**
 - ✅ Project setup and deployment
 - ✅ Database schema and migrations
 - ✅ Admin work editor with autosave
@@ -173,11 +175,12 @@ See [ROADMAP.md](./ROADMAP.md) for detailed roadmap and feature planning.
 - ✅ List pages for composers and works
 - ✅ Review queue management with filtering and merge
 - ✅ Location search integration (Google Places + Nominatim)
+- ✅ CSV import functionality with validation and duplicate detection
 - ✅ API routes and typeahead search
 - ✅ Recording embeds and activity tracking
 
 **Next Up:**
-- CSV import functionality
+- Public search interface
 - Public search interface
 - Stripe subscription integration
 

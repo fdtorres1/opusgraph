@@ -1,6 +1,6 @@
 # OpusGraph Roadmap
 
-## ✅ Completed (MVP v1.0 - v1.4.0)
+## ✅ Completed (MVP v1.0 - v1.5.0)
 
 - [x] **Project Setup** - Next.js 16 with TypeScript and App Router
 - [x] **Database Schema** - Complete Supabase migration with all tables, functions, and RLS policies
@@ -62,15 +62,17 @@
 
 ### Phase 2: Data Import & Management
 
-- [ ] **CSV Import Functionality** - Bulk import with duplicate detection
-  - CSV upload and staging
+- [x] **CSV Import Functionality** - Bulk import with duplicate detection ✅
+  - CSV upload and parsing
   - Field mapping UI
-  - Validation (years, URLs, durations)
+  - Validation (years, URLs, durations, country codes)
   - Duplicate detection using existing functions
   - Auto-flag duplicates for review
   - Transactional upsert
-  - Row-level import report
-  - *Issue: [#2](https://github.com/fdtorres1/opusgraph/issues/2)*
+  - Row-level import report with success/failure details
+  - Multi-step wizard (Upload → Map → Validate → Execute → Results)
+  - Support for both composers and works
+  - *Issue: [#2](https://github.com/fdtorres1/opusgraph/issues/2) - Completed*
 
 - [x] **Location Search Integration** - Google Places/Nominatim integration ✅
   - Server endpoint `/api/places` for location search
@@ -155,6 +157,6 @@
 - **v1.2.0** - Sidebar navigation, list pages, and review queue page ✅
 - **v1.3.0** - Review queue management with filtering, comparison, and merge ✅
 - **v1.4.0** - Location search integration with Google Places and Nominatim ✅
-- **v1.5.0** (Planned) - CSV import functionality
+- **v1.5.0** - CSV import functionality with validation and duplicate detection ✅
 - **v2.0.0** (Planned) - Public features and subscriptions
 
