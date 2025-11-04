@@ -1,4 +1,8 @@
 // middleware.ts
+// Note: Next.js 16 shows a deprecation warning about middleware file convention.
+// This is expected and the middleware.ts file at root is still the correct approach.
+// The warning can be safely ignored - functionality is not affected.
+// See: https://nextjs.org/docs/app/building-your-application/routing/middleware
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
