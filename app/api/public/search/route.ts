@@ -19,26 +19,24 @@ export async function GET(req: NextRequest) {
       works: [],
     };
 
-    // Search composers
-    if (type === "all" || type === "composers") {
-      const { data: composers, error: composersError } = await supabase.rpc(
-        "public_min_composers",
-        { q: query || null }
-      );
-      if (!composersError && composers) {
-        results.composers = composers;
-      }
+    // Run searches in parallel for better performance
+    const [composersResult, worksResult] = await Promise.all([
+      // Search composers
+      (type === "all" || type === "composers")
+        ? supabase.rpc("public_min_composers", { q: query || null })
+        : Promise.resolve({ data: null, error: null }),
+      // Search works
+      (type === "all" || type === "works")
+        ? supabase.rpc("public_min_works", { q: query || null, composer_id: null })
+        : Promise.resolve({ data: null, error: null }),
+    ]);
+
+    if (!composersResult.error && composersResult.data) {
+      results.composers = composersResult.data;
     }
 
-    // Search works
-    if (type === "all" || type === "works") {
-      const { data: works, error: worksError } = await supabase.rpc(
-        "public_min_works",
-        { q: query || null, composer_id: null }
-      );
-      if (!worksError && works) {
-        results.works = works;
-      }
+    if (!worksResult.error && worksResult.data) {
+      results.works = worksResult.data;
     }
 
     return NextResponse.json(results);

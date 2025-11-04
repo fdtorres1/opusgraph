@@ -49,7 +49,7 @@ export function PublicSearch() {
       } finally {
         setLoading(false);
       }
-    }, 300);
+    }, 150);
 
     return () => clearTimeout(timer);
   }, [query, activeTab]);
