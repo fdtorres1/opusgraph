@@ -45,9 +45,22 @@ export function PublicHeader() {
     <header className="border-b bg-white sticky top-0 z-50">
       <div className="container mx-auto px-4 py-3 max-w-7xl">
         <div className="flex items-center justify-between">
-          <Link href="/search" className="text-xl font-bold hover:underline">
-            OpusGraph
-          </Link>
+          <div className="flex items-center gap-6">
+            <Link href="/search" className="text-xl font-bold hover:underline">
+              OpusGraph
+            </Link>
+            <nav className="hidden md:flex items-center gap-4">
+              <Link href="/search" className="text-sm text-zinc-600 hover:text-zinc-900">
+                Search
+              </Link>
+              <Link href="/composers" className="text-sm text-zinc-600 hover:text-zinc-900">
+                Composers
+              </Link>
+              <Link href="/works" className="text-sm text-zinc-600 hover:text-zinc-900">
+                Works
+              </Link>
+            </nav>
+          </div>
           <div className="flex items-center gap-4">
             <span className="text-sm text-zinc-600 flex items-center gap-2">
               <User className="h-4 w-4" />
