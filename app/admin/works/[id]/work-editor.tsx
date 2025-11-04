@@ -16,6 +16,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import { useRouter } from "next/navigation";
+import { Trash2 } from "lucide-react";
 
 type Props = {
   initial: any | null;
@@ -37,6 +38,8 @@ export default function WorkEditor({ initial, isNew, ensembles }: Props) {
   const [workId, setWorkId] = useState<string | null>(initial?.id ?? null);
   const [saving, setSaving] = useState<"idle"|"saving"|"saved"|"error">("idle");
   const [showDiscard, setShowDiscard] = useState(false);
+  const [showDelete, setShowDelete] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const lastSavedRef = useRef<any>(initial);
 
   const defaultValues: WorkPayloadType = {
@@ -125,6 +128,25 @@ export default function WorkEditor({ initial, isNew, ensembles }: Props) {
 
   const statusIsPublished = watch("status") === "published";
 
+  const handleDelete = async () => {
+    if (!workId) return;
+    setDeleting(true);
+    try {
+      const res = await fetch(`/api/admin/works/${workId}`, {
+        method: "DELETE",
+      });
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.error || "Failed to delete work");
+      }
+      router.push("/admin/works");
+    } catch (error) {
+      console.error("Delete error:", error);
+      alert(error instanceof Error ? error.message : "Failed to delete work");
+      setDeleting(false);
+    }
+  };
+
   return (
     <div className="max-w-5xl space-y-6">
       <div className="flex items-center justify-between">
@@ -135,6 +157,17 @@ export default function WorkEditor({ initial, isNew, ensembles }: Props) {
           </p>
         </div>
         <div className="flex items-center gap-3">
+          {workId && (
+            <Button
+              type="button"
+              variant="destructive"
+              onClick={() => setShowDelete(true)}
+              disabled={deleting}
+            >
+              <Trash2 className="h-4 w-4 mr-2" />
+              Delete
+            </Button>
+          )}
           <div className="flex items-center gap-2">
             <Label htmlFor="status-switch">Draft / Published</Label>
             <Switch
@@ -291,6 +324,30 @@ export default function WorkEditor({ initial, isNew, ensembles }: Props) {
               }
               setShowDiscard(false);
             }}>Discard</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Delete dialog */}
+      <AlertDialog open={showDelete} onOpenChange={setShowDelete}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Work?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete this work? This action cannot be undone. All related sources, recordings, and associations will also be deleted.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setShowDelete(false)} disabled={deleting}>
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDelete}
+              disabled={deleting}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {deleting ? "Deleting..." : "Delete"}
+            </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

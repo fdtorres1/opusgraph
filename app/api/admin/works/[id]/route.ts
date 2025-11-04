@@ -134,3 +134,47 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   return NextResponse.json({ ok: true, work: updated });
 }
 
+export async function DELETE(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const supabase = await createServerSupabase();
+  const { id } = await params;
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  const { data: profile } = await supabase.from("user_profile").select("admin_role").eq("user_id", user.id).single();
+  if (!profile || !["super_admin", "admin"].includes(profile.admin_role)) {
+    return NextResponse.json({ error: "Forbidden: Only admins can delete" }, { status: 403 });
+  }
+
+  // Check if work exists
+  const { data: work, error: fetchError } = await supabase
+    .from("work")
+    .select("id, work_name")
+    .eq("id", id)
+    .single();
+
+  if (fetchError || !work) {
+    return NextResponse.json({ error: "Work not found" }, { status: 404 });
+  }
+
+  // Delete work (cascade will handle related records)
+  const { error: deleteError } = await supabase
+    .from("work")
+    .delete()
+    .eq("id", id);
+
+  if (deleteError) {
+    return NextResponse.json({ error: deleteError.message }, { status: 400 });
+  }
+
+  // Log deletion as revision
+  await supabase.from("revision").insert({
+    entity_type: "work",
+    entity_id: id,
+    actor_user_id: user.id,
+    action: "delete",
+    snapshot: work,
+  });
+
+  return NextResponse.json({ ok: true, message: "Work deleted successfully" });
+}
+

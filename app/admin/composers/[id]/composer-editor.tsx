@@ -15,6 +15,7 @@ import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import { useRouter } from "next/navigation";
 import { LocationSearch } from "@/components/location-search";
+import { Trash2 } from "lucide-react";
 
 type Props = {
   initial: any | null;
@@ -37,6 +38,8 @@ export default function ComposerEditor({ initial, isNew, genders, countries }: P
   const [composerId, setComposerId] = useState<string | null>(initial?.id ?? null);
   const [saving, setSaving] = useState<"idle"|"saving"|"saved"|"error">("idle");
   const [showDiscard, setShowDiscard] = useState(false);
+  const [showDelete, setShowDelete] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const lastSavedRef = useRef<any>(initial);
 
   const defaultValues: ComposerPayloadType = {
@@ -133,6 +136,25 @@ export default function ComposerEditor({ initial, isNew, genders, countries }: P
     setValue("nationalities", updated);
   };
 
+  const handleDelete = async () => {
+    if (!composerId) return;
+    setDeleting(true);
+    try {
+      const res = await fetch(`/api/admin/composers/${composerId}`, {
+        method: "DELETE",
+      });
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.error || "Failed to delete composer");
+      }
+      router.push("/admin/composers");
+    } catch (error) {
+      console.error("Delete error:", error);
+      alert(error instanceof Error ? error.message : "Failed to delete composer");
+      setDeleting(false);
+    }
+  };
+
   return (
     <div className="max-w-5xl space-y-6">
       <div className="flex items-center justify-between">
@@ -143,6 +165,17 @@ export default function ComposerEditor({ initial, isNew, genders, countries }: P
           </p>
         </div>
         <div className="flex items-center gap-3">
+          {composerId && (
+            <Button
+              type="button"
+              variant="destructive"
+              onClick={() => setShowDelete(true)}
+              disabled={deleting}
+            >
+              <Trash2 className="h-4 w-4 mr-2" />
+              Delete
+            </Button>
+          )}
           <div className="flex items-center gap-2">
             <Label htmlFor="status-switch">Draft / Published</Label>
             <Switch
@@ -294,6 +327,30 @@ export default function ComposerEditor({ initial, isNew, genders, countries }: P
               }
               setShowDiscard(false);
             }}>Discard</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Delete dialog */}
+      <AlertDialog open={showDelete} onOpenChange={setShowDelete}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Composer?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete this composer? This action cannot be undone. All related works and associations will also be deleted.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setShowDelete(false)} disabled={deleting}>
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDelete}
+              disabled={deleting}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {deleting ? "Deleting..." : "Delete"}
+            </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
