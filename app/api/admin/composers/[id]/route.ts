@@ -31,7 +31,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
   return NextResponse.json({
     composer: {
       ...composer,
-      nationalities: (composer.composer_nationality || []).map((n: any) => n.country_iso2),
+      nationality: (composer.composer_nationality || [])[0]?.country_iso2 ?? null,
       links: (composer.composer_link || []).sort((a: any, b: any) => (a.display_order || 0) - (b.display_order || 0)),
     },
   });
@@ -92,14 +92,13 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
 
   if (upErr) return NextResponse.json({ error: upErr.message }, { status: 400 });
 
-  // Replace nationalities
-  if (Array.isArray(p.nationalities)) {
-    await supabase.from("composer_nationality").delete().eq("composer_id", id);
-    if (p.nationalities.length) {
-      await supabase.from("composer_nationality").insert(
-        p.nationalities.map((iso2: string) => ({ composer_id: id, country_iso2: iso2 }))
-      );
-    }
+  // Replace nationality (single country)
+  await supabase.from("composer_nationality").delete().eq("composer_id", id);
+  if (p.nationality) {
+    await supabase.from("composer_nationality").insert({
+      composer_id: id,
+      country_iso2: p.nationality,
+    });
   }
 
   // Replace links

@@ -17,7 +17,7 @@ export const ComposerPayload = z.object({
   gender_id: z.string().uuid().optional().nullable(),
   gender_self_describe: z.string().optional().nullable(),
   status: z.enum(["draft", "published"]).optional(),
-  nationalities: z.array(z.string().length(2)).optional(), // ISO2 country codes
+  nationality: z.string().length(2).optional().nullable(), // ISO2 country code (single country)
   links: z.array(z.object({
     id: z.string().uuid().optional(),
     url: z.string().url(),

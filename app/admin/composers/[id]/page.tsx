@@ -9,13 +9,9 @@ export default async function ComposerPage({ params }: { params: Promise<{ id: s
 
   let initial: any = null;
   let genders: { id: string; label: string }[] = [];
-  let countries: { iso2: string; name: string }[] = [];
 
   const { data: gendersData } = await supabase.from("gender_identity").select("id,label").order("label");
   genders = (gendersData ?? []).map(g => ({ id: g.id, label: g.label }));
-
-  const { data: countriesData } = await supabase.from("country").select("iso2,name").order("name");
-  countries = (countriesData ?? []).map(c => ({ iso2: c.iso2, name: c.name }));
 
   if (!isNew) {
     const { data } = await supabase
@@ -33,7 +29,7 @@ export default async function ComposerPage({ params }: { params: Promise<{ id: s
   }
 
   return (
-    <ComposerEditor initial={initial} isNew={isNew} genders={genders} countries={countries} />
+    <ComposerEditor initial={initial} isNew={isNew} genders={genders} />
   );
 }
 

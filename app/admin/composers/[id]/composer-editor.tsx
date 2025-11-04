@@ -21,7 +21,6 @@ type Props = {
   initial: any | null;
   isNew: boolean;
   genders: { id: string; label: string }[];
-  countries: { iso2: string; name: string }[];
 };
 
 const useDebounced = (value: any, delay = 700) => {
@@ -33,7 +32,7 @@ const useDebounced = (value: any, delay = 700) => {
   return v;
 };
 
-export default function ComposerEditor({ initial, isNew, genders, countries }: Props) {
+export default function ComposerEditor({ initial, isNew, genders }: Props) {
   const router = useRouter();
   const [composerId, setComposerId] = useState<string | null>(initial?.id ?? null);
   const [saving, setSaving] = useState<"idle"|"saving"|"saved"|"error">("idle");
@@ -52,7 +51,7 @@ export default function ComposerEditor({ initial, isNew, genders, countries }: P
     gender_id: initial?.gender_id ?? undefined,
     gender_self_describe: initial?.gender_self_describe ?? "",
     status: initial?.status ?? "draft",
-    nationalities: (initial?.composer_nationality ?? []).map((n: any) => n.country_iso2),
+    nationality: (initial?.composer_nationality ?? [])[0]?.country_iso2 ?? null,
     links: (initial?.composer_link ?? []).sort((a: any,b: any)=>a.display_order-b.display_order).map((l: any) => ({
       id: l.id, url: l.url, is_primary: l.is_primary ?? false, display_order: l.display_order ?? 0
     })),
@@ -62,7 +61,6 @@ export default function ComposerEditor({ initial, isNew, genders, countries }: P
   const { control, register, watch, setValue, reset } = form;
 
   const links = useFieldArray({ control, name: "links" });
-  const selectedNationalities = watch("nationalities") || [];
 
   // Create new Draft row on mount for /new
   useEffect(() => {
@@ -144,14 +142,6 @@ export default function ComposerEditor({ initial, isNew, genders, countries }: P
   const statusIsPublished = watch("status") === "published";
   const selectedGenderId = watch("gender_id");
   const showGenderSelfDescribe = selectedGenderId && genders.find(g => g.id === selectedGenderId)?.label === "Self-Describe";
-
-  const toggleNationality = (iso2: string) => {
-    const current = selectedNationalities;
-    const updated = current.includes(iso2)
-      ? current.filter((c: string) => c !== iso2)
-      : [...current, iso2];
-    setValue("nationalities", updated);
-  };
 
   const handleDelete = async () => {
     if (!composerId) return;
@@ -262,22 +252,11 @@ export default function ComposerEditor({ initial, isNew, genders, countries }: P
           </div>
 
           <div className="space-y-2">
-            <Label>Nationalities</Label>
-            <div className="border rounded-md p-3 max-h-48 overflow-auto">
-              <div className="grid grid-cols-2 gap-2">
-                {countries.map(country => (
-                  <label key={country.iso2} className="flex items-center space-x-2 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={selectedNationalities.includes(country.iso2)}
-                      onChange={() => toggleNationality(country.iso2)}
-                      className="rounded"
-                    />
-                    <span className="text-sm">{country.name}</span>
-                  </label>
-                ))}
-              </div>
-            </div>
+            <Label>Nationality</Label>
+            <CountrySelect
+              value={watch("nationality") ?? ""}
+              onSelect={(iso2) => setValue("nationality", iso2 || null)}
+            />
           </div>
 
           {/* Links */}
@@ -336,7 +315,7 @@ export default function ComposerEditor({ initial, isNew, genders, countries }: P
                   gender_id: lastSavedRef.current.gender_id ?? undefined,
                   gender_self_describe: lastSavedRef.current.gender_self_describe ?? "",
                   status: lastSavedRef.current.status ?? "draft",
-                  nationalities: [],
+                  nationality: null,
                   links: [],
                 });
               } else {
@@ -383,6 +362,94 @@ function PlaceSelector({ value, onSelect }: { value: string | undefined; onSelec
       onSelect={onSelect}
       placeholder="Search for a location..."
     />
+  );
+}
+
+/** Country selector using typeahead search */
+function CountrySelect({ value, onSelect }: { value: string; onSelect: (iso2: string | null) => void }) {
+  const [q, setQ] = useState("");
+  const [items, setItems] = useState<{ id: string; label: string }[]>([]);
+  const [selectedCountry, setSelectedCountry] = useState<{ id: string; label: string } | null>(null);
+
+  // Load selected country name when value changes
+  useEffect(() => {
+    if (value && !selectedCountry) {
+      fetch(`/api/admin/search/countries?q=`)
+        .then(res => res.json())
+        .then(data => {
+          const country = data.results?.find((c: { id: string }) => c.id === value);
+          if (country) {
+            setSelectedCountry(country);
+            setQ(country.label);
+          }
+        })
+        .catch(() => {});
+    } else if (!value) {
+      setSelectedCountry(null);
+      setQ("");
+    }
+  }, [value, selectedCountry]);
+
+  useEffect(() => {
+    const t = setTimeout(async () => {
+      if (q.length < 1) {
+        setItems([]);
+        return;
+      }
+      const res = await fetch(`/api/admin/search/countries?q=${encodeURIComponent(q)}`);
+      if (!res.ok) return;
+      const json = await res.json();
+      setItems(json.results ?? []);
+    }, 250);
+
+    return () => clearTimeout(t);
+  }, [q]);
+
+  return (
+    <div className="space-y-2">
+      <Input
+        placeholder="Search for a country..."
+        value={q}
+        onChange={(e) => setQ(e.target.value)}
+      />
+      {items.length > 0 && (
+        <div className="border rounded-md max-h-48 overflow-auto">
+          {items.map((it) => (
+            <button
+              key={it.id}
+              type="button"
+              className="w-full text-left px-3 py-2 hover:bg-accent"
+              onClick={() => {
+                onSelect(it.id);
+                setSelectedCountry(it);
+                setQ(it.label);
+                setItems([]);
+              }}
+            >
+              {it.label}
+            </button>
+          ))}
+        </div>
+      )}
+      {value && q === "" && selectedCountry && (
+        <p className="text-xs text-muted-foreground">Selected: {selectedCountry.label}</p>
+      )}
+      {value && (
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          onClick={() => {
+            onSelect(null);
+            setSelectedCountry(null);
+            setQ("");
+            setItems([]);
+          }}
+        >
+          Clear
+        </Button>
+      )}
+    </div>
   );
 }
 

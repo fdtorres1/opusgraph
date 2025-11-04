@@ -80,7 +80,7 @@ export function AuthenticatedComposerDetail({ composer }: { composer: Composer }
               <div className="flex items-center gap-2 text-zinc-600">
                 <Globe className="h-4 w-4" />
                 <span>
-                  Nationality: {nationalities.map(n => n.country_iso2).join(", ")}
+                  Nationality: {nationalities[0]?.country_iso2}
                 </span>
               </div>
             )}
