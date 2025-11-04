@@ -31,7 +31,7 @@ export default function LoginPage() {
       setLoading(false);
     } else {
       // Redirect to original destination or admin dashboard
-      const redirect = new URLSearchParams(window.location.search).get("redirect") || "/admin/works/new";
+      const redirect = new URLSearchParams(window.location.search).get("redirect") || "/admin";
       router.push(redirect);
       router.refresh();
     }
