@@ -10,6 +10,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Planned
 - Stripe Integration
 
+## [1.7.2] - 2025-01-27
+
+### Added
+- User profile link in sidebar footer showing email address
+- User profile page at `/admin/profile` displaying account information
+- Logout button in sidebar footer for easy sign-out
+- Profile page shows email, user ID, email verification status, and account creation date
+
+### Changed
+- Sidebar footer now includes user account controls with visual separator
+- Profile link highlights when active page is profile
+- Logout redirects to login page after signing out
+
 ## [1.7.1] - 2025-01-27
 
 ### Fixed
@@ -186,7 +199,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - React Hook Form with Zod validation
 - TypeScript throughout
 
-[Unreleased]: https://github.com/fdtorres1/opusgraph/compare/v1.7.1...HEAD
+[Unreleased]: https://github.com/fdtorres1/opusgraph/compare/v1.7.2...HEAD
+[1.7.2]: https://github.com/fdtorres1/opusgraph/compare/v1.7.1...v1.7.2
 [1.7.1]: https://github.com/fdtorres1/opusgraph/compare/v1.7.0...v1.7.1
 [1.7.0]: https://github.com/fdtorres1/opusgraph/compare/v1.6.0...v1.7.0
 [1.6.0]: https://github.com/fdtorres1/opusgraph/compare/v1.5.0...v1.6.0

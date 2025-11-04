@@ -164,5 +164,6 @@
 - **v1.6.0** - Public search interface with typeahead and detail pages ✅
 - **v1.7.0** - Delete functionality for composers and works with confirmation dialogs ✅
 - **v1.7.1** - Bug fixes: login redirect and clickable header ✅
+- **v1.7.2** - User profile page and logout button in sidebar footer ✅
 - **v2.0.0** (Planned) - Subscription features and Stripe integration
 
