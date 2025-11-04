@@ -10,8 +10,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Planned
 - CSV Import Functionality
 - Public Search Interface
-- Location Search Integration
 - Stripe Integration
+
+## [1.4.0] - 2025-01-27
+
+### Added
+- Location Search Integration with Google Places and Nominatim fallback
+- LocationSearch component with autocomplete functionality
+- Server-side caching for place lookups via place table
+- API endpoints for place search (`/api/places`) and place lookup (`/api/places/[id]`)
+- Birth Place and Death Place search in composer editor
+- Real-time location search with debouncing and loading states
+
+### Changed
+- Composer editor now uses LocationSearch component instead of placeholder
+- Place data is automatically stored in database for future lookups
+
+### Technical
+- Google Places Autocomplete integration (optional, requires API key)
+- Nominatim (OpenStreetMap) fallback for free location search
+- Rate limit handling with proper User-Agent headers
+- Graceful fallback if one provider fails
 
 ## [1.3.0] - 2025-01-27
 
@@ -94,7 +113,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - React Hook Form with Zod validation
 - TypeScript throughout
 
-[Unreleased]: https://github.com/fdtorres1/opusgraph/compare/v1.3.0...HEAD
+[Unreleased]: https://github.com/fdtorres1/opusgraph/compare/v1.4.0...HEAD
+[1.4.0]: https://github.com/fdtorres1/opusgraph/compare/v1.3.0...v1.4.0
 [1.3.0]: https://github.com/fdtorres1/opusgraph/compare/v1.2.0...v1.3.0
 [1.2.0]: https://github.com/fdtorres1/opusgraph/compare/v1.1.0...v1.2.0
 [1.1.0]: https://github.com/fdtorres1/opusgraph/compare/v1.0.0...v1.1.0

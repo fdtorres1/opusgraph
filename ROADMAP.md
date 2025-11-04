@@ -1,6 +1,6 @@
 # OpusGraph Roadmap
 
-## ✅ Completed (MVP v1.0 - v1.3.0)
+## ✅ Completed (MVP v1.0 - v1.4.0)
 
 - [x] **Project Setup** - Next.js 16 with TypeScript and App Router
 - [x] **Database Schema** - Complete Supabase migration with all tables, functions, and RLS policies
@@ -72,13 +72,15 @@
   - Row-level import report
   - *Issue: [#2](https://github.com/fdtorres1/opusgraph/issues/2)*
 
-- [ ] **Location Search Integration** - Google Places/Nominatim integration
+- [x] **Location Search Integration** - Google Places/Nominatim integration ✅
   - Server endpoint `/api/places` for location search
   - Google Places Autocomplete integration
   - Fallback to Nominatim when quota exceeded
   - Server-side caching
   - Store to `place` table on selection
-  - *Issue: [#6](https://github.com/fdtorres1/opusgraph/issues/6)*
+  - LocationSearch component with autocomplete
+  - Integration with composer editor for birth/death places
+  - *Issue: [#6](https://github.com/fdtorres1/opusgraph/issues/6) - Completed*
 
 ### Phase 3: Public Features
 
@@ -152,6 +154,7 @@
 - **v1.1.0** - Composer editor, activity panel, and enhanced dashboard ✅
 - **v1.2.0** - Sidebar navigation, list pages, and review queue page ✅
 - **v1.3.0** - Review queue management with filtering, comparison, and merge ✅
-- **v1.4.0** (Planned) - CSV import functionality
+- **v1.4.0** - Location search integration with Google Places and Nominatim ✅
+- **v1.5.0** (Planned) - CSV import functionality
 - **v2.0.0** (Planned) - Public features and subscriptions
 

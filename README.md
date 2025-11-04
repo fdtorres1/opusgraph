@@ -151,6 +151,7 @@ The sidebar collapses to icon-only mode for a compact view, with tooltips showin
 - **Work Management**: Full CRUD with instrumentation, recordings, sources, and publisher links
 - **Sources & Recordings**: Add multiple sources and recordings with automatic embed detection
 - **Typeahead Search**: Composer, publisher, and country search functionality
+- **Location Search**: Google Places and Nominatim integration for birth/death place selection
 - **Activity Tracking**: All changes logged in revision table with visual activity feed
 - **Activity Panel**: View all revisions, comments, and review flags with filtering
 
@@ -160,7 +161,7 @@ See [ROADMAP.md](./ROADMAP.md) for detailed roadmap and feature planning.
 
 ### Quick Overview
 
-**Completed (MVP v1.0 - v1.3.0):**
+**Completed (MVP v1.0 - v1.4.0):**
 - ✅ Project setup and deployment
 - ✅ Database schema and migrations
 - ✅ Admin work editor with autosave
@@ -171,12 +172,12 @@ See [ROADMAP.md](./ROADMAP.md) for detailed roadmap and feature planning.
 - ✅ Collapsible sidebar navigation
 - ✅ List pages for composers and works
 - ✅ Review queue management with filtering and merge
+- ✅ Location search integration (Google Places + Nominatim)
 - ✅ API routes and typeahead search
 - ✅ Recording embeds and activity tracking
 
 **Next Up:**
 - CSV import functionality
-- Location search integration
 - Public search interface
 - Stripe subscription integration
 
