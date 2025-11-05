@@ -26,7 +26,7 @@ export default async function PublicComposerPage({
         birth_place:place!composer_birth_place_id_fkey(id, label),
         death_place:place!composer_death_place_id_fkey(id, label),
         composer_link(id, url, is_primary, display_order),
-        composer_nationality(country_iso2)
+        composer_nationality(country_iso2, country:country!composer_nationality_country_iso2_fkey(iso2, name))
       `)
       .eq("id", id)
       .eq("status", "published")
@@ -48,7 +48,7 @@ export default async function PublicComposerPage({
       );
     }
 
-    // Normalize birth_place and death_place from arrays to single objects
+    // Normalize birth_place, death_place, and nationality from arrays to single objects
     const normalizedComposer = {
       ...composer,
       birth_place: Array.isArray(composer.birth_place) 
@@ -57,6 +57,12 @@ export default async function PublicComposerPage({
       death_place: Array.isArray(composer.death_place)
         ? (composer.death_place[0] || null)
         : composer.death_place,
+      composer_nationality: Array.isArray(composer.composer_nationality)
+        ? composer.composer_nationality.map((nat: any) => ({
+            ...nat,
+            country: Array.isArray(nat.country) ? (nat.country[0] || null) : nat.country,
+          }))
+        : composer.composer_nationality,
     };
 
     return <AuthenticatedComposerDetail composer={normalizedComposer} />;

@@ -17,7 +17,7 @@ type Composer = {
   birth_place?: { id: string; label: string } | null;
   death_place?: { id: string; label: string } | null;
   composer_link?: Array<{ id: string; url: string; is_primary?: boolean; display_order?: number }>;
-  composer_nationality?: Array<{ country_iso2: string }>;
+  composer_nationality?: Array<{ country_iso2: string; country?: { iso2: string; name: string } | null }>;
 };
 
 export function AuthenticatedComposerDetail({ composer }: { composer: Composer }) {
@@ -80,7 +80,7 @@ export function AuthenticatedComposerDetail({ composer }: { composer: Composer }
               <div className="flex items-center gap-2 text-zinc-600">
                 <Globe className="h-4 w-4" />
                 <span>
-                  Nationality: {nationalities[0]?.country_iso2}
+                  Nationality: {nationalities[0]?.country?.name || nationalities[0]?.country_iso2}
                 </span>
               </div>
             )}
