@@ -174,7 +174,6 @@ export function AuthenticatedWorkDetail({ work }: { work: Work }) {
               <div className="space-y-2">
                 {sources.map((source) => (
                   <div key={source.id} className="flex items-center gap-2">
-                    <ExternalLink className="h-4 w-4 text-zinc-400" />
                     <a
                       href={source.url}
                       target="_blank"
@@ -182,6 +181,15 @@ export function AuthenticatedWorkDetail({ work }: { work: Work }) {
                       className="text-blue-600 hover:underline"
                     >
                       {source.title || source.url}
+                    </a>
+                    <a
+                      href={source.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-zinc-400 hover:text-zinc-600 transition-colors"
+                      aria-label="Open link in new tab"
+                    >
+                      <ExternalLink className="h-4 w-4" />
                     </a>
                   </div>
                 ))}

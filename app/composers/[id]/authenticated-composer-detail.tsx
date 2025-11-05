@@ -97,7 +97,6 @@ export function AuthenticatedComposerDetail({ composer }: { composer: Composer }
               <div className="space-y-2">
                 {links.map((link) => (
                   <div key={link.id} className="flex items-center gap-2">
-                    <ExternalLink className="h-4 w-4 text-zinc-400" />
                     <a
                       href={link.url}
                       target="_blank"
@@ -109,6 +108,15 @@ export function AuthenticatedComposerDetail({ composer }: { composer: Composer }
                     {link.is_primary && (
                       <span className="text-xs text-zinc-500">(Primary)</span>
                     )}
+                    <a
+                      href={link.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-zinc-400 hover:text-zinc-600 transition-colors"
+                      aria-label="Open link in new tab"
+                    >
+                      <ExternalLink className="h-4 w-4" />
+                    </a>
                   </div>
                 ))}
               </div>
