@@ -185,6 +185,8 @@ See [ROADMAP.md](./ROADMAP.md) for detailed roadmap and feature planning.
 - ✅ Authenticated detail views for Individual users
 - ✅ Browse all composers and works pages
 - ✅ Public navigation and header with logout
+- ✅ Single nationality select with searchable dropdown
+- ✅ Improved external link icons (right-aligned, clickable)
 
 **Next Up:**
 - Stripe subscription integration

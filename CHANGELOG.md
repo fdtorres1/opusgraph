@@ -10,6 +10,37 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Planned
 - Stripe Integration
 
+## [1.7.6] - 2025-01-27
+
+### Changed
+- **Nationality Field**: Changed from checkbox grid (multiple selection) to searchable single-select dropdown
+- Only one country may be selected for nationality
+- Improved UX with typeahead search instead of scrolling through all countries
+- External link icon moved to right of URL and made clickable
+- Both URL text and icon are now clickable in External Links and Sources sections
+
+### Added
+- **CountrySelect Component**: New searchable country selector using typeahead pattern
+- Uses existing `/api/admin/search/countries` endpoint
+- Debounced search (250ms) for responsive typing
+- Shows selected country name and allows clearing selection
+- Hover effect on external link icons
+- Accessibility labels for external link icons
+
+### Fixed
+- Nationality display now shows country name (e.g., "Germany") instead of ISO code (e.g., "DE")
+- Updated composer detail query to join country table for country names
+- Normalized nested country relationship in composer_nationality
+
+### Technical
+- Updated validator: `nationality` is now single string instead of `nationalities` array
+- Updated API route to handle single country instead of array
+- Updated display components to show single country with country name
+- Removed unused `countries` prop from ComposerEditor
+
+### Breaking Changes
+⚠️ **Note**: This is a breaking change for any existing data with multiple nationalities. Only the first nationality will be preserved when editing existing composers.
+
 ## [1.7.5] - 2025-01-27
 
 ### Added
@@ -277,7 +308,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - React Hook Form with Zod validation
 - TypeScript throughout
 
-[Unreleased]: https://github.com/fdtorres1/opusgraph/compare/v1.7.5...HEAD
+[Unreleased]: https://github.com/fdtorres1/opusgraph/compare/v1.7.6...HEAD
+[1.7.6]: https://github.com/fdtorres1/opusgraph/compare/v1.7.5...v1.7.6
 [1.7.5]: https://github.com/fdtorres1/opusgraph/compare/v1.7.4...v1.7.5
 [1.7.4]: https://github.com/fdtorres1/opusgraph/compare/v1.7.3...v1.7.4
 [1.7.3]: https://github.com/fdtorres1/opusgraph/compare/v1.7.2...v1.7.3
