@@ -4,6 +4,10 @@ import { SidebarProvider, SidebarInset, SidebarTrigger } from "@/components/ui/s
 import { Separator } from "@/components/ui/separator";
 import Link from "next/link";
 
+// Force dynamic rendering for admin pages to ensure Supabase client
+// has access to environment variables at runtime
+export const dynamic = "force-dynamic";
+
 export default function AdminLayout({
   children,
 }: {
