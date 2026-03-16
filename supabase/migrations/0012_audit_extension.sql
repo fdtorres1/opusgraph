@@ -15,7 +15,8 @@ CREATE INDEX IF NOT EXISTS idx_revision_org
 -- 2. Update activity_event view
 -- =========
 
-CREATE OR REPLACE VIEW activity_event AS
+DROP VIEW IF EXISTS activity_event;
+CREATE VIEW activity_event AS
 -- Reference DB: revision events (composer, work)
 WITH rev AS (
   SELECT
@@ -145,7 +146,7 @@ om AS (
     r.created_at AS occurred_at,
     r.actor_user_id AS actor_id,
     coalesce(
-      r.snapshot->>'first_name' || ' ' || r.snapshot->>'last_name',
+      concat_ws(' ', r.snapshot->>'first_name', r.snapshot->>'last_name'),
       'Member'
     ) AS subject_label,
     r.entity_type,
