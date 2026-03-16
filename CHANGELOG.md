@@ -8,7 +8,85 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Planned
-- Stripe Integration
+- Stripe subscription integration
+- PDF attachments via Supabase Storage
+- Repertoire discovery features
+
+## [2.0.0] - 2026-03-16
+
+### Added — Library Management Platform
+OpusGraph is now a dual-purpose platform: the original Works Database plus a multi-tenant ensemble library management SaaS.
+
+**Organizations & Multi-Tenancy**
+- Organization model with three roles: owner, manager, member
+- Auto-created personal org ("My Library") for individual users on signup
+- Row-Level Security (RLS) policies enforcing org data isolation across all library tables
+- URL-based org context (`/library/[orgSlug]/...`) for shareable, unambiguous links
+- Org settings page (name, type, plan tier display, delete)
+- Member management (invite by email, change roles, remove members)
+
+**Library Catalog**
+- Library entry CRUD with autosave (800ms debounce)
+- Works Database auto-populate: typeahead search links entries to reference works, auto-fills metadata as placeholders
+- JSONB `overrides` column for org-specific customization of reference data
+- Structured parts tracking (part name, quantity, condition per part)
+- Condition tracking (excellent, good, fair, poor, missing) with derived "Missing Parts" badge
+- Physical location tracking (shelf, cabinet, room)
+- Full-text search across title, composer, arranger, publisher, notes, and part names
+- Filter by condition and tag; sort by title, composer, date added
+- Threaded comments on entries (all org roles can comment; author can edit/delete own)
+
+**Performance History**
+- Performance CRUD with program builder
+- Add library entries to programs with ordering (up/down reorder)
+- Track date, event name, venue, season, and notes per performance
+
+**Tags & Categories**
+- Per-org tag system with name, category, and color
+- Assign tags to library entries (multi-select with search)
+- Tag management page with CRUD, color picker, and entry counts
+
+**CSV Import**
+- 5-step import wizard: upload, map columns, validate, execute, results
+- Library-specific field mapping (title, composer, copies, location, condition, etc.)
+- Automatic reference work matching during import
+- Duplicate detection within the org
+
+**Activity & Audit Trail**
+- Unified audit trail via extended `revision` table covering both Works Database and library
+- Org-scoped activity feed with source/entity type filters and pagination
+- All mutations logged: entry CRUD, performance CRUD, member changes, tag changes
+
+**Authentication & Routing**
+- Login redirects to `/library/[orgSlug]` for non-admin users
+- Root `/` redirects authenticated users to their library or admin dashboard
+- Middleware protection for `/library/*` routes
+- `getOrgContext()` and `requireOrgRole()` auth helpers
+
+**Infrastructure**
+- 7 new database migrations (0005–0011)
+- Service-role Supabase client for admin operations (email lookup)
+- 5 Zod validator schemas for library entities
+- Library display utility functions (override merge, condition helpers)
+- Library sidebar with org-scoped navigation
+
+### Technical
+- Next.js 16 App Router with `force-dynamic` on library layouts
+- React Hook Form + Zod for all library forms
+- shadcn/ui components throughout
+- Full TypeScript type safety
+- Follows existing codebase patterns (autosave, revision logging, delete+reinsert for child records)
+
+### Database Schema (New Tables)
+- `organization` — multi-tenant billing unit with slug, type, plan tier
+- `org_member` — user-org membership with role (owner/manager/member)
+- `library_entry` — catalog entries with JSONB overrides and reference work FK
+- `library_entry_part` — structured parts per entry
+- `performance` — concert/event records
+- `performance_work` — program entries with ordering
+- `library_entry_search` — tsvector full-text search index
+- `library_tag` + `library_entry_tag` — per-org taxonomy
+- `library_comment` — threaded comments on entries
 
 ## [1.7.6] - 2025-01-27
 

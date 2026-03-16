@@ -17,151 +17,42 @@ See `CHANGELOG.md` for detailed version history through v1.7.6.
 
 ---
 
-## Phase 0: Foundation
+## ✅ Phase 0: Foundation (Completed)
 
-Multi-tenant infrastructure. No UI — just schema, auth, and middleware.
+Multi-tenant infrastructure — schema, auth, and middleware.
 
-### 0.1 — Organization & Membership Schema
-- [ ] Migration `0005_organizations.sql`: `organization` and `org_member` tables
-- [ ] Enum types: `org_type` (orchestra, choir, band, church, school, other)
-- [ ] Enum type: `org_role` (owner, manager, member)
-- [ ] Enum type: `plan_tier` (free, starter, professional)
-- [ ] Slug generation function (URL-safe, unique)
-- [ ] RLS policies for org data isolation
-- [ ] Trigger: ensure at least one owner per org
-- [ ] Trigger: auto-update `updated_at` on organization
-- [ ] Trigger: auto-create personal org on user signup (name="My Library", type="other", role="owner")
-
-### 0.2 — Library Entry Schema
-- [ ] Migration `0006_library_entries.sql`: `library_entry` and `library_entry_part` tables
-- [ ] `library_entry.reference_work_id` FK to existing `work` table
-- [ ] `library_entry.overrides` JSONB column for reference field customization
-- [ ] Structured `library_entry_part` table (part_name, quantity, condition, notes)
-- [ ] RLS policies: org-scoped read/write (individuals are single-member orgs, same pattern)
-- [ ] Trigger: auto-update `updated_at`
-
-### 0.3 — Performance History Schema
-- [ ] Migration `0007_performances.sql`: `performance` and `performance_work` tables
-- [ ] `performance_work.program_order` for concert program ordering
-- [ ] RLS policies matching library_entry pattern
-- [ ] Trigger: auto-update `updated_at`
-
-### 0.4 — Library Search Index
-- [ ] Migration `0008_library_search.sql`: `library_entry_search` table
-- [ ] tsvector combining title, composer, arranger, publisher, notes, part names
-- [ ] GIN index on search_vector
-- [ ] Trigger: rebuild search_vector on library_entry and library_entry_part changes
-- [ ] RLS policies for org-scoped search
-
-### 0.5 — Tags Schema
-- [ ] Migration `0009_library_tags.sql`: `library_tag` and `library_entry_tag` tables
-- [ ] Per-org tag scoping with category support
-- [ ] RLS policies inheriting from library_entry
-
-### 0.6 — Library Comments Schema
-- [ ] Migration `0010_library_comments.sql`: `library_comment` table
-- [ ] Threaded comments (parent_comment_id FK)
-- [ ] RLS: all org members (owner, manager, member) can read and write comments
-- [ ] Only comment author can update/delete their own comment
-
-### 0.7 — Audit Trail Extension
-- [ ] Migration `0011_audit_extension.sql`: extend `revision` table
-- [ ] Expand `entity_kind` enum: add library_entry, performance, organization, org_member, library_tag
-- [ ] Expand `revision_action` enum: add delete, invite, remove, role_change
-- [ ] Add `organization_id` column to `revision` (nullable — NULL for reference DB)
-- [ ] Update `activity_event` view to include library events, scoped by org
-
-### 0.8 — Middleware & Auth Updates
-- [ ] Extend `middleware.ts` to protect `/library/*` routes
-- [ ] Org context resolution from URL slug (`/library/[orgSlug]/...`)
-- [ ] API helper: get current user's org membership and role
-- [ ] Validate org slug against user's memberships
-- [ ] Zod validators for library entry, performance, organization, comment
+- [x] 7 database migrations (0005–0011): organizations, library entries, performances, search index, tags, comments, audit trail
+- [x] RLS policies on all new tables with org-scoped isolation
+- [x] Middleware protection for `/library/*` routes
+- [x] Org auth helpers: `getOrgContext()`, `requireOrgRole()`
+- [x] Zod validators for all library entities
+- [x] Library display utility functions (`resolveEntryDisplay()`, condition helpers)
 
 ---
 
-## Phase 1: MVP Library Management
+## ✅ Phase 1: MVP Library Management (Completed)
 
-Build for MSO dogfooding. Core CRUD and search.
+Built for MSO dogfooding — core CRUD, search, and all library features.
 
-### 1.1 — Library Dashboard
-- [ ] `/library/[orgSlug]` page: org-scoped dashboard
-- [ ] Stats: total entries, entries by condition, recent additions
-- [ ] Quick actions: add entry, search, log performance
-- [ ] Org context switcher (if user belongs to multiple orgs)
-
-### 1.2 — Library Entry Editor
-- [ ] `/library/[orgSlug]/catalog/new` and `/library/[orgSlug]/catalog/[id]` pages
-- [ ] Reference DB lookup: typeahead search that matches reference works
-- [ ] Auto-populate fields from reference work on selection
-- [ ] Override any auto-populated field with org-specific values
-- [ ] Standalone entry creation (no reference work link)
-- [ ] Parts management: add/edit/remove parts with quantity and condition
-- [ ] Copies owned, location, condition, notes fields
-- [ ] Autosave (reuse 800ms debounce pattern from admin editors)
-
-### 1.3 — Library Catalog Browse & Search
-- [ ] `/library/[orgSlug]/catalog` page: list all entries for the org
-- [ ] Multi-field search: title, composer, arranger, publisher
-- [ ] Filter by condition, location, tag
-- [ ] Sort by title, composer, date added, last performed
-- [ ] Pagination or infinite scroll
-
-### 1.4 — Performance History
-- [ ] `/library/[orgSlug]/performances` page: list performances
-- [ ] `/library/[orgSlug]/performances/new` page: log a new performance
-- [ ] Select library entries to add to the program (with ordering)
-- [ ] Performance detail view showing the program
-- [ ] "Last performed" and "times performed" derived data on catalog entries
-
-### 1.5 — Library CSV Import
-- [ ] `/library/[orgSlug]/import` page: import library data from spreadsheets
-- [ ] Adapt existing CSV import pipeline for library-specific fields
-- [ ] Column mapping for: title, composer, copies, location, condition, parts
-- [ ] Reference DB matching: attempt to link imported entries to reference works
-- [ ] Duplicate detection within the org's library
-- [ ] Import report with row-level results
-
-### 1.6 — Library Entry Comments
-- [ ] Comments section on `/library/[orgSlug]/catalog/[id]` page
-- [ ] Threaded replies
-- [ ] All org roles can read and write comments
-- [ ] Author can edit/delete their own comments
-
-### 1.7 — Org Activity Feed
-- [ ] `/library/[orgSlug]/activity` page
-- [ ] Show audit trail: entry creates/updates/deletes, performance logs, member changes, comments
-- [ ] Filter by entity type, action, date range
-- [ ] Reuse activity feed component patterns from admin activity page
-
-### 1.8 — Tag Management
-- [ ] Tag CRUD within org settings
-- [ ] Assign tags to library entries (multi-select)
-- [ ] Filter catalog by tag
-- [ ] Tag categories (season, genre, difficulty)
+- [x] Library dashboard with stats, quick actions, recent items
+- [x] Library entry editor with autosave, reference work lookup, parts management, tags, comments
+- [x] Catalog browse & search with full-text search, condition/tag filters, sorting, pagination
+- [x] Performance history with program builder (add works, reorder, autosave)
+- [x] CSV import wizard (5-step: upload, map, validate, execute, results)
+- [x] Threaded comments on library entries (all org roles can comment)
+- [x] Org activity feed with filters and pagination
+- [x] Tag management with color picker and entry counts
 
 ---
 
-## Phase 2: Organization Management
+## ✅ Phase 2: Organization Management (Completed)
 
-Multi-user access and org settings.
+Multi-user access, org settings, and personal library polish.
 
-### 2.1 — Org Settings Page
-- [ ] `/library/[orgSlug]/settings` page
-- [ ] Edit org name, type
-- [ ] View current plan tier
-
-### 2.2 — Member Management
-- [ ] `/library/[orgSlug]/settings/members` page
-- [ ] Invite users by email
-- [ ] Assign/change roles (owner, manager, member)
-- [ ] Remove members
-- [ ] Invite acceptance flow
-
-### 2.3 — Personal Library Polish
-- [ ] "My Library" branding for auto-created personal orgs (no "organization" language)
-- [ ] Simplified settings page for personal orgs (hide member management)
-- [ ] Upgrade path: convert personal library to ensemble org (rename, change type, invite members)
+- [x] Org settings page (edit name/type, plan display, delete org)
+- [x] Member management (invite by email, change roles, remove members)
+- [x] Personal library polish (login redirects, root `/` redirect, sidebar branding)
+- [x] Service-role Supabase client for email-based user lookup
 
 ---
 

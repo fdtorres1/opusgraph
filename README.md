@@ -122,6 +122,7 @@ opusgraph/
 
 ## Documentation
 
+- **[User Guide](docs/USER_GUIDE.md)** — End-user guide for library management and Works Database admin
 - **[Architecture](docs/ARCHITECTURE.md)** — System design, two-layer auth, multi-tenancy, data model
 - **[Schema](docs/SCHEMA.md)** — Database table specifications for library management
 - **[Roadmap](ROADMAP.md)** — Feature phases and implementation plan

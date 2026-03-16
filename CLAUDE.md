@@ -68,6 +68,7 @@ Billing: orgs billed at org level; personal orgs (individuals) billed individual
 
 ## Key Documentation
 
+- `docs/USER_GUIDE.md` — End-user guide for library management and Works Database admin
 - `docs/ARCHITECTURE.md` — System design, data flow, route structure, key decisions
 - `docs/SCHEMA.md` — Detailed table specs for all new library management tables
 - `claude-code-handoff.md` — Original planning doc with competitive context and priorities
