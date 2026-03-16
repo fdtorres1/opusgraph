@@ -1,7 +1,53 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { Button } from "@/components/ui/button";
+import { createServerSupabase } from "@/lib/supabase/server";
 
-export default function Home() {
+export const dynamic = "force-dynamic";
+
+export default async function Home() {
+  // If the user is authenticated, redirect them to their library or admin
+  const supabase = await createServerSupabase();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (user) {
+    // Check if platform admin
+    const { data: profile } = await supabase
+      .from("user_profile")
+      .select("admin_role")
+      .eq("user_id", user.id)
+      .single();
+
+    const adminRole = profile?.admin_role || "none";
+    const hasAdminAccess = ["super_admin", "admin", "contributor"].includes(adminRole);
+
+    if (hasAdminAccess) {
+      redirect("/admin");
+    }
+
+    // Find user's first org membership and redirect to library
+    const { data: membership } = await supabase
+      .from("org_member")
+      .select("organization_id, organization:organization_id(slug)")
+      .eq("user_id", user.id)
+      .order("created_at", { ascending: true })
+      .limit(1)
+      .single();
+
+    if (membership?.organization && typeof membership.organization === "object") {
+      const org = membership.organization as unknown as { slug: string };
+      if (org.slug) {
+        redirect(`/library/${org.slug}`);
+      }
+    }
+
+    // Fallback if no org found (shouldn't happen)
+    redirect("/search");
+  }
+
+  // Unauthenticated users see the landing page
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-gradient-to-b from-zinc-50 to-zinc-100 dark:from-zinc-900 dark:to-zinc-800">
       <main className="container mx-auto px-4 py-16 text-center">

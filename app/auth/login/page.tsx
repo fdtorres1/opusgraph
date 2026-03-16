@@ -32,7 +32,7 @@ export default function LoginPage() {
     } else {
       // Check user role to determine redirect
       const { data: { user } } = await supabase.auth.getUser();
-      
+
       if (user) {
         const { data: profile } = await supabase
           .from("user_profile")
@@ -44,16 +44,35 @@ export default function LoginPage() {
         const hasAdminAccess = ["super_admin", "admin", "contributor"].includes(adminRole);
 
         const requestedRedirect = new URLSearchParams(window.location.search).get("redirect");
-        
-        // If user requested /admin but doesn't have access, redirect to search
+
+        // Helper: find the user's first org and return its library URL
+        const getLibraryUrl = async (): Promise<string> => {
+          const { data: membership } = await supabase
+            .from("org_member")
+            .select("organization_id, organization:organization_id(slug)")
+            .eq("user_id", user.id)
+            .order("created_at", { ascending: true })
+            .limit(1)
+            .single();
+
+          if (membership?.organization && typeof membership.organization === "object") {
+            const org = membership.organization as unknown as { slug: string };
+            if (org.slug) {
+              return `/library/${org.slug}`;
+            }
+          }
+          return "/search";
+        };
+
+        // If user requested /admin but doesn't have access, redirect to library
         if (requestedRedirect?.startsWith("/admin") && !hasAdminAccess) {
-          router.push("/search");
+          router.push(await getLibraryUrl());
         } else if (requestedRedirect) {
           router.push(requestedRedirect);
         } else if (hasAdminAccess) {
           router.push("/admin");
         } else {
-          router.push("/search");
+          router.push(await getLibraryUrl());
         }
       } else {
         // Fallback to search if user check fails
@@ -69,7 +88,7 @@ export default function LoginPage() {
         <div>
           <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-50">Sign In</h1>
           <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-400">
-            Sign in to access OpusGraph admin dashboard
+            Sign in to access your OpusGraph account
           </p>
         </div>
         <form onSubmit={handleLogin} className="space-y-4">

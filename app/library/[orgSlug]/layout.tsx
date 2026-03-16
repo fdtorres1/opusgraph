@@ -32,7 +32,9 @@ export default async function LibraryLayout({
   }
 
   const { org } = result.data;
-  const displayName = org.type === "personal" ? "My Library" : org.name;
+  // For personal orgs (type 'other'), the name is already "My Library" from the DB.
+  // Just use org.name directly — it works for both personal and ensemble orgs.
+  const displayName = org.name;
 
   return (
     <SidebarProvider>

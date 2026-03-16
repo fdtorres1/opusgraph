@@ -13,7 +13,7 @@ export async function GET(request: NextRequest) {
     if (!error) {
       // Check user role to determine redirect
       const { data: { user } } = await supabase.auth.getUser();
-      
+
       if (user) {
         const { data: profile } = await supabase
           .from("user_profile")
@@ -21,8 +21,6 @@ export async function GET(request: NextRequest) {
           .eq("user_id", user.id)
           .single();
 
-        // If user has admin/contributor role and requested /admin, allow it
-        // Otherwise, redirect based on role
         const adminRole = profile?.admin_role || "none";
         const hasAdminAccess = ["super_admin", "admin", "contributor"].includes(adminRole);
 
@@ -31,8 +29,8 @@ export async function GET(request: NextRequest) {
           if (hasAdminAccess) {
             return NextResponse.redirect(`${origin}${requestedNext}`);
           } else {
-            // Individual user trying to access admin - redirect to search
-            return NextResponse.redirect(`${origin}/search`);
+            // Individual user trying to access admin - redirect to their library
+            return NextResponse.redirect(await getLibraryRedirect(supabase, user.id, origin));
           }
         } else if (requestedNext) {
           // User requested a specific page (not admin)
@@ -42,7 +40,7 @@ export async function GET(request: NextRequest) {
           if (hasAdminAccess) {
             return NextResponse.redirect(`${origin}/admin`);
           } else {
-            return NextResponse.redirect(`${origin}/search`);
+            return NextResponse.redirect(await getLibraryRedirect(supabase, user.id, origin));
           }
         }
       }
@@ -51,5 +49,30 @@ export async function GET(request: NextRequest) {
 
   // Return the user to an error page with instructions
   return NextResponse.redirect(`${origin}/auth/login?error=auth_callback_error`);
+}
+
+/** Look up the user's first org membership and return a redirect URL to their library. */
+async function getLibraryRedirect(
+  supabase: Awaited<ReturnType<typeof createServerSupabase>>,
+  userId: string,
+  origin: string,
+): Promise<string> {
+  const { data: membership } = await supabase
+    .from("org_member")
+    .select("organization_id, organization:organization_id(slug)")
+    .eq("user_id", userId)
+    .order("created_at", { ascending: true })
+    .limit(1)
+    .single();
+
+  if (membership?.organization && typeof membership.organization === "object") {
+    const org = membership.organization as unknown as { slug: string };
+    if (org.slug) {
+      return `${origin}/library/${org.slug}`;
+    }
+  }
+
+  // Fallback: user has no org memberships (shouldn't happen, personal org is auto-created)
+  return `${origin}/search`;
 }
 

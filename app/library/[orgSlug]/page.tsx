@@ -31,7 +31,9 @@ export default async function LibraryDashboard({
   }
 
   const { org, supabase } = result.data;
-  const displayName = org.type === "personal" ? "My Library" : org.name;
+  // For personal orgs (type 'other'), the name is already "My Library" from the DB.
+  // Just use org.name directly — it works for both personal and ensemble orgs.
+  const displayName = org.name;
 
   // Fetch all stats in parallel (same queries as the stats API)
   const [

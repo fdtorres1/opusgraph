@@ -33,9 +33,11 @@ type OrgProps = {
   org: { id: string; slug: string; name: string; type: string; plan_tier: string };
 };
 
-function buildMenuItems(orgSlug: string) {
+function buildMenuItems(orgSlug: string, orgType: string) {
   const base = `/library/${orgSlug}`;
-  return [
+  const isPersonal = orgType === "other";
+
+  const items = [
     {
       title: "Dashboard",
       url: base,
@@ -76,12 +78,18 @@ function buildMenuItems(orgSlug: string) {
       url: `${base}/tags`,
       icon: Tags,
     },
-    {
+  ];
+
+  // Personal orgs (single-member) don't need org-level settings (member management, etc.)
+  if (!isPersonal) {
+    items.push({
       title: "Settings",
       url: `${base}/settings`,
       icon: Settings,
-    },
-  ];
+    });
+  }
+
+  return items;
 }
 
 export function LibrarySidebar({ org }: OrgProps) {
@@ -90,7 +98,7 @@ export function LibrarySidebar({ org }: OrgProps) {
   const supabase = createClient();
   const [user, setUser] = useState<SupabaseUser | null>(null);
 
-  const menuItems = buildMenuItems(org.slug);
+  const menuItems = buildMenuItems(org.slug, org.type);
   const basePath = `/library/${org.slug}`;
 
   useEffect(() => {
@@ -114,7 +122,7 @@ export function LibrarySidebar({ org }: OrgProps) {
     <Sidebar collapsible="icon">
       <SidebarContent>
         <SidebarGroup>
-          <SidebarGroupLabel>Navigation</SidebarGroupLabel>
+          <SidebarGroupLabel>{org.name}</SidebarGroupLabel>
           <SidebarMenu>
             {menuItems.map((item) => {
               const Icon = item.icon;
