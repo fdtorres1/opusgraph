@@ -22,18 +22,26 @@ NEXT_PUBLIC_SUPABASE_URL
 - Environment: Production, Preview, Development (all environments)
 
 ```
-NEXT_PUBLIC_SUPABASE_ANON_KEY
+NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY
 ```
-- Value: Your Supabase anon/public key
+- Value: Your Supabase publishable key (`sb_publishable_...`)
 - Environment: Production, Preview, Development (all environments)
-- You can find this in: Supabase Dashboard → Project Settings → API → Project API keys → `anon` `public`
+- You can find this in: Supabase Dashboard → Project Settings → API Keys
 
-#### Optional Variables (for future features):
+```
+SUPABASE_SECRET_KEY
+```
+- Value: Your Supabase secret key (`sb_secret_...`), server-only
+- Environment: Production, Preview, Development
+- Required for member invite email lookups
+- You can find this in: Supabase Dashboard → Project Settings → API Keys
+
+#### Optional Variables:
 
 ```
 GOOGLE_PLACES_API_KEY
 ```
-- For location search integration (not yet implemented)
+- For location search integration
 - Environment: Production, Preview, Development
 
 ```
@@ -145,7 +153,7 @@ In Supabase Dashboard → Authentication → URL Configuration:
 
 ### Authentication Issues
 
-- Verify Supabase URL and anon key are correct
+- Verify Supabase URL and publishable key are correct
 - Check Supabase redirect URLs include your Vercel domain
 - Ensure Supabase Auth is enabled in your project
 

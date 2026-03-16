@@ -4,12 +4,12 @@ These scripts help you populate test composers into the database to verify every
 
 ## Option 1: Direct Database Script (Recommended)
 
-This script connects directly to Supabase using the service role key, bypassing RLS and authentication.
+This script connects directly to Supabase using the secret key, bypassing RLS and authentication.
 
 **Prerequisites:**
 - Create `scripts/populate-composers.env.local` file with your credentials:
   - `NEXT_PUBLIC_SUPABASE_URL` - Your Supabase project URL
-  - `SUPABASE_SERVICE_ROLE_KEY` - Your service role key (get from Supabase Dashboard → Settings → API → service_role key)
+  - `SUPABASE_SECRET_KEY` - Your Supabase secret key (get from Supabase Dashboard → Settings → API Keys)
 
 **Run:**
 ```bash

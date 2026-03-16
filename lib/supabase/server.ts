@@ -6,7 +6,7 @@ export async function createServerSupabase() {
   const cookieStore = await cookies();
   return createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!, // we operate under the user's session via cookies
+    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!,
     {
       cookies: {
         get(name: string) { return cookieStore.get(name)?.value; },
@@ -20,4 +20,3 @@ export async function createServerSupabase() {
     }
   );
 }
-

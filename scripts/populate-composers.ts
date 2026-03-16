@@ -10,7 +10,7 @@ import { resolve } from 'path';
 import { createClient } from '@supabase/supabase-js';
 
 // Load environment variables from scripts/populate-composers.env.local
-// This file should contain SUPABASE_SERVICE_ROLE_KEY and NEXT_PUBLIC_SUPABASE_URL
+// This file should contain SUPABASE_SECRET_KEY and NEXT_PUBLIC_SUPABASE_URL
 // This keeps local env vars separate from Vercel deployment variables
 const envPath = resolve(process.cwd(), 'scripts', 'populate-composers.env.local');
 config({ path: envPath });
@@ -19,19 +19,19 @@ config({ path: envPath });
 config({ path: resolve(process.cwd(), '.env.local') });
 
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
-const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
+const SUPABASE_SECRET_KEY = process.env.SUPABASE_SECRET_KEY || '';
 
-if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
+if (!SUPABASE_URL || !SUPABASE_SECRET_KEY) {
   console.error('Error: Missing required environment variables');
   console.error('Please add the following to scripts/populate-composers.env.local:');
   console.error('  NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co');
-  console.error('  SUPABASE_SERVICE_ROLE_KEY=your_service_role_key');
-  console.error('\nGet your service role key from: Supabase Dashboard → Settings → API → service_role key');
+  console.error('  SUPABASE_SECRET_KEY=your_secret_key');
+  console.error('\nGet your secret key from: Supabase Dashboard → Settings → API Keys');
   process.exit(1);
 }
 
-// Use service role key to bypass RLS (for admin scripts)
-const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
+// Use secret key to bypass RLS (for admin scripts)
+const supabase = createClient(SUPABASE_URL, SUPABASE_SECRET_KEY, {
   auth: {
     autoRefreshToken: false,
     persistSession: false

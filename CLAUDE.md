@@ -77,5 +77,6 @@ Billing: orgs billed at org level; personal orgs (individuals) billed individual
 ## Environment Variables
 
 - `NEXT_PUBLIC_SUPABASE_URL` — Supabase project URL
-- `NEXT_PUBLIC_SUPABASE_ANON_KEY` — Supabase anonymous key
+- `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` — Supabase publishable key (replaces legacy anon key)
+- `SUPABASE_SECRET_KEY` — Supabase secret key, server-only (replaces legacy service role key). Required for member invite email lookup.
 - `GOOGLE_PLACES_API_KEY` — Optional, for location search

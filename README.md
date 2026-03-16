@@ -65,7 +65,7 @@ cp .env.local.example .env.local
 Edit `.env.local` and add your Supabase credentials:
 ```env
 NEXT_PUBLIC_SUPABASE_URL=https://YOUR-PROJECT.supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJ...
+NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=sb_publishable_...
 ```
 
 4. Run database migrations:
