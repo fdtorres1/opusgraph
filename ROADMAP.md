@@ -1,171 +1,249 @@
 # OpusGraph Roadmap
 
-## ✅ Completed (MVP v1.0 - v1.7.0)
+## Completed: Reference Database (v1.0–v1.7)
 
-- [x] **Project Setup** - Next.js 16 with TypeScript and App Router
-- [x] **Database Schema** - Complete Supabase migration with all tables, functions, and RLS policies
-- [x] **Admin Work Editor** - Full-featured work editor with autosave, draft/publish, sources, and recordings
-- [x] **Admin Composer Editor** - Full-featured composer editor with autosave, draft/publish, nationalities, links, and gender identity
-- [x] **API Routes** - RESTful API for CRUD operations on works and composers
-- [x] **Typeahead Search** - Composer, publisher, and country search functionality
-- [x] **Recording Embeds** - Automatic detection and embedding for YouTube, Spotify, Apple Music, SoundCloud
-- [x] **Activity Tracking** - Revision history and activity feed (database schema)
-- [x] **Activity Panel UI** - Admin activity feed with filtering, grouping, and infinite scroll with local timestamps
-- [x] **Admin Dashboard** - Enhanced dashboard with statistics (composer/work counts, review flags) and recent activity preview
-- [x] **Sidebar Navigation** - Collapsible left sidebar with icon-only mode, tooltips, and keyboard shortcuts
-- [x] **List Pages** - Composers and Works list pages with grid view and status badges
-- [x] **Review Queue Page** - Basic review queue page for managing review flags
-- [x] **Review Queue Management** - Enhanced review queue with filtering, comparison, and merge functionality
-- [x] **Review System** - Duplicate detection functions and review flag schema
-- [x] **Authentication** - Login/signup pages with Supabase Auth
-- [x] **Deployment** - Vercel deployment with Next.js 16 compatibility
-- [x] **GitHub Integration** - Repository, project board, and issue tracking
+The original OpusGraph reference database is fully functional:
+- Composer and work editors with autosave and draft/publish workflow
+- RESTful API routes for all CRUD operations
+- CSV import with validation and duplicate detection
+- Review queue with comparison and merge
+- Activity feed with filtering
+- Public search, browse, and detail pages
+- Authentication with 4-tier RBAC
+- Location search (Google Places + Nominatim)
+- Deployed on Vercel
 
-## 🚧 In Progress
+See `CHANGELOG.md` for detailed version history through v1.7.6.
 
-*Currently no items in progress*
+---
 
-## 📋 Planned Features
+## Phase 0: Foundation
 
-### Phase 1: Core Admin Features
+Multi-tenant infrastructure. No UI — just schema, auth, and middleware.
 
-- [x] **Composer Editor Page** - Admin interface for managing composer profiles ✅
-  - Autosave functionality
-  - Draft/Published toggle
-  - Birth/death year and place management
-  - Nationality multi-select
-  - Composer links management
-  - Gender identity selection
-  - Activity tracking
-  - *Issue: [#1](https://github.com/fdtorres1/opusgraph/issues/1) - Completed*
+### 0.1 — Organization & Membership Schema
+- [ ] Migration `0005_organizations.sql`: `organization` and `org_member` tables
+- [ ] Enum types: `org_type` (orchestra, choir, band, church, school, other)
+- [ ] Enum type: `org_role` (owner, manager, member)
+- [ ] Enum type: `plan_tier` (free, starter, professional)
+- [ ] Slug generation function (URL-safe, unique)
+- [ ] RLS policies for org data isolation
+- [ ] Trigger: ensure at least one owner per org
+- [ ] Trigger: auto-update `updated_at` on organization
+- [ ] Trigger: auto-create personal org on user signup (name="My Library", type="other", role="owner")
 
-- [x] **Activity Panel UI** - Admin activity feed interface ✅
-  - Read from `activity_event` view
-  - Group by date
-  - Infinite scroll
-  - Filter by event type (revision, comment, review_flag)
-  - Filter by entity type (composer, work)
-  - Clickable links to related entities
-  - Actual timestamps in local timezone
-  - *Issue: [#4](https://github.com/fdtorres1/opusgraph/issues/4) - Completed*
+### 0.2 — Library Entry Schema
+- [ ] Migration `0006_library_entries.sql`: `library_entry` and `library_entry_part` tables
+- [ ] `library_entry.reference_work_id` FK to existing `work` table
+- [ ] `library_entry.overrides` JSONB column for reference field customization
+- [ ] Structured `library_entry_part` table (part_name, quantity, condition, notes)
+- [ ] RLS policies: org-scoped read/write (individuals are single-member orgs, same pattern)
+- [ ] Trigger: auto-update `updated_at`
 
-- [x] **Review Queue Management** - UI for managing review flags ✅
-  - Review queue page at `/admin/review`
-  - List all open `review_flag` entries
-  - Filter by reason (possible_duplicate, incomplete, etc.)
-  - Filter by status (open, resolved, dismissed)
-  - Side-by-side comparison modal for duplicates
-  - Resolve/dismiss/merge actions
-  - Entity name display and detailed comparison view
-  - Activity tracking for review actions
-  - *Issue: [#5](https://github.com/fdtorres1/opusgraph/issues/5) - Completed*
+### 0.3 — Performance History Schema
+- [ ] Migration `0007_performances.sql`: `performance` and `performance_work` tables
+- [ ] `performance_work.program_order` for concert program ordering
+- [ ] RLS policies matching library_entry pattern
+- [ ] Trigger: auto-update `updated_at`
 
-### Phase 2: Data Import & Management
+### 0.4 — Library Search Index
+- [ ] Migration `0008_library_search.sql`: `library_entry_search` table
+- [ ] tsvector combining title, composer, arranger, publisher, notes, part names
+- [ ] GIN index on search_vector
+- [ ] Trigger: rebuild search_vector on library_entry and library_entry_part changes
+- [ ] RLS policies for org-scoped search
 
-- [x] **CSV Import Functionality** - Bulk import with duplicate detection ✅
-  - CSV upload and parsing
-  - Field mapping UI
-  - Validation (years, URLs, durations, country codes)
-  - Duplicate detection using existing functions
-  - Auto-flag duplicates for review
-  - Transactional upsert
-  - Row-level import report with success/failure details
-  - Multi-step wizard (Upload → Map → Validate → Execute → Results)
-  - Support for both composers and works
-  - *Issue: [#2](https://github.com/fdtorres1/opusgraph/issues/2) - Completed*
+### 0.5 — Tags Schema
+- [ ] Migration `0009_library_tags.sql`: `library_tag` and `library_entry_tag` tables
+- [ ] Per-org tag scoping with category support
+- [ ] RLS policies inheriting from library_entry
 
-- [x] **Location Search Integration** - Google Places/Nominatim integration ✅
-  - Server endpoint `/api/places` for location search
-  - Google Places Autocomplete integration
-  - Fallback to Nominatim when quota exceeded
-  - Server-side caching
-  - Store to `place` table on selection
-  - LocationSearch component with autocomplete
-  - Integration with composer editor for birth/death places
-  - *Issue: [#6](https://github.com/fdtorres1/opusgraph/issues/6) - Completed*
+### 0.6 — Library Comments Schema
+- [ ] Migration `0010_library_comments.sql`: `library_comment` table
+- [ ] Threaded comments (parent_comment_id FK)
+- [ ] RLS: all org members (owner, manager, member) can read and write comments
+- [ ] Only comment author can update/delete their own comment
 
-### Phase 3: Public Features
+### 0.7 — Audit Trail Extension
+- [ ] Migration `0011_audit_extension.sql`: extend `revision` table
+- [ ] Expand `entity_kind` enum: add library_entry, performance, organization, org_member, library_tag
+- [ ] Expand `revision_action` enum: add delete, invite, remove, role_change
+- [ ] Add `organization_id` column to `revision` (nullable — NULL for reference DB)
+- [ ] Update `activity_event` view to include library events, scoped by org
 
-- [x] **Public Search Interface** - Public-facing search page ✅
-  - Public search page at `/search` with typeahead functionality
-  - Calls `public_min_works` and `public_min_composers` RPCs via `/api/public/search`
-  - Typeahead search with 300ms debounce
-  - Tab-based filtering (All/Composers/Works) with result counts
-  - Results display (name only for public users)
-  - Links to composer/work detail pages with sign-in prompts
-  - Public detail pages showing names only with subscription prompts
-  - Search button added to homepage
-  - *Issue: [#3](https://github.com/fdtorres1/opusgraph/issues/3) - Completed*
+### 0.8 — Middleware & Auth Updates
+- [ ] Extend `middleware.ts` to protect `/library/*` routes
+- [ ] Org context resolution from URL slug (`/library/[orgSlug]/...`)
+- [ ] API helper: get current user's org membership and role
+- [ ] Validate org slug against user's memberships
+- [ ] Zod validators for library entry, performance, organization, comment
 
-- [ ] **Public Detail Pages** - Composer and work detail pages
-  - Show names only for public users
-  - Full details with subscription
-  - Sign-in/sign-up prompts
-  - Recording embeds for public
+---
 
-### Phase 4: Subscription & Access
+## Phase 1: MVP Library Management
 
-- [ ] **Stripe Integration** - Subscription management
-  - Stripe Checkout integration
-  - Customer Portal setup
-  - Webhook handler for subscription events
-  - Upsert `subscription` table on webhook events
-  - Team and institutional subscription support
-  - Seat count enforcement
-  - *Issue: [#7](https://github.com/fdtorres1/opusgraph/issues/7)*
+Build for MSO dogfooding. Core CRUD and search.
 
-- [ ] **Team Management** - Team subscription features
-  - Team creation and management
-  - Team member invitations
-  - Seat management
+### 1.1 — Library Dashboard
+- [ ] `/library/[orgSlug]` page: org-scoped dashboard
+- [ ] Stats: total entries, entries by condition, recent additions
+- [ ] Quick actions: add entry, search, log performance
+- [ ] Org context switcher (if user belongs to multiple orgs)
 
-- [ ] **Institutional Access** - Library/SAML-like access
-  - Institution creation
-  - IP range configuration
-  - SAML/SSO integration (future)
+### 1.2 — Library Entry Editor
+- [ ] `/library/[orgSlug]/catalog/new` and `/library/[orgSlug]/catalog/[id]` pages
+- [ ] Reference DB lookup: typeahead search that matches reference works
+- [ ] Auto-populate fields from reference work on selection
+- [ ] Override any auto-populated field with org-specific values
+- [ ] Standalone entry creation (no reference work link)
+- [ ] Parts management: add/edit/remove parts with quantity and condition
+- [ ] Copies owned, location, condition, notes fields
+- [ ] Autosave (reuse 800ms debounce pattern from admin editors)
 
-### Phase 5: Enhanced Features
+### 1.3 — Library Catalog Browse & Search
+- [ ] `/library/[orgSlug]/catalog` page: list all entries for the org
+- [ ] Multi-field search: title, composer, arranger, publisher
+- [ ] Filter by condition, location, tag
+- [ ] Sort by title, composer, date added, last performed
+- [ ] Pagination or infinite scroll
 
-- [ ] **Full-Text Search** - Enhanced search with PostgreSQL
-  - Full-text search implementation
-  - Search across works, composers, instrumentation
-  - Advanced search filters
+### 1.4 — Performance History
+- [ ] `/library/[orgSlug]/performances` page: list performances
+- [ ] `/library/[orgSlug]/performances/new` page: log a new performance
+- [ ] Select library entries to add to the program (with ordering)
+- [ ] Performance detail view showing the program
+- [ ] "Last performed" and "times performed" derived data on catalog entries
 
-- [ ] **Tags & Taxonomy** - Work tagging system
-  - Tag management
-  - Tag-based filtering
-  - Tag categories
+### 1.5 — Library CSV Import
+- [ ] `/library/[orgSlug]/import` page: import library data from spreadsheets
+- [ ] Adapt existing CSV import pipeline for library-specific fields
+- [ ] Column mapping for: title, composer, copies, location, condition, parts
+- [ ] Reference DB matching: attempt to link imported entries to reference works
+- [ ] Duplicate detection within the org's library
+- [ ] Import report with row-level results
 
-- [ ] **Export & Reporting** - Data export features
-  - CSV export
-  - PDF reports
-  - API documentation
+### 1.6 — Library Entry Comments
+- [ ] Comments section on `/library/[orgSlug]/catalog/[id]` page
+- [ ] Threaded replies
+- [ ] All org roles can read and write comments
+- [ ] Author can edit/delete their own comments
 
-## 🎯 Future Considerations
+### 1.7 — Org Activity Feed
+- [ ] `/library/[orgSlug]/activity` page
+- [ ] Show audit trail: entry creates/updates/deletes, performance logs, member changes, comments
+- [ ] Filter by entity type, action, date range
+- [ ] Reuse activity feed component patterns from admin activity page
 
-- Mobile app (React Native)
-- Advanced analytics dashboard
-- API for third-party integrations
-- Collaborative editing features
-- Version control for works
-- Multi-language support
-- Integration with music libraries (Spotify, Apple Music APIs)
-- Image upload for composer portraits
-- Score preview/integration
+### 1.8 — Tag Management
+- [ ] Tag CRUD within org settings
+- [ ] Assign tags to library entries (multi-select)
+- [ ] Filter catalog by tag
+- [ ] Tag categories (season, genre, difficulty)
 
-## Version History
+---
 
-- **v1.0.0** - MVP with admin work editor and basic infrastructure ✅
-- **v1.1.0** - Composer editor, activity panel, and enhanced dashboard ✅
-- **v1.2.0** - Sidebar navigation, list pages, and review queue page ✅
-- **v1.3.0** - Review queue management with filtering, comparison, and merge ✅
-- **v1.4.0** - Location search integration with Google Places and Nominatim ✅
-- **v1.5.0** - CSV import functionality with validation and duplicate detection ✅
-- **v1.6.0** - Public search interface with typeahead and detail pages ✅
-- **v1.7.0** - Delete functionality for composers and works with confirmation dialogs ✅
-- **v1.7.1** - Bug fixes: login redirect and clickable header ✅
-- **v1.7.2** - User profile page and logout button in sidebar footer ✅
-- **v1.7.3** - 🔒 CRITICAL SECURITY FIX: Prevent new signups from getting admin access ✅
-- **v1.7.4** - Search performance optimization with indexes and parallel queries ✅
-- **v2.0.0** (Planned) - Subscription features and Stripe integration
+## Phase 2: Organization Management
 
+Multi-user access and org settings.
+
+### 2.1 — Org Settings Page
+- [ ] `/library/[orgSlug]/settings` page
+- [ ] Edit org name, type
+- [ ] View current plan tier
+
+### 2.2 — Member Management
+- [ ] `/library/[orgSlug]/settings/members` page
+- [ ] Invite users by email
+- [ ] Assign/change roles (owner, manager, member)
+- [ ] Remove members
+- [ ] Invite acceptance flow
+
+### 2.3 — Personal Library Polish
+- [ ] "My Library" branding for auto-created personal orgs (no "organization" language)
+- [ ] Simplified settings page for personal orgs (hide member management)
+- [ ] Upgrade path: convert personal library to ensemble org (rename, change type, invite members)
+
+---
+
+## Phase 3: Subscription & Billing
+
+Stripe integration for org and individual billing.
+
+### 3.1 — Stripe Setup
+- [ ] Stripe product/price configuration
+- [ ] Webhook handler for subscription events
+- [ ] Update `organization.plan_tier` on subscription changes
+
+### 3.2 — Billing UI
+- [ ] Plan selection and checkout flow
+- [ ] Stripe Customer Portal link for managing subscription
+- [ ] Usage display (members, entries, storage)
+
+### 3.3 — Plan Enforcement
+- [ ] Free tier limits (entries, members, storage)
+- [ ] Upgrade prompts when approaching limits
+- [ ] Graceful degradation (read-only) on expiration
+
+---
+
+## Phase 4: Reference DB Integration (Differentiators)
+
+Features that leverage the reference database as a competitive advantage.
+
+### 4.1 — Auto-Populate Enhancement
+- [ ] Smarter matching: fuzzy search, alternate titles, opus numbers
+- [ ] Bulk match: scan existing library entries and suggest reference links
+- [ ] Show reference DB instrumentation as template for parts entry
+
+### 4.2 — Repertoire Discovery
+- [ ] "What can I program for my instrumentation that I haven't performed?"
+- [ ] Filter reference works by instrumentation match, difficulty, duration
+- [ ] Exclude works already in performance history
+- [ ] Subscription upsell feature
+
+### 4.3 — Reference DB Seeding
+- [ ] Import Latin American works database (~10K works)
+- [ ] Seed standard repertoire (~200-300 most programmed works)
+- [ ] Community contribution: library entries can seed reference DB
+
+---
+
+## Phase 5: Enhanced Features
+
+Post-launch differentiators.
+
+### 5.1 — PDF Attachments
+- [ ] Supabase Storage bucket for score/part PDFs
+- [ ] Upload/download on library entry editor
+- [ ] Storage quota per plan tier
+
+### 5.2 — Concert Program Generator
+- [ ] Generate printable program from a performance record
+- [ ] Pull composer bios, work details from reference DB
+- [ ] Customizable templates
+
+### 5.3 — Rental Set Tracking
+- [ ] Checkout/return workflow
+- [ ] Due dates and overdue alerts
+- [ ] Condition notes on return
+- [ ] Missing part flagging
+
+### 5.4 — Budget Tracking
+- [ ] Cost tracking per library entry (purchase price, rental fee)
+- [ ] Per-performance budget rollup
+- [ ] Season budget overview
+
+### 5.5 — Mobile Companion (iOS)
+- [ ] Quick lookup during rehearsals
+- [ ] Barcode/QR scanning for physical catalog
+- [ ] Native Swift app (Felix to build)
+
+---
+
+## Open Items (Pre-Build)
+
+- [ ] Export MSO Google Sheet and document actual columns in use
+- [ ] Confirm format and fields of Latin American works database (~10K works)
+- [ ] Sign up for Archive440 free tier and document UX gaps
+- [ ] Decide on product name (keep OpusGraph? Rename?)
+- [ ] Deprecate existing subscriber/subscription/team/institution tables after org model is live

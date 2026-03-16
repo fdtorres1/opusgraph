@@ -1,25 +1,40 @@
 # OpusGraph
 
-A classical music database application for discovering, preserving, and managing information about composers and their works.
+A cloud-based platform for ensemble music library management, powered by a curated classical music reference database.
 
-🌐 **Live Site**: [https://opusgraph.vercel.app](https://opusgraph.vercel.app)
+OpusGraph helps orchestras, choirs, bands, and other performing ensembles catalog their sheet music, track parts and copies, manage performance history, and plan seasons — replacing the spreadsheets that most organizations rely on today.
+
+**Live Site**: [https://opusgraph.vercel.app](https://opusgraph.vercel.app)
 
 ## Features
 
-- **Composer Management**: Create and manage composer profiles with biographical information, nationalities, and links
-- **Work Cataloging**: Catalog musical works with detailed metadata including instrumentation, duration, recordings, and sources
-- **Admin Interface**: Rich admin interface with autosave, draft/publish workflow, and activity tracking
-- **Public Access**: Public users can view composer and work names; authenticated users can view full details
-- **Review System**: Automated duplicate detection and review flags for quality assurance
-- **Activity Feed**: Track all changes, comments, and review flags in a centralized activity panel
+### Library Management
+- **Catalog sheet music**: Title, composer, arranger, publisher, instrumentation, copies owned, physical location, condition
+- **Track parts**: Structured part-by-part tracking with quantity and condition per part
+- **Performance history**: Log concerts and services with full programs, track when each piece was last performed
+- **Multi-field search**: Search and filter by any combination of title, composer, instrumentation, condition, location, tags
+- **CSV import**: Migrate from Google Sheets or Excel with column mapping and duplicate detection
+- **Tags & categories**: Organize by season, genre, difficulty, or custom categories
+
+### Reference Database
+- **Auto-populate**: Type a work title and OpusGraph suggests matches from its reference database, auto-filling instrumentation, duration, and publisher
+- **Composer profiles**: Biographical data, nationalities, external links
+- **Work catalog**: Instrumentation, recordings, sources, publication details
+- **Review system**: Duplicate detection and quality assurance flags
+
+### Multi-Tenant
+- **Organizations**: Each ensemble gets its own isolated library
+- **Roles**: Owner, manager (full edit), and member (read-only, can comment) per organization
+- **Individual accounts**: Auto-created personal org ("My Library") — same features, no "organization" language
+- **Billing**: Organization-level or individual subscriptions
 
 ## Tech Stack
 
 - **Framework**: Next.js 16 (App Router)
-- **Database**: Supabase (PostgreSQL)
-- **UI**: shadcn/ui + Tailwind CSS
+- **Database**: Supabase (PostgreSQL) with Row-Level Security
+- **UI**: shadcn/ui + Tailwind CSS 4
 - **Forms**: React Hook Form + Zod validation
-- **Authentication**: Supabase Auth
+- **Auth**: Supabase Auth with two-layer role system
 
 ## Getting Started
 
@@ -53,26 +68,22 @@ NEXT_PUBLIC_SUPABASE_URL=https://YOUR-PROJECT.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJ...
 ```
 
-4. Run Supabase migrations:
+4. Run database migrations:
 
-If using Supabase CLI:
+Apply migrations in order from `supabase/migrations/`. If using Supabase CLI:
 ```bash
-supabase db reset  # if empty project
-supabase db push   # or: supabase db reset applies migrations
+supabase db push
 ```
 
-Or apply the migration manually in the Supabase dashboard:
-- Go to SQL Editor
-- Copy and paste the contents of `supabase/migrations/0001_init.sql`
-- Run the migration
+Or apply manually via the Supabase dashboard SQL Editor.
 
-5. Set up your user profile:
+5. Set up your admin account:
 
 After creating your account in Supabase Auth, set yourself as a super admin:
 ```sql
-insert into user_profile(user_id, first_name, last_name, admin_role)
-values ('<YOUR-AUTH-UUID>', 'Your Name', '', 'super_admin')
-on conflict (user_id) do update set admin_role='super_admin';
+INSERT INTO user_profile(user_id, first_name, last_name, admin_role)
+VALUES ('<YOUR-AUTH-UUID>', 'Your Name', '', 'super_admin')
+ON CONFLICT (user_id) DO UPDATE SET admin_role = 'super_admin';
 ```
 
 6. Run the development server:
@@ -87,126 +98,46 @@ npm run dev
 ```
 opusgraph/
 ├── app/
-│   ├── admin/              # Admin interface pages
-│   │   ├── layout.tsx      # Admin layout with sidebar
-│   │   ├── page.tsx        # Dashboard
-│   │   ├── composers/      # Composer pages
-│   │   ├── works/          # Work editor pages
-│   │   ├── activity/       # Activity panel
-│   │   └── review/         # Review queue
-│   ├── api/                # API routes
-│   │   └── admin/          # Admin API endpoints
-│   └── ...
+│   ├── admin/              # Reference DB admin interface
+│   ├── library/            # Library management (org-scoped)
+│   ├── api/
+│   │   ├── admin/          # Reference DB API endpoints
+│   │   └── library/        # Library management API endpoints
+│   ├── auth/               # Authentication pages
+│   ├── composers/          # Public composer pages
+│   ├── works/              # Public work pages
+│   └── search/             # Public search
 ├── components/
-│   ├── admin-sidebar.tsx   # Sidebar navigation component
 │   └── ui/                 # shadcn/ui components
 ├── lib/
 │   ├── supabase/           # Supabase client utilities
-│   ├── validators/         # Zod schemas
-│   ├── recording.ts        # Recording URL detection
-│   └── duration.ts         # Duration formatting/parsing
+│   └── validators/         # Zod schemas
+├── docs/
+│   ├── ARCHITECTURE.md     # System design and decisions
+│   └── SCHEMA.md           # Database table specifications
 ├── supabase/
 │   └── migrations/         # Database migrations
 └── ...
 ```
 
-## Database Schema
+## Documentation
 
-The application uses PostgreSQL with the following key tables:
-
-- `composer` - Composer profiles
-- `work` - Musical works
-- `work_source` - Source links for works
-- `work_recording` - Recording embeds (YouTube, Spotify, etc.)
-- `revision` - Change history
-- `review_flag` - Quality assurance flags
-- `user_profile` - User roles and permissions
-- `subscription` - Subscription management
-
-See `supabase/migrations/0001_init.sql` for the complete schema.
-
-## Admin Interface
-
-Access the admin dashboard at `/admin` with a collapsible sidebar navigation. The sidebar provides quick access to:
-
-- **Dashboard**: `/admin` - Overview with statistics and recent activity
-- **Composers**: 
-  - List: `/admin/composers` - View all composers
-  - Create: `/admin/composers/new` - Create new composer
-  - Edit: `/admin/composers/[id]` - Edit existing composer
-- **Works**:
-  - List: `/admin/works` - View all works
-  - Create: `/admin/works/new` - Create new work
-  - Edit: `/admin/works/[id]` - Edit existing work
-- **Activity**: `/admin/activity` - View activity feed with filtering
-- **Review Queue**: `/admin/review` - Manage review flags with filtering, comparison, and merge functionality
-- **CSV Import**: `/admin/import` - Bulk import composers or works from CSV files
-
-The sidebar collapses to icon-only mode for a compact view, with tooltips showing full labels on hover. Use the toggle button (or `Ctrl/Cmd + B`) to expand/collapse.
-
-### Key Features:
-
-- **Autosave**: Changes are automatically saved after 800ms of inactivity
-- **Draft/Published**: Toggle between draft and published status
-- **Composer Management**: Full CRUD with birth/death info, nationalities, links, and gender identity
-- **Work Management**: Full CRUD with instrumentation, recordings, sources, and publisher links
-- **Sources & Recordings**: Add multiple sources and recordings with automatic embed detection
-- **Typeahead Search**: Composer, publisher, and country search functionality
-- **Location Search**: Google Places and Nominatim integration for birth/death place selection
-- **CSV Import**: Bulk import composers or works with validation, duplicate detection, and field mapping
-- **Public Search**: Public-facing search interface at `/search` with typeahead and detail pages
-- **Delete Functionality**: Delete composers and works with confirmation dialogs and admin-only access
-- **Activity Tracking**: All changes logged in revision table with visual activity feed
-- **Activity Panel**: View all revisions, comments, and review flags with filtering
-
-## Roadmap
-
-See [ROADMAP.md](./ROADMAP.md) for detailed roadmap and feature planning.
-
-### Quick Overview
-
-**Completed (MVP v1.0 - v1.7.0):**
-- ✅ Project setup and deployment
-- ✅ Database schema and migrations
-- ✅ Admin work editor with autosave
-- ✅ Admin composer editor with autosave
-- ✅ Activity panel UI with filtering
-- ✅ Authentication (login/signup)
-- ✅ Admin dashboard with statistics
-- ✅ Collapsible sidebar navigation
-- ✅ List pages for composers and works
-- ✅ Review queue management with filtering and merge
-- ✅ Location search integration (Google Places + Nominatim)
-- ✅ CSV import functionality with validation and duplicate detection
-- ✅ Public search interface with typeahead and detail pages
-- ✅ Delete functionality for composers and works
-- ✅ API routes and typeahead search
-- ✅ Recording embeds and activity tracking
-- ✅ Authenticated detail views for Individual users
-- ✅ Browse all composers and works pages
-- ✅ Public navigation and header with logout
-- ✅ Single nationality select with searchable dropdown
-- ✅ Improved external link icons (right-aligned, clickable)
-
-**Next Up:**
-- Stripe subscription integration
+- **[Architecture](docs/ARCHITECTURE.md)** — System design, two-layer auth, multi-tenancy, data model
+- **[Schema](docs/SCHEMA.md)** — Database table specifications for library management
+- **[Roadmap](ROADMAP.md)** — Feature phases and implementation plan
+- **[Changelog](CHANGELOG.md)** — Version history
 
 ## Development
 
-### Adding New Components
-
-Use shadcn/ui to add UI components:
+### Adding UI Components
 ```bash
 npx shadcn@latest add [component-name]
 ```
 
 ### Database Migrations
-
 Create new migrations in `supabase/migrations/` following the naming pattern `XXXX_description.sql`.
 
-### Type Safety
-
-The project uses TypeScript throughout. Run type checking:
+### Type Checking
 ```bash
 npm run build
 ```
@@ -214,7 +145,3 @@ npm run build
 ## License
 
 [Add your license here]
-
-## Contributing
-
-[Add contribution guidelines here]
