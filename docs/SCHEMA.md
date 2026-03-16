@@ -365,7 +365,8 @@ Migrations should be applied in slice order. Each slice is independent and deplo
 0008_library_search.sql         ← Slice 4: library_entry_search + triggers
 0009_library_tags.sql           ← Slice 5: library_tag + library_entry_tag
 0010_library_comments.sql       ← Slice 6: library_comment
-0011_audit_extension.sql        ← Slice 7: revision table changes + enum expansion + activity view update
+0011_enum_extensions.sql         ← Slice 7a: ALTER TYPE for entity_kind + revision_action (must run outside transaction)
+0012_audit_extension.sql        ← Slice 7b: revision table changes + activity view update + RLS
 ```
 
 Each migration includes: table creation, indexes, constraints, RLS policies, and triggers.

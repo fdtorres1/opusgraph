@@ -1,19 +1,6 @@
 -- =========
--- 0. Expand Enum Types
+-- NOTE: Enum extensions are in 0011_enum_extensions.sql (must run first, outside transaction)
 -- =========
-
--- Expand entity_kind to cover library entities
-ALTER TYPE entity_kind ADD VALUE IF NOT EXISTS 'library_entry';
-ALTER TYPE entity_kind ADD VALUE IF NOT EXISTS 'performance';
-ALTER TYPE entity_kind ADD VALUE IF NOT EXISTS 'organization';
-ALTER TYPE entity_kind ADD VALUE IF NOT EXISTS 'org_member';
-ALTER TYPE entity_kind ADD VALUE IF NOT EXISTS 'library_tag';
-
--- Expand revision_action to cover new actions
-ALTER TYPE revision_action ADD VALUE IF NOT EXISTS 'delete';
-ALTER TYPE revision_action ADD VALUE IF NOT EXISTS 'invite';
-ALTER TYPE revision_action ADD VALUE IF NOT EXISTS 'remove';
-ALTER TYPE revision_action ADD VALUE IF NOT EXISTS 'role_change';
 
 -- =========
 -- 1. Add organization_id to revision
