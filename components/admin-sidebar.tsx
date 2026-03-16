@@ -29,6 +29,7 @@ import {
   Upload,
   User,
   LogOut,
+  BookOpen,
 } from "lucide-react";
 import type { User as SupabaseUser } from "@supabase/supabase-js";
 
@@ -90,11 +91,25 @@ export function AdminSidebar() {
   const router = useRouter();
   const supabase = createClient();
   const [user, setUser] = useState<SupabaseUser | null>(null);
+  const [libraryUrl, setLibraryUrl] = useState<string | null>(null);
 
   useEffect(() => {
     async function getUser() {
       const { data: { user } } = await supabase.auth.getUser();
       setUser(user);
+      if (user) {
+        const { data: membership } = await supabase
+          .from("org_member")
+          .select("organization_id, organization:organization_id(slug)")
+          .eq("user_id", user.id)
+          .order("created_at", { ascending: true })
+          .limit(1)
+          .single();
+        if (membership?.organization && typeof membership.organization === "object") {
+          const org = membership.organization as unknown as { slug: string };
+          if (org.slug) setLibraryUrl(`/library/${org.slug}`);
+        }
+      }
     }
     getUser();
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -160,6 +175,16 @@ export function AdminSidebar() {
       <SidebarFooter>
         <SidebarSeparator />
         <SidebarMenu>
+          {libraryUrl && (
+            <SidebarMenuItem>
+              <SidebarMenuButton asChild tooltip="My Library">
+                <Link href={libraryUrl}>
+                  <BookOpen />
+                  <span className="group-data-[collapsible=icon]:hidden">My Library</span>
+                </Link>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+          )}
           <SidebarMenuItem>
             <SidebarMenuButton asChild isActive={pathname === "/admin/profile"} tooltip="Profile">
               <Link href="/admin/profile">

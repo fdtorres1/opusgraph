@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
-import { LogOut, User } from "lucide-react";
+import { LogOut, User, BookOpen, Shield } from "lucide-react";
 import type { User as SupabaseUser } from "@supabase/supabase-js";
 
 export function PublicHeader() {
@@ -13,11 +13,36 @@ export function PublicHeader() {
   const supabase = createClient();
   const [user, setUser] = useState<SupabaseUser | null>(null);
   const [loading, setLoading] = useState(true);
+  const [libraryUrl, setLibraryUrl] = useState<string | null>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
     async function getUser() {
       const { data: { user } } = await supabase.auth.getUser();
       setUser(user);
+      if (user) {
+        // Fetch library org slug
+        const { data: membership } = await supabase
+          .from("org_member")
+          .select("organization_id, organization:organization_id(slug)")
+          .eq("user_id", user.id)
+          .order("created_at", { ascending: true })
+          .limit(1)
+          .single();
+        if (membership?.organization && typeof membership.organization === "object") {
+          const org = membership.organization as unknown as { slug: string };
+          if (org.slug) setLibraryUrl(`/library/${org.slug}`);
+        }
+        // Check admin role
+        const { data: profile } = await supabase
+          .from("user_profile")
+          .select("admin_role")
+          .eq("user_id", user.id)
+          .single();
+        if (profile && ["super_admin", "admin", "contributor"].includes(profile.admin_role || "")) {
+          setIsAdmin(true);
+        }
+      }
       setLoading(false);
     }
     getUser();
@@ -62,6 +87,18 @@ export function PublicHeader() {
             </nav>
           </div>
           <div className="flex items-center gap-4">
+            {libraryUrl && (
+              <Link href={libraryUrl} className="text-sm text-zinc-600 hover:text-zinc-900 flex items-center gap-1">
+                <BookOpen className="h-4 w-4" />
+                My Library
+              </Link>
+            )}
+            {isAdmin && (
+              <Link href="/admin" className="text-sm text-zinc-600 hover:text-zinc-900 flex items-center gap-1">
+                <Shield className="h-4 w-4" />
+                Admin
+              </Link>
+            )}
             <span className="text-sm text-zinc-600 flex items-center gap-2">
               <User className="h-4 w-4" />
               {user.email}

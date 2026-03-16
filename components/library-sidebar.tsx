@@ -26,6 +26,7 @@ import {
   Settings,
   User,
   LogOut,
+  Shield,
 } from "lucide-react";
 import type { User as SupabaseUser } from "@supabase/supabase-js";
 
@@ -97,6 +98,7 @@ export function LibrarySidebar({ org }: OrgProps) {
   const router = useRouter();
   const supabase = createClient();
   const [user, setUser] = useState<SupabaseUser | null>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
 
   const menuItems = buildMenuItems(org.slug, org.type);
   const basePath = `/library/${org.slug}`;
@@ -107,6 +109,16 @@ export function LibrarySidebar({ org }: OrgProps) {
         data: { user },
       } = await supabase.auth.getUser();
       setUser(user);
+      if (user) {
+        const { data: profile } = await supabase
+          .from("user_profile")
+          .select("admin_role")
+          .eq("user_id", user.id)
+          .single();
+        if (profile && ["super_admin", "admin", "contributor"].includes(profile.admin_role || "")) {
+          setIsAdmin(true);
+        }
+      }
     }
     getUser();
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -190,6 +202,16 @@ export function LibrarySidebar({ org }: OrgProps) {
       <SidebarFooter>
         <SidebarSeparator />
         <SidebarMenu>
+          {isAdmin && (
+            <SidebarMenuItem>
+              <SidebarMenuButton asChild tooltip="Admin Dashboard">
+                <Link href="/admin">
+                  <Shield />
+                  <span className="group-data-[collapsible=icon]:hidden">Admin</span>
+                </Link>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+          )}
           <SidebarMenuItem>
             <SidebarMenuButton tooltip="User">
               <User />
