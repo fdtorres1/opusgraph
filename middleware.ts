@@ -62,6 +62,17 @@ export async function middleware(request: NextRequest) {
     }
   }
 
+  // Protect library routes - require authentication only
+  // Org membership checks happen downstream in getOrgContext()
+  if (request.nextUrl.pathname.startsWith("/library")) {
+    if (!user) {
+      const url = request.nextUrl.clone();
+      url.pathname = "/auth/login";
+      url.searchParams.set("redirect", request.nextUrl.pathname);
+      return NextResponse.redirect(url);
+    }
+  }
+
   return supabaseResponse;
 }
 
