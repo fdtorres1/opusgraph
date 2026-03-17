@@ -188,9 +188,15 @@ for delete using (
 );
 
 -- Org member policies
+-- NOTE: Cannot use is_org_member() here — it queries org_member itself, causing circular RLS.
+-- Instead, check if the current user has ANY row in org_member for the same org.
 drop policy if exists select_org_member_member on org_member;
 create policy select_org_member_member on org_member
-for select using (is_org_member(organization_id));
+for select using (
+  organization_id in (
+    select om.organization_id from org_member om where om.user_id = auth.uid()
+  )
+);
 
 drop policy if exists insert_org_member_manager on org_member;
 create policy insert_org_member_manager on org_member
