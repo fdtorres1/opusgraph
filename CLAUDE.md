@@ -71,6 +71,11 @@ Billing: orgs billed at org level; personal orgs (individuals) billed individual
 - `docs/USER_GUIDE.md` — End-user guide for library management and Works Database admin
 - `docs/ARCHITECTURE.md` — System design, data flow, route structure, key decisions
 - `docs/SCHEMA.md` — Detailed table specs for all new library management tables
+- `docs/ROADMAP.md` — Current priorities and sequencing across product and engineering work
+- `docs/DECISIONS.md` — Durable product and architecture decisions with rationale
+- `docs/WORKLOG.md` — Append-only implementation and investigation log for handoffs
+- `docs/ACTIVE_CONTEXT.md` — Canonical current-state handoff file for the next session
+- `docs/specs/` — Focused specs for nontrivial initiatives and in-flight work
 - `claude-code-handoff.md` — Original planning doc with competitive context and priorities
 - `ensemble-library-opportunity.md` — Market research and opportunity assessment
 
@@ -80,3 +85,20 @@ Billing: orgs billed at org level; personal orgs (individuals) billed individual
 - `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` — Supabase publishable key (replaces legacy anon key)
 - `SUPABASE_SECRET_KEY` — Supabase secret key, server-only (replaces legacy service role key). Required for member invite email lookup.
 - `GOOGLE_PLACES_API_KEY` — Optional, for location search
+
+## Documentation Workflow
+
+- Treat `docs/ACTIVE_CONTEXT.md` as the canonical handoff file for current work.
+- Before starting any substantial multi-step task, read `docs/ACTIVE_CONTEXT.md`, `docs/ROADMAP.md`, and any linked spec or decision entries relevant to the task.
+- After any substantial task, update `docs/ACTIVE_CONTEXT.md` with current status, next steps, blockers, and the exact files, routes, tables, or commands needed to resume.
+- Append a concise dated entry to `docs/WORKLOG.md` after any meaningful implementation, investigation, or planning session.
+- Record durable product or architecture choices in `docs/DECISIONS.md` when they are made or materially changed.
+- Update `docs/ROADMAP.md` when priorities, sequencing, or status change.
+- For nontrivial initiatives, create or update a focused spec in `docs/specs/` and link it from `docs/ROADMAP.md` and `docs/ACTIVE_CONTEXT.md`.
+- Do not leave partially completed work without documenting what was done, what remains, and how to resume safely.
+- When resuming work, prefer the repository docs over memory reconstruction.
+
+## Session Closeout
+
+- At the end of any session involving code changes, handoff-worthy investigation, or planning, update the relevant docs before concluding.
+- Every handoff update must include the current objective, completed work, next concrete step, blockers or open questions, and key files, routes, tables, or commands.
