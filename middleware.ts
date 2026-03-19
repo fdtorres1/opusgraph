@@ -6,6 +6,17 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
+function buildRedirectPath(request: NextRequest): string {
+  const path = `${request.nextUrl.pathname}${request.nextUrl.search}`;
+  return path.startsWith("/") && !path.startsWith("//") ? path : "/";
+}
+
+function buildLoginUrl(request: NextRequest): URL {
+  const url = new URL("/auth/login", request.url);
+  url.searchParams.set("redirect", buildRedirectPath(request));
+  return url;
+}
+
 export async function middleware(request: NextRequest) {
   let supabaseResponse = NextResponse.next({
     request,
@@ -20,7 +31,7 @@ export async function middleware(request: NextRequest) {
           return request.cookies.getAll();
         },
         setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value, options }) =>
+          cookiesToSet.forEach(({ name, value }) =>
             request.cookies.set(name, value)
           );
           supabaseResponse = NextResponse.next({
@@ -41,10 +52,7 @@ export async function middleware(request: NextRequest) {
   // Protect admin routes - require authentication AND admin/contributor role
   if (request.nextUrl.pathname.startsWith("/admin")) {
     if (!user) {
-      const url = request.nextUrl.clone();
-      url.pathname = "/auth/login";
-      url.searchParams.set("redirect", request.nextUrl.pathname);
-      return NextResponse.redirect(url);
+      return NextResponse.redirect(buildLoginUrl(request));
     }
 
     // Check if user has admin/contributor role
@@ -66,10 +74,7 @@ export async function middleware(request: NextRequest) {
   // Org membership checks happen downstream in getOrgContext()
   if (request.nextUrl.pathname.startsWith("/library")) {
     if (!user) {
-      const url = request.nextUrl.clone();
-      url.pathname = "/auth/login";
-      url.searchParams.set("redirect", request.nextUrl.pathname);
-      return NextResponse.redirect(url);
+      return NextResponse.redirect(buildLoginUrl(request));
     }
   }
 
@@ -88,4 +93,3 @@ export const config = {
     "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
   ],
 };
-

@@ -1,32 +1,42 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import Link from "next/link";
+import { getSafeRedirectPath } from "@/lib/auth-redirect";
 
 export default function SignUpPage() {
-  const router = useRouter();
+  const searchParams = useSearchParams();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
   const supabase = createClient();
+  const requestedRedirect = getSafeRedirectPath(searchParams.get("redirect"));
+  const loginHref = requestedRedirect
+    ? `/auth/login?redirect=${encodeURIComponent(requestedRedirect)}`
+    : "/auth/login";
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError(null);
 
+    const callbackUrl = new URL("/auth/callback", window.location.origin);
+    if (requestedRedirect) {
+      callbackUrl.searchParams.set("redirect", requestedRedirect);
+    }
+
     const { error } = await supabase.auth.signUp({
       email,
       password,
       options: {
-        emailRedirectTo: `${window.location.origin}/auth/callback`,
+        emailRedirectTo: callbackUrl.toString(),
       },
     });
 
@@ -46,11 +56,11 @@ export default function SignUpPage() {
           <div>
             <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-50">Check your email</h1>
             <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-400">
-              We've sent you a confirmation link at {email}. Click the link to confirm your account.
+              We&apos;ve sent you a confirmation link at {email}. Click the link to confirm your account.
             </p>
           </div>
           <Button asChild className="w-full">
-            <Link href="/auth/login">Back to Sign In</Link>
+            <Link href={loginHref}>Back to Sign In</Link>
           </Button>
         </div>
       </div>
@@ -104,7 +114,7 @@ export default function SignUpPage() {
         </form>
         <div className="text-center text-sm text-zinc-600 dark:text-zinc-400">
           Already have an account?{" "}
-          <Link href="/auth/login" className="font-medium text-zinc-900 hover:underline dark:text-zinc-50">
+          <Link href={loginHref} className="font-medium text-zinc-900 hover:underline dark:text-zinc-50">
             Sign in
           </Link>
         </div>
@@ -117,4 +127,3 @@ export default function SignUpPage() {
     </div>
   );
 }
-

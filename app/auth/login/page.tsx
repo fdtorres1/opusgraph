@@ -1,20 +1,26 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import Link from "next/link";
+import { getSafeRedirectPath } from "@/lib/auth-redirect";
 
 export default function LoginPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const supabase = createClient();
+  const requestedRedirect = getSafeRedirectPath(searchParams.get("redirect"));
+  const signupHref = requestedRedirect
+    ? `/auth/signup?redirect=${encodeURIComponent(requestedRedirect)}`
+    : "/auth/signup";
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -42,8 +48,6 @@ export default function LoginPage() {
 
         const adminRole = profile?.admin_role || "none";
         const hasAdminAccess = ["super_admin", "admin", "contributor"].includes(adminRole);
-
-        const requestedRedirect = new URLSearchParams(window.location.search).get("redirect");
 
         // Helper: find the user's first org and return its library URL
         const getLibraryUrl = async (): Promise<string> => {
@@ -126,8 +130,11 @@ export default function LoginPage() {
           </Button>
         </form>
         <div className="text-center text-sm text-zinc-600 dark:text-zinc-400">
-          Don't have an account?{" "}
-          <Link href="/auth/signup" className="font-medium text-zinc-900 hover:underline dark:text-zinc-50">
+          Don&apos;t have an account?{" "}
+          <Link
+            href={signupHref}
+            className="font-medium text-zinc-900 hover:underline dark:text-zinc-50"
+          >
             Sign up
           </Link>
         </div>
@@ -140,4 +147,3 @@ export default function LoginPage() {
     </div>
   );
 }
-
