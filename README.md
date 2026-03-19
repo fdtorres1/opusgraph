@@ -113,8 +113,13 @@ opusgraph/
 │   ├── supabase/           # Supabase client utilities
 │   └── validators/         # Zod schemas
 ├── docs/
+│   ├── ACTIVE_CONTEXT.md   # Current handoff state for the next session
 │   ├── ARCHITECTURE.md     # System design and decisions
-│   └── SCHEMA.md           # Database table specifications
+│   ├── DECISIONS.md        # Durable product and architecture decisions
+│   ├── ROADMAP.md          # Current priorities and sequencing
+│   ├── SCHEMA.md           # Database table specifications
+│   ├── WORKLOG.md          # Append-only implementation log
+│   └── specs/             # Focused specs for nontrivial initiatives
 ├── supabase/
 │   └── migrations/         # Database migrations
 └── ...
@@ -125,8 +130,11 @@ opusgraph/
 - **[User Guide](docs/USER_GUIDE.md)** — End-user guide for library management and Works Database admin
 - **[Architecture](docs/ARCHITECTURE.md)** — System design, two-layer auth, multi-tenancy, data model
 - **[Schema](docs/SCHEMA.md)** — Database table specifications for library management
-- **[Roadmap](ROADMAP.md)** — Feature phases and implementation plan
-- **[Changelog](CHANGELOG.md)** — Version history
+- **[Roadmap](docs/ROADMAP.md)** — Current priorities and sequencing
+- **[Decisions](docs/DECISIONS.md)** — Durable product and architecture decisions
+- **[Worklog](docs/WORKLOG.md)** — Append-only implementation and investigation history
+- **[Active Context](docs/ACTIVE_CONTEXT.md)** — Canonical current-state handoff for the next session
+- **[Specs](docs/specs/README.md)** — Focused specs for nontrivial initiatives
 
 ## Development
 
