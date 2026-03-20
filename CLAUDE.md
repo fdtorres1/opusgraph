@@ -86,6 +86,15 @@ Billing: orgs billed at org level; personal orgs (individuals) billed individual
 - `SUPABASE_SECRET_KEY` — Supabase secret key, server-only (replaces legacy service role key). Required for member invite email lookup.
 - `GOOGLE_PLACES_API_KEY` — Optional, for location search
 
+## Git Workflow
+
+- Never work directly on `main`.
+- Before making code or documentation changes, create a scoped branch from `main`.
+- Use small, logically grouped commits.
+- Prefer opening a PR for every branch before merging to `main`.
+- Keep `main` as the stable integration branch.
+- Do not push direct commits to `main` except in an explicit emergency hotfix approved by the user.
+
 ## Documentation Workflow
 
 - Treat `docs/ACTIVE_CONTEXT.md` as the canonical handoff file for current work.
