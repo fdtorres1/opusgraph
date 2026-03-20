@@ -31,14 +31,15 @@ export default async function LibraryLayout({
     redirect("/");
   }
 
-  const { org } = result.data;
+  const { org, membership } = result.data;
   // For personal orgs (type 'other'), the name is already "My Library" from the DB.
   // Just use org.name directly — it works for both personal and ensemble orgs.
   const displayName = org.name;
+  const canManageEntries = ["owner", "manager"].includes(membership.role);
 
   return (
     <SidebarProvider>
-      <LibrarySidebar org={org} />
+      <LibrarySidebar org={org} canManageEntries={canManageEntries} />
       <SidebarInset>
         <header className="flex h-16 shrink-0 items-center gap-2 border-b px-4">
           <SidebarTrigger className="-ml-1" />

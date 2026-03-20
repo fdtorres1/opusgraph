@@ -18,7 +18,7 @@ export default async function CatalogPage({
     redirect("/");
   }
 
-  const { org, supabase } = result.data;
+  const { org, membership, supabase } = result.data;
 
   // Fetch initial entries (first 50, ordered by title)
   const selectFields = `
@@ -46,6 +46,7 @@ export default async function CatalogPage({
   return (
     <CatalogClient
       org={org}
+      canManageEntries={["owner", "manager"].includes(membership.role)}
       initialEntries={entries ?? []}
       initialTotal={count ?? 0}
     />
