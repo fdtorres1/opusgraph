@@ -2,6 +2,32 @@
 
 Record durable product and architecture decisions here. Keep entries brief and biased toward rationale and consequences.
 
+## 2026-03-20: Harden auth user bootstrap with a pinned search path and schema-qualified slug generation
+
+- Decision: Keep `public.handle_new_user()` as the signup bootstrap trigger, but harden it with `set search_path = public` and `public.generate_slug(...)`, shipped as forward repair migration `0015_fix_handle_new_user_search_path.sql`.
+- Context: New-user creation failed in the linked cloud project even with valid modern publishable/secret keys. Live DB inspection showed the `auth.users` trigger path could not resolve unqualified `generate_slug(...)` under the effective search path, which caused `auth.admin.createUser()` to fail with a database error.
+- Why:
+  - fixes the actual failure boundary without changing the broader signup bootstrap behavior
+  - makes the trigger deterministic across auth-trigger execution contexts
+  - avoids blaming the modern key migration for a database-function resolution bug
+- Consequences:
+  - new-user creation now depends on `0015` being present in upgrade environments
+  - future auth-trigger functions should either pin `search_path` explicitly or schema-qualify cross-function calls
+  - signed-in auth/RLS verification can now use dedicated disposable test accounts instead of existing personal accounts
+
+## 2026-03-19: Parallel agent work should use separate worktrees with explicit file ownership
+
+- Decision: Concurrent agents should use separate `git worktree`s and separate branches, and active file ownership should be recorded in `docs/ACTIVE_CONTEXT.md`.
+- Context: Multiple Codex instances may work on OpusGraph concurrently, and simple branch separation inside one checkout does not prevent collisions in uncommitted files, generated artifacts, or overlapping edits.
+- Why:
+  - a separate worktree isolates the filesystem state for each active coding stream
+  - a separate branch keeps integration boundaries explicit
+  - recording file ownership in `docs/ACTIVE_CONTEXT.md` makes conflicts visible before edits start
+- Consequences:
+  - the default safe setup for parallel work is one worktree per agent
+  - concurrent edits to the same files should be treated as an exception, not normal workflow
+  - `docs/ACTIVE_CONTEXT.md` must be updated when a new parallel stream starts or finishes
+
 ## 2026-03-18: Use repo-native docs as the canonical handoff system
 
 - Decision: The canonical documentation workflow for ongoing work is `docs/ROADMAP.md`, `docs/DECISIONS.md`, `docs/WORKLOG.md`, `docs/ACTIVE_CONTEXT.md`, and focused specs under `docs/specs/`.
