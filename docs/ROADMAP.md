@@ -4,9 +4,19 @@ This file is the current priority view for OpusGraph. Keep it short, current, an
 
 ## Now
 
+### Member catalog-create authorization fix and re-verification
+- Status: In progress
+- Why now: The signed-in verification run found a real authorization defect: members could see catalog-create affordances and load `/library/[orgSlug]/catalog/new`.
+- Scope:
+  - deploy the local route/UI guard fix for member catalog creation
+  - re-run the member verification slice first
+  - continue manager, owner, signup/callback, and direct RLS verification only after the member check passes
+- Primary spec: `docs/specs/auth-redirect-and-org-member-rls.md`
+- Related docs: `docs/AUTH_AND_RLS_VERIFICATION.md`, `docs/templates/auth-rls-verification-checklist.md`
+
 ### Signed-in auth and `org_member` RLS verification signoff
 - Status: In progress
-- Why now: The production auth redirect hotfix is deployed, the cloud migration repairs are applied, and the dedicated verification fixtures now exist, but the signed-in verification matrix is still incomplete.
+- Why now: The production auth redirect hotfix is deployed, the cloud migration repairs are applied, the dedicated verification fixtures exist, and the hosted publishable-key config is now corrected, but the signed-in verification matrix is still incomplete.
 - Scope:
   - verify login, signup, confirmation callback, and post-auth redirect behavior with real test users
   - verify `owner`, `manager`, `member`, and authenticated non-member behavior in the hosted app
@@ -16,7 +26,7 @@ This file is the current priority view for OpusGraph. Keep it short, current, an
 - Related docs: `docs/AUTH_AND_RLS_VERIFICATION.md`, `docs/templates/auth-rls-verification-checklist.md`, `docs/ARCHITECTURE.md`
 
 ### Auth/RLS failure triage if verification finds defects
-- Status: Planned
+- Status: In progress
 - Why now: Any failing auth or RLS behavior becomes the immediate blocker for further feature work.
 - Scope:
   - isolate failures by boundary: middleware, UI, API authorization, RLS policy, or fixture/setup
@@ -67,6 +77,6 @@ This file is the current priority view for OpusGraph. Keep it short, current, an
 ## Blocked
 
 ### Signed-in auth and RLS verification execution
-- Status: Ready to run
-- Blocker: None on fixture setup; the remaining work is the actual execution and result capture.
+- Status: Partially blocked
+- Blocker: The hosted verification run found a real member authorization defect on catalog creation. The local fix exists on `fix/member-catalog-create-guard`, but the full matrix should not continue until that fix is deployed and the member slice is re-run.
 - Runbook: `docs/AUTH_AND_RLS_VERIFICATION.md`

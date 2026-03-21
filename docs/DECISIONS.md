@@ -2,6 +2,18 @@
 
 Record durable product and architecture decisions here. Keep entries brief and biased toward rationale and consequences.
 
+## 2026-03-20: Catalog creation must be owner-or-manager only at both UI and route levels
+
+- Decision: Treat library-entry creation as an owner/manager capability everywhere, not just at the API layer. Members must not see create affordances and must be redirected away from `/library/[orgSlug]/catalog/new`.
+- Context: The live signed-in verification run showed that member users were correctly blocked from some higher-privilege areas but could still see `Add New` affordances and load the full `New Library Entry` page directly, even though the create API path was already guarded.
+- Why:
+  - create authorization needs to be consistent across page routing, UI affordances, and API handlers
+  - hiding only the API boundary leaves confusing and unsafe partial access in the product surface
+  - the library-management role model already states that only owners/managers can edit catalog data
+- Consequences:
+  - verification should explicitly check both direct `/catalog/new` access and create affordance visibility for members
+  - future catalog-management features should use the same owner/manager gate at the page and component layer, not just the write endpoint
+
 ## 2026-03-20: Harden auth user bootstrap with a pinned search path and schema-qualified slug generation
 
 - Decision: Keep `public.handle_new_user()` as the signup bootstrap trigger, but harden it with `set search_path = public` and `public.generate_slug(...)`, shipped as forward repair migration `0015_fix_handle_new_user_search_path.sql`.

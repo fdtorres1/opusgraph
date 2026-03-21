@@ -4,11 +4,11 @@ This is the canonical handoff file for the next session. Rewrite freely as prior
 
 ## Current Objective
 
-Execute the remaining signed-in auth and `org_member` RLS verification on the linked cloud environment, then triage any failures before starting IMSLP ingestion implementation.
+Deploy the member catalog-create authorization fix, re-run the blocked signed-in verification slice, then finish the remaining auth and `org_member` RLS verification before starting IMSLP ingestion implementation.
 
 ## Current Branch
 
-- `fix/auth-user-bootstrap-trigger`
+- `fix/member-catalog-create-guard`
 
 ## Parallel Work Coordination
 
@@ -25,16 +25,21 @@ Execute the remaining signed-in auth and `org_member` RLS verification on the li
 
 - Agent: current Codex session
   - Worktree: current checkout at `/Volumes/Felix-SSD-1/Cursor Projects/opusgraph`
-  - Branch: `fix/auth-user-bootstrap-trigger`
-  - Scope: auth user-bootstrap fix, verification-fixture setup, and handoff refresh
+  - Branch: `fix/member-catalog-create-guard`
+  - Scope: member catalog-create authorization fix, verification continuation, and handoff refresh
   - File ownership:
-    - `supabase/migrations/0015_fix_handle_new_user_search_path.sql`
+    - `app/library/[orgSlug]/catalog/[id]/page.tsx`
+    - `app/library/[orgSlug]/catalog/page.tsx`
+    - `app/library/[orgSlug]/catalog/catalog-client.tsx`
+    - `app/library/[orgSlug]/layout.tsx`
+    - `app/library/[orgSlug]/page.tsx`
+    - `components/library-sidebar.tsx`
     - `docs/ACTIVE_CONTEXT.md`
     - `docs/ROADMAP.md`
     - `docs/WORKLOG.md`
     - `docs/DECISIONS.md`
   - Status: active
-  - Notes: forward repair migration is committed; current task is handoff cleanup before signed-in verification execution
+  - Notes: local member-catalog-create fix is committed; current task is to deploy it and resume the blocked verification matrix
 
 ## In Progress
 
@@ -50,6 +55,7 @@ Execute the remaining signed-in auth and `org_member` RLS verification on the li
 - Hosted login and signup pages preserve the redirect parameter in their cross-links.
 - Manual verification guidance exists in `docs/AUTH_AND_RLS_VERIFICATION.md`, and the reusable checklist now lives in `docs/templates/auth-rls-verification-checklist.md`.
 - The modern `SUPABASE_PUBLISHABLE_KEY` and `SUPABASE_SECRET_KEY` are verified valid; the earlier user-creation failure was traced to the `handle_new_user()` trigger, not to credential or app misconfiguration.
+- Production was temporarily serving a legacy Supabase anon key in the hosted browser bundle, which caused `Legacy API keys are disabled` during login; the production env/config was corrected and owner login now works again with the modern publishable key.
 - Dedicated cloud verification fixtures now exist:
   - org `auth-rls-verification-20260320` (`6228fd52-3a52-49b1-a3fa-50d8bf3a4d00`)
   - `auth-rls-owner-20260320@example.com`
@@ -57,6 +63,17 @@ Execute the remaining signed-in auth and `org_member` RLS verification on the li
   - `auth-rls-member-20260320@example.com`
   - `auth-rls-outsider-20260320@example.com`
 - The temporary verification-org memberships for the two Felix accounts were removed after the dedicated test users were created.
+- Signed-in verification findings so far:
+  - owner login returns correctly to `/library/auth-rls-verification-20260320/catalog?view=all`
+  - outsider auth from `/admin/review` falls back to the outsider's own library instead of `/admin/*`
+  - outsider direct access to the verification org falls back to the outsider's own library
+  - member can read the org catalog and settings members page
+  - member is denied from `/library/auth-rls-verification-20260320/tags`
+- The live verification run found a real defect: members could still see catalog-create affordances and load `/library/auth-rls-verification-20260320/catalog/new`.
+- A focused local fix now exists on this branch:
+  - members are redirected away from `/catalog/new`
+  - catalog-create affordances are hidden for non-manager/non-owner users
+  - `npm run build` passes
 - IMSLP ingestion planning review is complete:
   - the current reference import pipeline is CSV-only
   - admin CRUD, duplicate review, `external_ids`, `extra_metadata`, `review_flag`, and `revision` provide reusable building blocks
@@ -68,12 +85,13 @@ Execute the remaining signed-in auth and `org_member` RLS verification on the li
 ## Next 3 Steps
 
 1. Execute the signed-in verification matrix from `docs/AUTH_AND_RLS_VERIFICATION.md` using `docs/templates/auth-rls-verification-checklist.md` with real owner, manager, member, and non-member test users.
-2. If any auth or RLS behavior fails, isolate the fault boundary and open a narrow fix branch before starting new feature work.
-3. If verification passes, refresh the handoff docs and begin `T0-1` through `T0-4`, then `T1-1`, `T2-1` through `T2-3`, `T4-1`, and `T5-1` from `docs/specs/imslp-reference-ingestion.md`.
+2. Deploy the local member catalog-create guard fix and re-run the member verification slice first.
+3. If the member slice passes, continue manager, owner, signup/callback, and direct RLS verification; if the full matrix passes, refresh the handoff docs and begin `T0-1` through `T0-4`, then `T1-1`, `T2-1` through `T2-3`, `T4-1`, and `T5-1` from `docs/specs/imslp-reference-ingestion.md`.
 
 ## Known Blockers
 
 - This session has no local `.env` file and no running local Supabase stack, so the cloud environment remains the practical verification target.
+- The full signed-in verification matrix should not continue until the member catalog-create guard fix is deployed and rechecked on the hosted app.
 - IMSLP implementation should not start until auth/RLS verification is either signed off or narrowed into a known follow-up fix slice.
 
 ## Key Files
@@ -118,7 +136,7 @@ Execute the remaining signed-in auth and `org_member` RLS verification on the li
 - Keep `0013` historically representative. Use `0014` as the upgrade repair path.
 - Keep `0015` as the forward repair for the auth bootstrap trigger; do not rewrite `0005` again without a deliberate migration-history decision.
 - Non-admin users should never be bounced back into `/admin/*` after auth.
-- The current stack-ranked order is: signed-in auth/RLS verification, auth/RLS failure triage if needed, handoff-doc reconciliation, then IMSLP ingestion implementation.
+- The current stack-ranked order is: member catalog-create fix deployment and recheck, remaining signed-in auth/RLS verification, auth/RLS failure triage if needed, handoff-doc reconciliation, then IMSLP ingestion implementation.
 - The live verification fixture is:
   - org slug `auth-rls-verification-20260320`
   - org id `6228fd52-3a52-49b1-a3fa-50d8bf3a4d00`
@@ -126,6 +144,10 @@ Execute the remaining signed-in auth and `org_member` RLS verification on the li
   - manager `auth-rls-manager-20260320@example.com`
   - member `auth-rls-member-20260320@example.com`
   - outsider `auth-rls-outsider-20260320@example.com`
+- The latest hosted verification findings are:
+  - owner redirect/login works
+  - outsider fallback works for both `/admin/*` and another org's library route
+  - member still needs a deployed recheck for `/catalog/new` and create affordances after the local fix on this branch
 - For concurrent agent work, prefer separate worktrees and branches, and claim file ownership in `Parallel Work Coordination` before editing.
 - For source ingestion, keep the framework generic and isolate IMSLP-specific logic inside an adapter that uses official IMSLP list endpoints for discovery and `api.php` for detailed page extraction before considering HTML scraping.
 - For implementation sequencing, use the task IDs in `docs/specs/imslp-reference-ingestion.md` rather than phase labels; the current starting slice is `T0-1` through `T0-4`, then `T1-1`, `T2-1` through `T2-3`, `T4-1`, and `T5-1`.

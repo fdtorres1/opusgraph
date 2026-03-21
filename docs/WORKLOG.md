@@ -125,3 +125,25 @@ Append-only log for implementation, investigation, and planning sessions. Keep e
 - Follow-up:
   - execute the signed-in auth/RLS verification matrix against the live fixture
   - if anything fails, isolate the defect boundary before starting IMSLP implementation work
+
+### Hosted auth config corrected; signed-in verification exposed a member catalog-create defect
+- The first hosted owner-login attempt failed with `Legacy API keys are disabled`.
+- Confirmed the deployed browser bundle was still shipping a legacy JWT anon key even though repo code already used `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`.
+- After production envs were corrected and the app was redeployed, the hosted bundle switched to the modern `sb_publishable_...` key and owner login succeeded again.
+- Signed-in verification findings so far:
+  - owner login from `/library/auth-rls-verification-20260320/catalog?view=all` succeeds and returns to the full route
+  - outsider login from `/admin/review` falls back to the outsider's library instead of `/admin/*`
+  - outsider direct access to the verification org falls back to the outsider's own library
+  - member can read the org catalog and settings members page
+  - member is denied from `/library/auth-rls-verification-20260320/tags`
+- The verification run found a real authorization defect:
+  - member users could still see catalog-create affordances
+  - member users could load `/library/auth-rls-verification-20260320/catalog/new`
+- Implemented a focused fix on branch `fix/member-catalog-create-guard`:
+  - redirect members away from `/catalog/new`
+  - hide catalog-create affordances for non-manager/non-owner users in the catalog page, dashboard quick actions, and library sidebar
+- `npm run build` passes with the catalog-create guard fix.
+- Follow-up:
+  - deploy the member catalog-create fix
+  - re-run the member verification slice first
+  - continue manager, owner, signup/callback, and direct RLS verification only after the member slice passes
