@@ -147,3 +147,28 @@ Append-only log for implementation, investigation, and planning sessions. Keep e
   - deploy the member catalog-create fix
   - re-run the member verification slice first
   - continue manager, owner, signup/callback, and direct RLS verification only after the member slice passes
+
+### Member catalog-create fix deployed; app and live-RLS verification mostly passed
+- Merged and deployed PR #22 (`fix: unblock auth verification findings`), which shipped:
+  - `0015_fix_handle_new_user_search_path.sql`
+  - the member catalog-create route/UI guard fix
+  - the latest auth-verification handoff refresh
+- Hosted app verification after deploy:
+  - member login from `/library/auth-rls-verification-20260320/catalog/new` now lands on `/library/auth-rls-verification-20260320/catalog`
+  - member no longer sees `Add New`, `Add New Entry`, or empty-state catalog-create affordances
+  - manager can still load `/library/auth-rls-verification-20260320/catalog/new` and sees catalog create affordances
+  - owner can still load `/library/auth-rls-verification-20260320/catalog/new`
+  - manager and owner can load `/library/auth-rls-verification-20260320/settings/members` and `/library/auth-rls-verification-20260320/tags`
+- Live RLS verification using real user JWTs against `rest/v1/org_member`:
+  - `owner`, `manager`, and `member` each read 3 membership rows for the verification org
+  - `outsider` reads 0 rows
+  - `member` insert is denied with RLS (`403`)
+  - `manager` insert succeeds
+  - `owner` update succeeds
+  - `manager` update/delete return empty results rather than explicit `403`, which is consistent with the row not being writable/visible through policy
+  - `owner` delete succeeds
+  - outsider membership cleanup was confirmed; the verification org is back to 3 members
+- Remaining gaps:
+  - positive `/admin/review` login return for a platform-admin account
+  - signup confirmation/callback proof with a fresh account or generated confirmation link
+  - final verification summary/write-up in the runbook

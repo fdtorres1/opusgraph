@@ -66,7 +66,7 @@ Expected:
 
 ## org_member RLS Checks
 
-Run these in the Supabase SQL editor or with `psql`, impersonating each user through the app/session where possible. The goal is to prove that the policies no longer recurse and that access is correct by role.
+Run these in the Supabase SQL editor or with `psql`, impersonating each user through the app/session where possible. If direct SQL impersonation is impractical, the equivalent proof can be collected by authenticating real users and calling `rest/v1` directly with their access tokens. The goal is to prove that the policies no longer recurse and that access is correct by role.
 
 Use placeholders:
 - `<shared-org-id>`
@@ -112,6 +112,10 @@ As `member`, run the same insert with a different candidate user.
 
 Expected:
 - Insert is denied by RLS.
+
+Note:
+- When using `rest/v1`, denied `INSERT` typically returns `403`.
+- Denied `UPDATE` and `DELETE` may appear as an empty successful result because the row is not writable or visible under the policy. Treat that as denial if the row remains unchanged and a later owner action succeeds.
 
 Cleanup after each successful insert:
 
