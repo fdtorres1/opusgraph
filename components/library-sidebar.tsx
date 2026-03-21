@@ -32,9 +32,10 @@ import type { User as SupabaseUser } from "@supabase/supabase-js";
 
 type OrgProps = {
   org: { id: string; slug: string; name: string; type: string; plan_tier: string };
+  canManageEntries: boolean;
 };
 
-function buildMenuItems(orgSlug: string, orgType: string) {
+function buildMenuItems(orgSlug: string, orgType: string, canManageEntries: boolean) {
   const base = `/library/${orgSlug}`;
   const isPersonal = orgType === "other";
 
@@ -53,10 +54,14 @@ function buildMenuItems(orgSlug: string, orgType: string) {
           title: "All Entries",
           url: `${base}/catalog`,
         },
-        {
-          title: "Add New",
-          url: `${base}/catalog/new`,
-        },
+        ...(canManageEntries
+          ? [
+              {
+                title: "Add New",
+                url: `${base}/catalog/new`,
+              },
+            ]
+          : []),
       ],
     },
     {
@@ -93,14 +98,14 @@ function buildMenuItems(orgSlug: string, orgType: string) {
   return items;
 }
 
-export function LibrarySidebar({ org }: OrgProps) {
+export function LibrarySidebar({ org, canManageEntries }: OrgProps) {
   const pathname = usePathname();
   const router = useRouter();
   const supabase = createClient();
   const [user, setUser] = useState<SupabaseUser | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
 
-  const menuItems = buildMenuItems(org.slug, org.type);
+  const menuItems = buildMenuItems(org.slug, org.type, canManageEntries);
   const basePath = `/library/${org.slug}`;
 
   useEffect(() => {

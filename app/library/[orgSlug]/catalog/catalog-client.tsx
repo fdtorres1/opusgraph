@@ -122,10 +122,12 @@ const PAGE_SIZE = 50;
 
 export function CatalogClient({
   org,
+  canManageEntries,
   initialEntries,
   initialTotal,
 }: {
   org: OrgInfo;
+  canManageEntries: boolean;
   initialEntries: EntryRow[];
   initialTotal: number;
 }) {
@@ -299,11 +301,13 @@ export function CatalogClient({
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-3xl font-bold">Catalog</h1>
-        <Button asChild>
-          <Link href={`/library/${org.slug}/catalog/new`}>
-            Add New Entry
-          </Link>
-        </Button>
+        {canManageEntries && (
+          <Button asChild>
+            <Link href={`/library/${org.slug}/catalog/new`}>
+              Add New Entry
+            </Link>
+          </Button>
+        )}
       </div>
 
       {/* Filters */}
@@ -413,13 +417,19 @@ export function CatalogClient({
       {/* Empty state */}
       {!loading && entries.length === 0 && (
         <div className="text-center py-12 text-zinc-500 dark:text-zinc-400">
-          No entries yet.{" "}
-          <Link
-            href={`/library/${org.slug}/catalog/new`}
-            className="underline"
-          >
-            Add your first entry.
-          </Link>
+          {canManageEntries ? (
+            <>
+              No entries yet.{" "}
+              <Link
+                href={`/library/${org.slug}/catalog/new`}
+                className="underline"
+              >
+                Add your first entry.
+              </Link>
+            </>
+          ) : (
+            "No entries yet."
+          )}
         </div>
       )}
 

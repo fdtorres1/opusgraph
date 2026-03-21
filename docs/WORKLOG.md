@@ -52,3 +52,98 @@ Append-only log for implementation, investigation, and planning sessions. Keep e
   - execute the remaining signed-in auth/RLS verification steps with real test users or SQL-editor access
   - run lint/build/tests as appropriate
   - capture any cloud-specific findings in this log
+
+## 2026-03-19
+
+### IMSLP ingestion investigation and planning
+- Reviewed the current reference-data APIs and schema:
+  - admin CRUD exists for composers and works
+  - admin review/merge flows exist for duplicate handling
+  - admin import endpoints are CSV-only and synchronous
+  - `external_ids` and `extra_metadata` already exist on `composer` and `work`
+- Verified IMSLP source options directly:
+  - documented bulk list API works for `type=1` people/categories and `type=2` works
+  - standard MediaWiki `api.php` endpoints are available and can return page metadata and full wikitext
+  - work-page wikitext contains useful structured fields including title, opus/catalogue number, composition/publication year, style, instrumentation, movements, and duration text
+- Added `docs/specs/imslp-reference-ingestion.md` to capture the recommended phased approach:
+  - decomposed into smallest-unit tasks `T0-*` through `T12-*`
+  - includes dependencies and a recommended first-10-task starting slice
+- Recommended implementation direction:
+  - build a platform-agnostic ingest service separate from the CSV import routes
+  - keep source-specific fetch and parse logic behind adapters, with IMSLP as the first one
+  - use IMSLP ids/permalinks as canonical provenance inside the generic `external_ids` model
+  - keep imported rows in `draft`
+  - send ambiguous matches to `review_flag` instead of auto-merging
+
+### Parallel work coordination protocol added
+- Added a lightweight coordination section to `docs/ACTIVE_CONTEXT.md` for:
+  - worktree
+  - branch
+  - scope
+  - file ownership
+  - status
+- Recorded the durable rule in `docs/DECISIONS.md` that concurrent agents should use separate worktrees and explicit ownership rather than sharing one checkout.
+
+## 2026-03-20
+
+### Priority order and verification planning refreshed
+- Re-ranked the active work order so the immediate sequence is now:
+  - signed-in auth and `org_member` RLS verification
+  - auth/RLS failure triage if verification finds defects
+  - handoff-doc reconciliation
+  - IMSLP ingestion implementation
+- Updated `docs/ROADMAP.md` to reflect that ordering explicitly.
+- Updated `docs/ACTIVE_CONTEXT.md` so the current objective is the signed-in verification pass rather than ingestion work.
+- Added `docs/templates/auth-rls-verification-checklist.md` as the reusable operator checklist for future production verification runs.
+- Follow-up:
+  - execute the signed-in verification matrix with real test users and/or SQL-editor access
+  - record pass/fail outcomes before starting IMSLP implementation work
+
+### Auth user-bootstrap trigger fixed and dedicated verification fixtures created
+- Validated the modern Supabase key path:
+  - `SUPABASE_PUBLISHABLE_KEY` and `SUPABASE_SECRET_KEY` are active for the linked cloud project
+  - Auth Admin reads work with the new secret key
+- Root-caused the failing new-user bootstrap path:
+  - `auth.admin.createUser()` failed with `Database error creating new user`
+  - live DB inspection showed `public.handle_new_user()` had no pinned `search_path`
+  - `handle_new_user()` called `generate_slug(...)` unqualified
+  - in the auth-trigger execution context, unqualified `generate_slug(...)` was not resolvable while `public.generate_slug(...)` succeeded
+- Added the forward repair migration `supabase/migrations/0015_fix_handle_new_user_search_path.sql`.
+- Applied `0015` to the linked cloud project and marked it applied in remote migration history.
+- Re-tested new-user creation with the modern secret key after `0015`; user creation now succeeds.
+- Created the dedicated verification org:
+  - slug `auth-rls-verification-20260320`
+  - id `6228fd52-3a52-49b1-a3fa-50d8bf3a4d00`
+- Created the dedicated verification users:
+  - `auth-rls-owner-20260320@example.com`
+  - `auth-rls-manager-20260320@example.com`
+  - `auth-rls-member-20260320@example.com`
+  - `auth-rls-outsider-20260320@example.com`
+- Assigned the owner, manager, and member users to the verification org and intentionally left the outsider user out of the org.
+- Removed the temporary Felix-account memberships from the verification org once the dedicated users existed.
+- Stored the dedicated verification logins in 1Password under the `Sage-Openclaw` vault.
+- Follow-up:
+  - execute the signed-in auth/RLS verification matrix against the live fixture
+  - if anything fails, isolate the defect boundary before starting IMSLP implementation work
+
+### Hosted auth config corrected; signed-in verification exposed a member catalog-create defect
+- The first hosted owner-login attempt failed with `Legacy API keys are disabled`.
+- Confirmed the deployed browser bundle was still shipping a legacy JWT anon key even though repo code already used `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`.
+- After production envs were corrected and the app was redeployed, the hosted bundle switched to the modern `sb_publishable_...` key and owner login succeeded again.
+- Signed-in verification findings so far:
+  - owner login from `/library/auth-rls-verification-20260320/catalog?view=all` succeeds and returns to the full route
+  - outsider login from `/admin/review` falls back to the outsider's library instead of `/admin/*`
+  - outsider direct access to the verification org falls back to the outsider's own library
+  - member can read the org catalog and settings members page
+  - member is denied from `/library/auth-rls-verification-20260320/tags`
+- The verification run found a real authorization defect:
+  - member users could still see catalog-create affordances
+  - member users could load `/library/auth-rls-verification-20260320/catalog/new`
+- Implemented a focused fix on branch `fix/member-catalog-create-guard`:
+  - redirect members away from `/catalog/new`
+  - hide catalog-create affordances for non-manager/non-owner users in the catalog page, dashboard quick actions, and library sidebar
+- `npm run build` passes with the catalog-create guard fix.
+- Follow-up:
+  - deploy the member catalog-create fix
+  - re-run the member verification slice first
+  - continue manager, owner, signup/callback, and direct RLS verification only after the member slice passes

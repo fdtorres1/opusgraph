@@ -10,6 +10,7 @@ export default async function LibraryEntryPage({
   params: Promise<{ orgSlug: string; id: string }>;
 }) {
   const { orgSlug, id: paramId } = await params;
+  const isNew = paramId === "new";
   const result = await getOrgContext(orgSlug);
 
   if (!result.ok) {
@@ -19,8 +20,11 @@ export default async function LibraryEntryPage({
     redirect("/");
   }
 
-  const { org, supabase } = result.data;
-  const isNew = paramId === "new";
+  const { org, membership, supabase } = result.data;
+
+  if (isNew && !["owner", "manager"].includes(membership.role)) {
+    redirect(`/library/${org.slug}/catalog`);
+  }
 
   let initial: any = null;
 

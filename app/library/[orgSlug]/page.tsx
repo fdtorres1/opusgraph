@@ -30,10 +30,11 @@ export default async function LibraryDashboard({
     redirect("/");
   }
 
-  const { org, supabase } = result.data;
+  const { org, membership, supabase } = result.data;
   // For personal orgs (type 'other'), the name is already "My Library" from the DB.
   // Just use org.name directly — it works for both personal and ensemble orgs.
   const displayName = org.name;
+  const canManageEntries = ["owner", "manager"].includes(membership.role);
 
   // Fetch all stats in parallel (same queries as the stats API)
   const [
@@ -155,12 +156,14 @@ export default async function LibraryDashboard({
         </CardHeader>
         <CardContent>
           <div className="flex flex-wrap gap-3">
-            <Button asChild>
-              <Link href={`/library/${org.slug}/catalog/new`}>
-                <Plus className="h-4 w-4 mr-2" />
-                Add Entry
-              </Link>
-            </Button>
+            {canManageEntries && (
+              <Button asChild>
+                <Link href={`/library/${org.slug}/catalog/new`}>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add Entry
+                </Link>
+              </Button>
+            )}
             <Button asChild variant="outline">
               <Link href={`/library/${org.slug}/catalog`}>
                 <Search className="h-4 w-4 mr-2" />
