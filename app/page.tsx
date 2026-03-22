@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { Button } from "@/components/ui/button";
+import { getPostAuthRedirectPath } from "@/lib/post-auth-redirect";
 import { createServerSupabase } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
@@ -13,38 +14,7 @@ export default async function Home() {
   } = await supabase.auth.getUser();
 
   if (user) {
-    // Check if platform admin
-    const { data: profile } = await supabase
-      .from("user_profile")
-      .select("admin_role")
-      .eq("user_id", user.id)
-      .single();
-
-    const adminRole = profile?.admin_role || "none";
-    const hasAdminAccess = ["super_admin", "admin", "contributor"].includes(adminRole);
-
-    if (hasAdminAccess) {
-      redirect("/admin");
-    }
-
-    // Find user's first org membership and redirect to library
-    const { data: membership } = await supabase
-      .from("org_member")
-      .select("organization_id, organization:organization_id(slug)")
-      .eq("user_id", user.id)
-      .order("created_at", { ascending: true })
-      .limit(1)
-      .single();
-
-    if (membership?.organization && typeof membership.organization === "object") {
-      const org = membership.organization as unknown as { slug: string };
-      if (org.slug) {
-        redirect(`/library/${org.slug}`);
-      }
-    }
-
-    // Fallback if no org found (shouldn't happen)
-    redirect("/search");
+    redirect(await getPostAuthRedirectPath(supabase, user.id, null));
   }
 
   // Unauthenticated users see the landing page

@@ -4,30 +4,21 @@ This file is the current priority view for OpusGraph. Keep it short, current, an
 
 ## Now
 
-### Member catalog-create authorization fix and re-verification
-- Status: In progress
-- Why now: The signed-in verification run found a real authorization defect: members could see catalog-create affordances and load `/library/[orgSlug]/catalog/new`.
-- Scope:
-  - deploy the local route/UI guard fix for member catalog creation
-  - re-run the member verification slice first
-  - continue manager, owner, signup/callback, and direct RLS verification only after the member check passes
-- Primary spec: `docs/specs/auth-redirect-and-org-member-rls.md`
-- Related docs: `docs/AUTH_AND_RLS_VERIFICATION.md`, `docs/templates/auth-rls-verification-checklist.md`
-
 ### Signed-in auth and `org_member` RLS verification signoff
 - Status: In progress
-- Why now: The production auth redirect hotfix is deployed, the cloud migration repairs are applied, the dedicated verification fixtures exist, and the hosted publishable-key config is now corrected, but the signed-in verification matrix is still incomplete.
+- Why now: The production auth redirect hotfix is deployed, the cloud migration repairs are applied, the hosted publishable-key config is corrected, the dedicated verification fixtures exist, the member catalog-create defect has been fixed, and most app/RLS checks now pass. The remaining gap is rollout of the new server-side signup confirmation flow plus the final auth-flow closeout checks.
 - Scope:
-  - verify login, signup, confirmation callback, and post-auth redirect behavior with real test users
-  - verify `owner`, `manager`, `member`, and authenticated non-member behavior in the hosted app
-  - verify direct RLS outcomes at the table level through the SQL editor or equivalent cloud access
-  - record pass/fail outcomes using the runbook and checklist template
+  - deploy and re-verify the new signup confirmation flow
+  - finish the remaining login/signup/callback and post-auth redirect checks
+  - verify the remaining positive `/admin/*` login path with a platform admin account
+  - record the completed hosted-app and live-RLS outcomes in the runbook and handoff docs
+- record pass/fail outcomes using the runbook and checklist template
 - Primary spec: `docs/specs/auth-redirect-and-org-member-rls.md`
 - Related docs: `docs/AUTH_AND_RLS_VERIFICATION.md`, `docs/templates/auth-rls-verification-checklist.md`, `docs/ARCHITECTURE.md`
 
 ### Auth/RLS failure triage if verification finds defects
 - Status: In progress
-- Why now: Any failing auth or RLS behavior becomes the immediate blocker for further feature work.
+- Why now: Signup confirmation currently fails in production until the new `/auth/confirm` flow and matching email-template change are live, which remains the immediate blocker for auth-verification signoff and further feature work.
 - Scope:
   - isolate failures by boundary: middleware, UI, API authorization, RLS policy, or fixture/setup
   - fix only the verified defect slice
@@ -78,5 +69,5 @@ This file is the current priority view for OpusGraph. Keep it short, current, an
 
 ### Signed-in auth and RLS verification execution
 - Status: Partially blocked
-- Blocker: The hosted verification run found a real member authorization defect on catalog creation. The local fix exists on `fix/member-catalog-create-guard`, but the full matrix should not continue until that fix is deployed and the member slice is re-run.
+- Blocker: The new `/auth/confirm` code path is ready locally but still needs deployment plus the matching Supabase email-template update, and the positive `/admin/*` login-return check still needs a usable platform-admin credential path from this shell.
 - Runbook: `docs/AUTH_AND_RLS_VERIFICATION.md`

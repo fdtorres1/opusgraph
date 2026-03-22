@@ -147,3 +147,75 @@ Append-only log for implementation, investigation, and planning sessions. Keep e
   - deploy the member catalog-create fix
   - re-run the member verification slice first
   - continue manager, owner, signup/callback, and direct RLS verification only after the member slice passes
+
+### Member catalog-create fix deployed; app and live-RLS verification mostly passed
+- Merged and deployed PR #22 (`fix: unblock auth verification findings`), which shipped:
+  - `0015_fix_handle_new_user_search_path.sql`
+  - the member catalog-create route/UI guard fix
+  - the latest auth-verification handoff refresh
+- Hosted app verification after deploy:
+  - member login from `/library/auth-rls-verification-20260320/catalog/new` now lands on `/library/auth-rls-verification-20260320/catalog`
+  - member no longer sees `Add New`, `Add New Entry`, or empty-state catalog-create affordances
+  - manager can still load `/library/auth-rls-verification-20260320/catalog/new` and sees catalog create affordances
+  - owner can still load `/library/auth-rls-verification-20260320/catalog/new`
+  - manager and owner can load `/library/auth-rls-verification-20260320/settings/members` and `/library/auth-rls-verification-20260320/tags`
+- Live RLS verification using real user JWTs against `rest/v1/org_member`:
+  - `owner`, `manager`, and `member` each read 3 membership rows for the verification org
+  - `outsider` reads 0 rows
+  - `member` insert is denied with RLS (`403`)
+  - `manager` insert succeeds
+  - `owner` update succeeds
+  - `manager` update/delete return empty results rather than explicit `403`, which is consistent with the row not being writable/visible through policy
+  - `owner` delete succeeds
+  - outsider membership cleanup was confirmed; the verification org is back to 3 members
+- Remaining gaps:
+  - positive `/admin/review` login return for a platform-admin account
+  - signup confirmation/callback proof with a fresh account or generated confirmation link
+  - final verification summary/write-up in the runbook
+
+## 2026-03-21
+
+### Signup confirmation/callback defect isolated
+- Used the secure 1Password service-account path to read `SUPABASE_SECRET_KEY` from the `Sage-Openclaw` vault without storing the secret in repo files or shell startup files.
+- Generated a fresh admin signup confirmation link for a brand-new user targeting:
+  - `/auth/callback?redirect=%2Flibrary%2Fauth-rls-verification-20260320%2Fcatalog`
+- Replayed the live Supabase verify URL end to end and captured the redirect chain.
+- Confirmed the live verify flow preserves the canonical internal redirect target, but the app still fails after control returns from Supabase:
+  - Supabase verify responds with a `303` to `/auth/callback?redirect=...#access_token=...&refresh_token=...&type=signup`
+  - the final app destination is `/auth/login?error=auth_callback_error&redirect=%2Flibrary%2Fauth-rls-verification-20260320%2Fcatalog`
+- Re-read `app/auth/callback/route.ts` and confirmed the route currently handles only `code` exchange:
+  - there is no handling for email-confirmation token flow such as `token_hash`/`type` verification
+  - URL-fragment tokens are invisible to the server route, so the current implementation cannot complete the signup confirmation flow as returned by Supabase verify
+- Result:
+  - the remaining auth-verification blocker is now a concrete callback defect, not email rate limiting or fixture setup
+- Follow-up:
+  - open a narrow fix branch for the signup confirmation/callback path
+  - add support for the Supabase email-confirmation token shape in `/auth/callback`
+  - re-run the generated-link verification after the fix
+
+### Server-side signup confirmation flow implemented locally
+- Opened branch `fix/signup-confirm-flow`.
+- Implemented a dedicated server-side confirmation route:
+  - `app/auth/confirm/route.ts`
+  - verifies `token_hash` + `type` with `supabase.auth.verifyOtp(...)`
+  - reuses the existing safe redirect contract and post-auth destination policy
+- Narrowed `app/auth/callback/route.ts` back to the `?code=...` exchange path and moved shared post-auth destination logic into:
+  - `lib/post-auth-redirect.ts`
+- Extended `lib/auth-redirect.ts` so server auth routes can safely recover the intended internal destination from a same-origin absolute `redirect_to` URL.
+- Updated:
+  - `app/page.tsx` to reuse the shared post-auth destination helper
+  - `app/auth/signup/page.tsx` so `emailRedirectTo` carries the final intended in-app destination instead of `/auth/callback`
+- Verification:
+  - `npm run build` passes
+  - local dev verification against the live Supabase project passed:
+    - generated a fresh `hashed_token` with `auth.admin.generateLink({ type: "signup" })`
+    - called `http://localhost:3000/auth/confirm?token_hash=...&type=signup&redirect_to=https://opusgraph.vercel.app/library/auth-rls-verification-20260320/catalog`
+    - observed session cookie establishment
+    - final destination was the new user’s personal library (`/library/my-library-...`), which is the correct non-member fallback
+- Remaining rollout dependency:
+  - production still needs the Supabase email template updated to a server-visible confirmation URL such as:
+    - `{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&type=email&redirect_to={{ .RedirectTo }}`
+- Follow-up:
+  - deploy this branch
+  - update the Supabase confirmation email template
+  - rerun production signup confirmation verification
