@@ -81,6 +81,14 @@ Current fix direction as of 2026-03-21:
 - `emailRedirectTo` should carry the final intended in-app destination, not `/auth/callback`.
 - A direct local verification using a fresh `hashed_token` already confirms that `/auth/confirm` can establish a session and redirect the user to their personal library when they are not a member of the requested org.
 
+Production verification as of 2026-03-21:
+- The hosted confirmation email template now points at `/auth/confirm`.
+- Production `/auth/confirm` is deployed.
+- A fresh production signup confirmation with `token_hash` now succeeds:
+  - the route sets the auth session cookie
+  - the initial redirect target is the requested org catalog
+  - downstream org access rules correctly fall the new outsider user back to their personal library
+
 ## org_member RLS Checks
 
 Run these in the Supabase SQL editor or with `psql`, impersonating each user through the app/session where possible. If direct SQL impersonation is impractical, the equivalent proof can be collected by authenticating real users and calling `rest/v1` directly with their access tokens. The goal is to prove that the policies no longer recurse and that access is correct by role.

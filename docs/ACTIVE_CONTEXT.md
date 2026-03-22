@@ -4,11 +4,11 @@ This is the canonical handoff file for the next session. Rewrite freely as prior
 
 ## Current Objective
 
-Deploy the new signup confirmation flow and matching Supabase email-template change, then finish auth-verification closeout and mark the signed-in auth and `org_member` RLS verification complete before starting IMSLP ingestion implementation.
+Finish the remaining auth-verification closeout checks, then mark the signed-in auth and `org_member` RLS verification complete before starting IMSLP ingestion implementation.
 
 ## Current Branch
 
-- `fix/signup-confirm-flow`
+- `main`
 
 ## Parallel Work Coordination
 
@@ -25,20 +25,15 @@ Deploy the new signup confirmation flow and matching Supabase email-template cha
 
 - Agent: current Codex session
   - Worktree: current checkout at `/Volumes/Felix-SSD-1/Cursor Projects/opusgraph`
-  - Branch: `fix/signup-confirm-flow`
-  - Scope: implement the server-side signup confirmation flow and leave the rollout handoff clean
+  - Branch: `main`
+  - Scope: production auth-verification closeout and handoff refresh
   - File ownership:
     - `docs/ACTIVE_CONTEXT.md`
     - `docs/AUTH_AND_RLS_VERIFICATION.md`
     - `docs/ROADMAP.md`
     - `docs/WORKLOG.md`
-    - `app/auth/callback/route.ts`
-    - `app/auth/confirm/route.ts`
-    - `app/auth/signup/page.tsx`
-    - `lib/auth-redirect.ts`
-    - `lib/post-auth-redirect.ts`
   - Status: active
-  - Notes: member-catalog-create fix is merged and deployed; current task is to finish the signup confirmation rollout cleanly and leave the handoff explicit
+  - Notes: member-catalog-create and signup-confirm fixes are merged and deployed; current task is to close the final verification gap and leave a clean handoff
 
 ## In Progress
 
@@ -89,10 +84,14 @@ Deploy the new signup confirmation flow and matching Supabase email-template cha
   - `/auth/callback` now remains the `?code=...` path
   - post-auth redirect policy is shared in `lib/post-auth-redirect.ts`
   - safe redirect parsing now also supports same-origin `redirect_to` URLs
-- Local end-to-end verification of `/auth/confirm` against the live Supabase project passed:
-  - a fresh `hashed_token` from `auth.admin.generateLink({ type: "signup" })` was sent to `http://localhost:3000/auth/confirm`
-  - the route established a session cookie
-  - the final destination was the new user’s personal library, not the requested verification-org catalog
+- The server-side signup confirmation flow is now merged and deployed:
+  - PR #23 merged to `main`
+  - production `/auth/confirm` is live
+  - the hosted Supabase Confirm signup template now points at `/auth/confirm?token_hash=...&type=email&redirect_to={{ .RedirectTo }}`
+- Production end-to-end signup confirmation now passes:
+  - a fresh production `token_hash` sets the session cookie on `/auth/confirm`
+  - the flow first redirects to the requested verification-org catalog
+  - downstream org access rules correctly fall the new outsider user back to their personal library
 - IMSLP ingestion planning review is complete:
   - the current reference import pipeline is CSV-only
   - admin CRUD, duplicate review, `external_ids`, `extra_metadata`, `review_flag`, and `revision` provide reusable building blocks
@@ -103,15 +102,14 @@ Deploy the new signup confirmation flow and matching Supabase email-template cha
 
 ## Next 3 Steps
 
-1. Deploy `fix/signup-confirm-flow` and update the Supabase confirmation email template to target `/auth/confirm?token_hash=...&type=email&redirect_to={{ .RedirectTo }}`.
-2. Re-run the signup confirmation flow against production and confirm the final post-confirmation destination is correct for a new non-member user.
-3. Verify the remaining positive `/admin/review` login-return path with a platform-admin account, then refresh the handoff docs and begin `T0-1` through `T0-4`, then `T1-1`, `T2-1` through `T2-3`, `T4-1`, and `T5-1` from `docs/specs/imslp-reference-ingestion.md` if auth verification is fully signed off.
+1. Verify the remaining positive `/admin/review` login-return path with a platform-admin account.
+2. Write the final auth/RLS verification signoff summary in the runbook and worklog if the admin path passes.
+3. Begin `T0-1` through `T0-4`, then `T1-1`, `T2-1` through `T2-3`, `T4-1`, and `T5-1` from `docs/specs/imslp-reference-ingestion.md` once auth verification is fully signed off.
 
 ## Known Blockers
 
 - This session has no local `.env` file and no running local Supabase stack, so the cloud environment remains the practical verification target.
 - The positive platform-admin login check is still pending because this shell does not currently have a clean noninteractive path to the admin-app credential.
-- Production still needs the matching Supabase email-template change before the new `/auth/confirm` flow becomes live.
 - IMSLP implementation should not start until auth/RLS verification is either signed off or narrowed into a known follow-up fix slice.
 
 ## Key Files
@@ -173,7 +171,8 @@ Deploy the new signup confirmation flow and matching Supabase email-template cha
   - member `/catalog/new` access and create affordances are now fixed in production
   - manager and owner create paths remain intact
   - `org_member` live RLS checks now pass the core select/insert/update/delete matrix through `rest/v1` with real user JWTs
-  - production signup confirmation still fails back to `/auth/login?error=auth_callback_error...` until the new `/auth/confirm` route is deployed and the Supabase confirmation template is updated
+  - production signup confirmation now works through `/auth/confirm`
+  - a fresh outsider signup correctly lands in the new user’s personal library rather than the requested verification org
 - For concurrent agent work, prefer separate worktrees and branches, and claim file ownership in `Parallel Work Coordination` before editing.
 - For source ingestion, keep the framework generic and isolate IMSLP-specific logic inside an adapter that uses official IMSLP list endpoints for discovery and `api.php` for detailed page extraction before considering HTML scraping.
 - For implementation sequencing, use the task IDs in `docs/specs/imslp-reference-ingestion.md` rather than phase labels; the current starting slice is `T0-1` through `T0-4`, then `T1-1`, `T2-1` through `T2-3`, `T4-1`, and `T5-1`.

@@ -6,9 +6,8 @@ This file is the current priority view for OpusGraph. Keep it short, current, an
 
 ### Signed-in auth and `org_member` RLS verification signoff
 - Status: In progress
-- Why now: The production auth redirect hotfix is deployed, the cloud migration repairs are applied, the hosted publishable-key config is corrected, the dedicated verification fixtures exist, the member catalog-create defect has been fixed, and most app/RLS checks now pass. The remaining gap is rollout of the new server-side signup confirmation flow plus the final auth-flow closeout checks.
+- Why now: The production auth redirect hotfix is deployed, the cloud migration repairs are applied, the hosted publishable-key config is corrected, the dedicated verification fixtures exist, the member catalog-create defect has been fixed, the new server-side signup confirmation flow is live, and most app/RLS checks now pass. The remaining gap is the final auth-flow closeout check for positive admin login return.
 - Scope:
-  - deploy and re-verify the new signup confirmation flow
   - finish the remaining login/signup/callback and post-auth redirect checks
   - verify the remaining positive `/admin/*` login path with a platform admin account
   - record the completed hosted-app and live-RLS outcomes in the runbook and handoff docs
@@ -17,8 +16,8 @@ This file is the current priority view for OpusGraph. Keep it short, current, an
 - Related docs: `docs/AUTH_AND_RLS_VERIFICATION.md`, `docs/templates/auth-rls-verification-checklist.md`, `docs/ARCHITECTURE.md`
 
 ### Auth/RLS failure triage if verification finds defects
-- Status: In progress
-- Why now: Signup confirmation currently fails in production until the new `/auth/confirm` flow and matching email-template change are live, which remains the immediate blocker for auth-verification signoff and further feature work.
+- Status: Planned
+- Why now: Any remaining auth or RLS failure should still block further feature work, but the signup confirmation defect itself is now fixed in production.
 - Scope:
   - isolate failures by boundary: middleware, UI, API authorization, RLS policy, or fixture/setup
   - fix only the verified defect slice
@@ -69,5 +68,5 @@ This file is the current priority view for OpusGraph. Keep it short, current, an
 
 ### Signed-in auth and RLS verification execution
 - Status: Partially blocked
-- Blocker: The new `/auth/confirm` code path is ready locally but still needs deployment plus the matching Supabase email-template update, and the positive `/admin/*` login-return check still needs a usable platform-admin credential path from this shell.
+- Blocker: The positive `/admin/*` login-return check still needs a usable platform-admin credential path from this shell.
 - Runbook: `docs/AUTH_AND_RLS_VERIFICATION.md`
