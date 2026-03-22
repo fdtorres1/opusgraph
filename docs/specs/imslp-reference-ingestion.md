@@ -171,6 +171,29 @@ The plan below is intentionally decomposed into the smallest practical units. Ea
   - `entity_kind = 'composer' | 'work'`
   - adapter key path under `extra_metadata.imslp`
 - Decide JSON key naming inside `external_ids`.
+- Decision:
+  - keep framework entity kinds as `composer` and `work`
+  - keep source-side entity kinds separate as `person` and `work`
+  - store IMSLP provenance under `external_ids.imslp` and adapter-specific enrichment under `extra_metadata.imslp`
+  - use resolved canonical page title plus canonical IMSLP page URL as the durable IMSLP identity
+  - do not treat IMSLP `intvals.pageid` as the primary stable source identifier
+- Recommended `external_ids.imslp` shape:
+
+```json
+{
+  "canonical_title": "Four hands 'Amicizia' (Stankovych, Tatiana)",
+  "canonical_url": "https://imslp.org/wiki/Four_hands_%27Amicizia%27_(Stankovych,_Tatiana)",
+  "source_entity_kind": "work",
+  "list_type": 2,
+  "list_id": "\"Amicizia\" (Stankovych, Tatiana)",
+  "parent_category": "Category:Stankovych, Tatiana"
+}
+```
+
+- Rationale:
+  - IMSLP `type=1` is a broader people/category feed, not a composer-only feed
+  - live IMSLP data shows redirects between list identity and final page identity
+  - canonical title/url is safer than relying on the list `pageid`
 - Output:
   - stable naming rules for code and stored JSON
 
@@ -183,6 +206,17 @@ The plan below is intentionally decomposed into the smallest practical units. Ea
   - `failed`
   - `canceled`
 - Define when a job may transition between states.
+- Decision:
+  - use exactly those six statuses for the first implementation
+  - allow transitions:
+    - `pending -> running | canceled`
+    - `running -> paused | completed | failed | canceled`
+    - `paused -> running | canceled`
+  - treat `completed`, `failed`, and `canceled` as terminal
+  - keep warnings and partial-match concerns in counters and summaries rather than adding extra status values like `completed_with_warnings`
+- Rationale:
+  - this is enough lifecycle for resumable imports without overfitting to IMSLP
+  - keeping status simple makes API behavior and job querying clearer
 - Output:
   - explicit lifecycle rules for API and database logic
 
@@ -192,6 +226,29 @@ The plan below is intentionally decomposed into the smallest practical units. Ea
   - numeric offset
   - structured JSON cursor
 - For IMSLP, define how `start` maps into the generic cursor model.
+- Decision:
+  - use a structured JSON cursor for the framework
+  - map IMSLP `start` into a generic offset-based cursor
+- Recommended cursor shape:
+
+```json
+{
+  "version": 1,
+  "strategy": "offset",
+  "offset": 0,
+  "batch_size": 100,
+  "sort": "id",
+  "source_entity_kind": "person"
+}
+```
+
+- IMSLP mapping:
+  - `offset` maps to `start`
+  - `sort` remains `id`
+  - `source_entity_kind` determines whether the adapter uses IMSLP `type=1` or `type=2`
+- Rationale:
+  - IMSLP exposes offset-style paging, not a durable opaque cursor
+  - idempotency must come from source identity matching, not cursor stability
 - Output:
   - generic cursor contract plus IMSLP mapping
 
@@ -200,6 +257,25 @@ The plan below is intentionally decomposed into the smallest practical units. Ea
   - fetches and parses only
   - includes duplicate detection
   - writes job logs but not entity rows
+- Decision:
+  - dry-run should execute the full read/normalize/match pipeline:
+    - fetch list batches
+    - resolve redirects
+    - fetch detailed page content
+    - parse and normalize candidates
+    - run source-identity lookup
+    - run duplicate detection
+    - compute would-create / would-update / would-flag counts
+  - dry-run may write only job-level records such as status, counters, and error/warning summaries
+  - dry-run must not write:
+    - `composer`
+    - `work`
+    - `review_flag`
+    - `revision`
+    - any other reference-data rows
+- Rationale:
+  - fetch-only dry-run is too weak to validate IMSLP parsing and duplicate behavior
+  - entity-free dry-run is still safe enough for operator preview and repeated testing
 - Output:
   - precise dry-run behavior
 

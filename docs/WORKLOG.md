@@ -258,3 +258,17 @@ Append-only log for implementation, investigation, and planning sessions. Keep e
 - Result:
   - the signed-in auth and `org_member` RLS verification pass is now signed off in production
   - the next active implementation objective is the generic source-ingestion foundation with IMSLP as the first adapter
+
+### IMSLP `T0-1` through `T0-4` decisions grounded against live IMSLP payloads
+- Re-checked the IMSLP source contract directly against:
+  - the official list API documented at `IMSLP:API`
+  - live `type=1` and `type=2` list responses from `API.ISCR.php`
+  - live `api.php` responses for person and work pages
+- Decision updates written into `docs/specs/imslp-reference-ingestion.md`:
+  - canonical IMSLP identity should use resolved page title + canonical page URL, not raw list `pageid`
+  - framework `entity_kind` stays `composer | work`, while source-side IMSLP kinds stay `person | work`
+  - ingest jobs use a six-state lifecycle: `pending`, `running`, `paused`, `completed`, `failed`, `canceled`
+  - the generic cursor should be structured JSON, with IMSLP `start` mapped into an offset model
+  - dry-run should execute fetch, redirect resolution, parse, normalization, and duplicate matching without writing `composer`, `work`, `review_flag`, or `revision`
+- Follow-up:
+  - implement `T1-1`, then `T2-1` through `T2-3` on top of those now-explicit framework decisions
