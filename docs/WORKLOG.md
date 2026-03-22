@@ -219,3 +219,23 @@ Append-only log for implementation, investigation, and planning sessions. Keep e
   - deploy this branch
   - update the Supabase confirmation email template
   - rerun production signup confirmation verification
+
+### Signup confirmation flow deployed and verified in production
+- Created and merged PR #23 (`fix: add server-side signup confirmation flow`).
+- Production now includes:
+  - `app/auth/confirm/route.ts`
+  - narrowed `app/auth/callback/route.ts`
+  - shared `lib/post-auth-redirect.ts`
+- Used the official Supabase Management API with a dashboard access token to update hosted auth config:
+  - `site_url` is now `https://opusgraph.vercel.app`
+  - Confirm signup template now uses:
+    - `{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&type=email&redirect_to={{ .RedirectTo }}`
+- Waited for Vercel to deploy until `/auth/confirm` stopped returning `404`.
+- Re-ran production signup confirmation using a fresh `hashed_token`.
+- Production verification result:
+  - `/auth/confirm` sets the auth session cookie
+  - the first redirect target is the requested verification-org catalog
+  - downstream org access rules redirect the new outsider user to their personal library
+  - final destination was `/library/my-library-...`, which is the correct result for a newly confirmed non-member
+- Remaining auth verification gap:
+  - positive `/admin/review` login-return path for a platform-admin account
