@@ -4,39 +4,9 @@ This file is the current priority view for OpusGraph. Keep it short, current, an
 
 ## Now
 
-### Signed-in auth and `org_member` RLS verification signoff
-- Status: In progress
-- Why now: The production auth redirect hotfix is deployed, the cloud migration repairs are applied, the hosted publishable-key config is corrected, the dedicated verification fixtures exist, the member catalog-create defect has been fixed, the new server-side signup confirmation flow is live, and most app/RLS checks now pass. The remaining gap is the final auth-flow closeout check for positive admin login return.
-- Scope:
-  - finish the remaining login/signup/callback and post-auth redirect checks
-  - verify the remaining positive `/admin/*` login path with a platform admin account
-  - record the completed hosted-app and live-RLS outcomes in the runbook and handoff docs
-- record pass/fail outcomes using the runbook and checklist template
-- Primary spec: `docs/specs/auth-redirect-and-org-member-rls.md`
-- Related docs: `docs/AUTH_AND_RLS_VERIFICATION.md`, `docs/templates/auth-rls-verification-checklist.md`, `docs/ARCHITECTURE.md`
-
-### Auth/RLS failure triage if verification finds defects
-- Status: Planned
-- Why now: Any remaining auth or RLS failure should still block further feature work, but the signup confirmation defect itself is now fixed in production.
-- Scope:
-  - isolate failures by boundary: middleware, UI, API authorization, RLS policy, or fixture/setup
-  - fix only the verified defect slice
-  - re-run the affected verification slice before closing the issue
-- Primary spec: `docs/specs/auth-redirect-and-org-member-rls.md`
-
-## Next
-
-### Reconcile roadmap and handoff docs after auth/RLS signoff
-- Status: Planned
-- Why next: Once verification is complete, the handoff docs need one clean refresh so the current objective and next steps are accurate.
-- Scope:
-  - update `docs/ACTIVE_CONTEXT.md`
-  - append verification outcomes to `docs/WORKLOG.md`
-  - align `docs/ROADMAP.md` with the next active implementation stream
-
 ### Generic source-ingestion foundation with IMSLP as the first adapter
-- Status: Planned
-- Why next: After auth/RLS signoff, this is the highest-leverage engineering initiative already decomposed into an implementation-ready spec.
+- Status: Ready to start
+- Why now: Auth/RLS verification is now signed off in production, and the ingestion plan is already decomposed into an implementation-ready sequence.
 - Scope:
   - add a platform-agnostic ingestion framework with jobs, cursors, provenance, and review handling
   - implement IMSLP as the first source adapter for composer and work seeding
@@ -49,24 +19,31 @@ This file is the current priority view for OpusGraph. Keep it short, current, an
   - `T4-1` and `T5-1` for initial job creation flow
 - Primary spec: `docs/specs/imslp-reference-ingestion.md`
 
+## Next
+
 ### Implement the remaining Phase 0 and Phase 1 library management work
 - Status: Planned
 - Reference: `docs/DECOMPOSITION.md`
 - Notes: This includes orgs, library entries, tags, comments, performances, import, activity, and settings flows.
 
-## Later
-
-### Billing and commercial packaging
-- Status: Not started
+### Billing and commercial packaging spec
+- Status: Planned
 - Notes: Billing is conceptually org-scoped and personal-org aware, but the implementation plan needs a dedicated product and technical spec before execution.
+
+## Later
 
 ### Venture-studio operating model across projects
 - Status: Emerging
 - Notes: This should influence how docs and specs are structured, but the current implementation remains repo-local and product-specific.
 
-## Blocked
+## Recently Completed
 
-### Signed-in auth and RLS verification execution
-- Status: Partially blocked
-- Blocker: The positive `/admin/*` login-return check still needs a usable platform-admin credential path from this shell.
+### Signed-in auth and `org_member` RLS verification signoff
+- Status: Complete
+- Outcome:
+  - production login redirect preservation passed for library and admin paths
+  - outsider admin fallback passed
+  - owner requested-route return passed
+  - signup confirmation now works through `/auth/confirm`
+  - live `org_member` RLS checks passed the core role matrix
 - Runbook: `docs/AUTH_AND_RLS_VERIFICATION.md`

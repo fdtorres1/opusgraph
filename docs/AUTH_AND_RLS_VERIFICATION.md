@@ -89,6 +89,19 @@ Production verification as of 2026-03-21:
   - the initial redirect target is the requested org catalog
   - downstream org access rules correctly fall the new outsider user back to their personal library
 
+Production verification as of 2026-03-22:
+- Positive admin login-return now also passes:
+  - logged-out `/admin/review` redirects to `/auth/login?redirect=%2Fadmin%2Freview`
+  - a real platform-admin user with `user_profile.admin_role = contributor` logs in successfully
+  - the final destination is `/admin/review`
+- Regression spot-checks also passed:
+  - a non-admin login from `/admin/review` still falls back to that user's personal library
+  - an owner login from `/library/<org-slug>/catalog?view=all` still returns to the requested route
+
+Signoff status as of 2026-03-22:
+- The auth redirect and `org_member` RLS verification run is complete in production.
+- Future auth work should be treated as new defects or enhancements, not as unfinished verification from this runbook.
+
 ## org_member RLS Checks
 
 Run these in the Supabase SQL editor or with `psql`, impersonating each user through the app/session where possible. If direct SQL impersonation is impractical, the equivalent proof can be collected by authenticating real users and calling `rest/v1` directly with their access tokens. The goal is to prove that the policies no longer recurse and that access is correct by role.
