@@ -8,7 +8,7 @@ Start the generic source-ingestion foundation with IMSLP as the first adapter no
 
 ## Current Branch
 
-- `docs/imslp-t0-decisions`
+- `feat/source-ingest-job-schema`
 
 ## Parallel Work Coordination
 
@@ -25,14 +25,14 @@ Start the generic source-ingestion foundation with IMSLP as the first adapter no
 
 - Agent: current Codex session
   - Worktree: current checkout at `/Volumes/Felix-SSD-1/Cursor Projects/opusgraph`
-  - Branch: `docs/imslp-t0-decisions`
-  - Scope: codify IMSLP-grounded `T0-1` through `T0-4` ingestion decisions in the spec and handoff docs
+  - Branch: `feat/source-ingest-job-schema`
+  - Scope: implement `T1-1` by adding the queue-ready `source_ingest_job` migration and refreshing handoff docs
   - File ownership:
     - `docs/ACTIVE_CONTEXT.md`
-    - `docs/specs/imslp-reference-ingestion.md`
+    - `supabase/migrations/0016_source_ingest_job.sql`
     - `docs/WORKLOG.md`
   - Status: active
-  - Notes: auth/RLS is already signed off; current task is to lock the first ingestion-framework decisions before schema and TypeScript implementation starts
+  - Notes: auth/RLS is already signed off; `T0-1` through `T0-4` are now explicit in the spec, and the current task is the first schema slice
 
 ## In Progress
 
@@ -103,17 +103,20 @@ Start the generic source-ingestion foundation with IMSLP as the first adapter no
   - the plan has been revised so the target architecture is a generic source-ingestion framework with IMSLP as the first adapter
   - the spec is now decomposed into smallest-unit execution tasks with task IDs `T0-*` through `T12-*`, explicit dependencies, and a recommended first-10-task sequence
   - a focused spec now exists at `docs/specs/imslp-reference-ingestion.md`
-- IMSLP-grounded `T0-1` through `T0-4` decisions are now being codified:
+- IMSLP-grounded `T0-1` through `T0-4` decisions are now codified in the spec:
   - use canonical resolved IMSLP page title + URL as durable source identity rather than raw list `pageid`
   - keep a simple six-state ingest job lifecycle
   - use a structured JSON cursor that maps IMSLP `start` into a generic offset model
   - define dry-run as full fetch/parse/match simulation without any composer/work/review writes
+- `T1-1` is now in flight:
+  - `0016_source_ingest_job.sql` introduces a queue-ready ingestion job control-plane table
+  - the migration uses the existing `entity_kind` enum, new job status/mode enums, JSONB cursor/options/summaries, execution counters, retry fields, claim/heartbeat fields, and `updated_at` trigger support
 
 ## Next 3 Steps
 
-1. Start `T0-1` through `T0-4` from `docs/specs/imslp-reference-ingestion.md` to lock the generic ingestion boundaries, job model, and review/provenance decisions.
-2. Implement `T1-1`, then `T2-1` through `T2-3` so the repo has the first generic ingestion job table, TypeScript contracts, and adapter interface.
-3. Move into `T4-1` and `T5-1` to create the first ingestion job flow and the IMSLP adapter bootstrap once the framework slice is in place.
+1. Review and land `0016_source_ingest_job.sql`, then verify the migration shape against local schema conventions.
+2. Implement `T2-1` through `T2-3` so the repo has generic ingest job types, normalized candidate types, and the first adapter contract.
+3. Move into `T4-1` and `T5-1` to create the first ingestion job flow and the IMSLP adapter bootstrap once the schema/type slice is in place.
 
 ## Known Blockers
 
@@ -186,4 +189,5 @@ Start the generic source-ingestion foundation with IMSLP as the first adapter no
 - For concurrent agent work, prefer separate worktrees and branches, and claim file ownership in `Parallel Work Coordination` before editing.
 - For source ingestion, keep the framework generic and isolate IMSLP-specific logic inside an adapter that uses official IMSLP list endpoints for discovery and `api.php` for detailed page extraction before considering HTML scraping.
 - For implementation sequencing, use the task IDs in `docs/specs/imslp-reference-ingestion.md` rather than phase labels; the current starting slice is `T0-1` through `T0-4`, then `T1-1`, `T2-1` through `T2-3`, `T4-1`, and `T5-1`.
+- `T1-1` currently uses a queue-ready control-plane design rather than a minimal passive log table because large backfills are expected.
 - Prefer updating the worklog and this file before ending a session.

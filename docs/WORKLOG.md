@@ -272,3 +272,29 @@ Append-only log for implementation, investigation, and planning sessions. Keep e
   - dry-run should execute fetch, redirect resolution, parse, normalization, and duplicate matching without writing `composer`, `work`, `review_flag`, or `revision`
 - Follow-up:
   - implement `T1-1`, then `T2-1` through `T2-3` on top of those now-explicit framework decisions
+
+### `T1-1` queue-ready ingestion job schema implemented
+- Added `supabase/migrations/0016_source_ingest_job.sql`.
+- The migration introduces:
+  - `source_ingest_job_status` enum
+  - `source_ingest_job_mode` enum
+  - `source_ingest_job` table using the existing `entity_kind` enum
+  - queue/executor-oriented fields such as:
+    - `priority`
+    - `attempt_count`
+    - `next_retry_at`
+    - `claimed_by`
+    - `claimed_at`
+    - `last_heartbeat_at`
+  - JSONB control-plane fields:
+    - `cursor`
+    - `options`
+    - `error_summary`
+    - `warning_summary`
+    - `result_summary`
+  - first-class execution counters and `updated_at` trigger support
+- Design choice:
+  - `created_by` remains a plain `uuid` without a cross-schema FK to `auth.users`, matching the repo's existing auth-user portability pattern
+- Follow-up:
+  - review the migration shape
+  - implement `T2-1` through `T2-3`
