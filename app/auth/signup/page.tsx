@@ -27,16 +27,15 @@ export default function SignUpPage() {
     setLoading(true);
     setError(null);
 
-    const callbackUrl = new URL("/auth/callback", window.location.origin);
-    if (requestedRedirect) {
-      callbackUrl.searchParams.set("redirect", requestedRedirect);
-    }
-
     const { error } = await supabase.auth.signUp({
       email,
       password,
       options: {
-        emailRedirectTo: callbackUrl.toString(),
+        // This should be consumed by the Supabase email template and forwarded to
+        // `/auth/confirm?token_hash=...&type=...&redirect_to={{ .RedirectTo }}`.
+        emailRedirectTo: requestedRedirect
+          ? new URL(requestedRedirect, window.location.origin).toString()
+          : undefined,
       },
     });
 

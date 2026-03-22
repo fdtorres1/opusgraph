@@ -64,6 +64,23 @@ Expected:
 - The callback receives the original internal redirect target.
 - After confirmation, the user is sent to the requested library page when authorized.
 
+Current production finding from 2026-03-21:
+- Admin-generated signup confirmation currently fails after Supabase verification redirects back to `/auth/callback`.
+- The live flow ends at `/auth/login?error=auth_callback_error&redirect=%2Flibrary%2F<org-slug>%2Fcatalog`.
+- The current callback route only handles `code` exchange and does not handle the email-confirmation token shape returned by the Supabase verify flow.
+
+Current fix direction as of 2026-03-21:
+- Add a dedicated server-side `/auth/confirm` route that verifies `token_hash` + `type` with `supabase.auth.verifyOtp(...)`.
+- Keep `/auth/callback` for the `?code=...` path only.
+- The Supabase confirmation email template must be updated to point at `/auth/confirm` using a server-visible URL shape such as:
+
+```text
+{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&type=email&redirect_to={{ .RedirectTo }}
+```
+
+- `emailRedirectTo` should carry the final intended in-app destination, not `/auth/callback`.
+- A direct local verification using a fresh `hashed_token` already confirms that `/auth/confirm` can establish a session and redirect the user to their personal library when they are not a member of the requested org.
+
 ## org_member RLS Checks
 
 Run these in the Supabase SQL editor or with `psql`, impersonating each user through the app/session where possible. If direct SQL impersonation is impractical, the equivalent proof can be collected by authenticating real users and calling `rest/v1` directly with their access tokens. The goal is to prove that the policies no longer recurse and that access is correct by role.

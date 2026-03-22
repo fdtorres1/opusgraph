@@ -4,11 +4,11 @@ This is the canonical handoff file for the next session. Rewrite freely as prior
 
 ## Current Objective
 
-Finish the remaining auth-verification closeout checks, then mark the signed-in auth and `org_member` RLS verification complete before starting IMSLP ingestion implementation.
+Deploy the new signup confirmation flow and matching Supabase email-template change, then finish auth-verification closeout and mark the signed-in auth and `org_member` RLS verification complete before starting IMSLP ingestion implementation.
 
 ## Current Branch
 
-- `docs/auth-rls-verification-progress`
+- `fix/signup-confirm-flow`
 
 ## Parallel Work Coordination
 
@@ -25,15 +25,20 @@ Finish the remaining auth-verification closeout checks, then mark the signed-in 
 
 - Agent: current Codex session
   - Worktree: current checkout at `/Volumes/Felix-SSD-1/Cursor Projects/opusgraph`
-  - Branch: `docs/auth-rls-verification-progress`
-  - Scope: post-deploy verification closeout and handoff refresh
+  - Branch: `fix/signup-confirm-flow`
+  - Scope: implement the server-side signup confirmation flow and leave the rollout handoff clean
   - File ownership:
     - `docs/ACTIVE_CONTEXT.md`
     - `docs/AUTH_AND_RLS_VERIFICATION.md`
     - `docs/ROADMAP.md`
     - `docs/WORKLOG.md`
+    - `app/auth/callback/route.ts`
+    - `app/auth/confirm/route.ts`
+    - `app/auth/signup/page.tsx`
+    - `lib/auth-redirect.ts`
+    - `lib/post-auth-redirect.ts`
   - Status: active
-  - Notes: member-catalog-create fix is merged and deployed; current task is to close the remaining verification gaps and leave a clean handoff
+  - Notes: member-catalog-create fix is merged and deployed; current task is to finish the signup confirmation rollout cleanly and leave the handoff explicit
 
 ## In Progress
 
@@ -75,6 +80,19 @@ Finish the remaining auth-verification closeout checks, then mark the signed-in 
   - `owner` update/delete succeeds
   - `manager` update/delete noop because the row is not writable/visible under policy
   - outsider cleanup was confirmed after mutation checks
+- Admin-generated signup confirmation has now been exercised directly against the live Supabase verify endpoint:
+  - Supabase verification preserves the canonical `redirect` target back to `/auth/callback`
+  - the live flow currently lands on `/auth/login?error=auth_callback_error&redirect=%2Flibrary%2Fauth-rls-verification-20260320%2Fcatalog`
+  - the current callback route only handles `code` exchange and does not handle the email-confirmation token shape returned by the signup verification flow
+- A new server-side confirmation flow is now implemented locally:
+  - `/auth/confirm` verifies `token_hash` + `type` with `verifyOtp(...)`
+  - `/auth/callback` now remains the `?code=...` path
+  - post-auth redirect policy is shared in `lib/post-auth-redirect.ts`
+  - safe redirect parsing now also supports same-origin `redirect_to` URLs
+- Local end-to-end verification of `/auth/confirm` against the live Supabase project passed:
+  - a fresh `hashed_token` from `auth.admin.generateLink({ type: "signup" })` was sent to `http://localhost:3000/auth/confirm`
+  - the route established a session cookie
+  - the final destination was the new user’s personal library, not the requested verification-org catalog
 - IMSLP ingestion planning review is complete:
   - the current reference import pipeline is CSV-only
   - admin CRUD, duplicate review, `external_ids`, `extra_metadata`, `review_flag`, and `revision` provide reusable building blocks
@@ -85,15 +103,15 @@ Finish the remaining auth-verification closeout checks, then mark the signed-in 
 
 ## Next 3 Steps
 
-1. Execute the signed-in verification matrix from `docs/AUTH_AND_RLS_VERIFICATION.md` using `docs/templates/auth-rls-verification-checklist.md` with real owner, manager, member, and non-member test users.
-2. Verify the remaining positive `/admin/review` login-return path with a platform-admin account if a usable credential path is available.
-3. Finish signup confirmation/callback verification, then refresh the handoff docs and begin `T0-1` through `T0-4`, then `T1-1`, `T2-1` through `T2-3`, `T4-1`, and `T5-1` from `docs/specs/imslp-reference-ingestion.md` if auth verification is fully signed off.
+1. Deploy `fix/signup-confirm-flow` and update the Supabase confirmation email template to target `/auth/confirm?token_hash=...&type=email&redirect_to={{ .RedirectTo }}`.
+2. Re-run the signup confirmation flow against production and confirm the final post-confirmation destination is correct for a new non-member user.
+3. Verify the remaining positive `/admin/review` login-return path with a platform-admin account, then refresh the handoff docs and begin `T0-1` through `T0-4`, then `T1-1`, `T2-1` through `T2-3`, `T4-1`, and `T5-1` from `docs/specs/imslp-reference-ingestion.md` if auth verification is fully signed off.
 
 ## Known Blockers
 
 - This session has no local `.env` file and no running local Supabase stack, so the cloud environment remains the practical verification target.
 - The positive platform-admin login check is still pending because this shell does not currently have a clean noninteractive path to the admin-app credential.
-- Fresh public signup attempts are currently rate-limited by Supabase email sending, so signup/callback proof needs either a wait period or an admin-generated confirmation-link path.
+- Production still needs the matching Supabase email-template change before the new `/auth/confirm` flow becomes live.
 - IMSLP implementation should not start until auth/RLS verification is either signed off or narrowed into a known follow-up fix slice.
 
 ## Key Files
@@ -102,7 +120,9 @@ Finish the remaining auth-verification closeout checks, then mark the signed-in 
 - `app/auth/login/page.tsx`
 - `app/auth/signup/page.tsx`
 - `app/auth/callback/route.ts`
+- `app/auth/confirm/route.ts`
 - `lib/auth-redirect.ts`
+- `lib/post-auth-redirect.ts`
 - `supabase/migrations/0005_organizations.sql`
 - `supabase/migrations/0013_fix_org_member_rls.sql`
 - `supabase/migrations/0014_backfill_org_member_rls_helpers.sql`
@@ -117,6 +137,7 @@ Finish the remaining auth-verification closeout checks, then mark the signed-in 
 - `/auth/login`
 - `/auth/signup`
 - `/auth/callback`
+- `/auth/confirm`
 - `/admin/*`
 - `/library/[orgSlug]/*`
 
@@ -152,6 +173,7 @@ Finish the remaining auth-verification closeout checks, then mark the signed-in 
   - member `/catalog/new` access and create affordances are now fixed in production
   - manager and owner create paths remain intact
   - `org_member` live RLS checks now pass the core select/insert/update/delete matrix through `rest/v1` with real user JWTs
+  - production signup confirmation still fails back to `/auth/login?error=auth_callback_error...` until the new `/auth/confirm` route is deployed and the Supabase confirmation template is updated
 - For concurrent agent work, prefer separate worktrees and branches, and claim file ownership in `Parallel Work Coordination` before editing.
 - For source ingestion, keep the framework generic and isolate IMSLP-specific logic inside an adapter that uses official IMSLP list endpoints for discovery and `api.php` for detailed page extraction before considering HTML scraping.
 - For implementation sequencing, use the task IDs in `docs/specs/imslp-reference-ingestion.md` rather than phase labels; the current starting slice is `T0-1` through `T0-4`, then `T1-1`, `T2-1` through `T2-3`, `T4-1`, and `T5-1`.
