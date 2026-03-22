@@ -239,3 +239,22 @@ Append-only log for implementation, investigation, and planning sessions. Keep e
   - final destination was `/library/my-library-...`, which is the correct result for a newly confirmed non-member
 - Remaining auth verification gap:
   - positive `/admin/review` login-return path for a platform-admin account
+
+## 2026-03-22
+
+### Final auth/RLS verification signoff completed
+- Created a dedicated platform-admin verification user:
+  - `auth-rls-admin-20260322@example.com`
+  - `user_profile.admin_role = contributor`
+  - credentials stored in 1Password under `Sage-Openclaw`
+- Verified the final positive admin redirect flow in production:
+  - logged-out `/admin/review` redirects to `/auth/login?redirect=%2Fadmin%2Freview`
+  - successful admin login returns to `/admin/review`
+  - the final page is the real review screen, not a fallback destination
+- Re-ran the highest-signal auth regressions:
+  - outsider login from `/admin/review` still falls back to the outsider personal library
+  - owner login from `/library/auth-rls-verification-20260320/catalog?view=all` still returns to the requested route
+  - production signup confirmation through `/auth/confirm` still lands a fresh outsider in the new user’s personal library
+- Result:
+  - the signed-in auth and `org_member` RLS verification pass is now signed off in production
+  - the next active implementation objective is the generic source-ingestion foundation with IMSLP as the first adapter

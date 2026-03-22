@@ -4,11 +4,11 @@ This is the canonical handoff file for the next session. Rewrite freely as prior
 
 ## Current Objective
 
-Finish the remaining auth-verification closeout checks, then mark the signed-in auth and `org_member` RLS verification complete before starting IMSLP ingestion implementation.
+Start the generic source-ingestion foundation with IMSLP as the first adapter now that the signed-in auth and `org_member` RLS verification pass is complete.
 
 ## Current Branch
 
-- `main`
+- `docs/auth-rls-signoff`
 
 ## Parallel Work Coordination
 
@@ -25,8 +25,8 @@ Finish the remaining auth-verification closeout checks, then mark the signed-in 
 
 - Agent: current Codex session
   - Worktree: current checkout at `/Volumes/Felix-SSD-1/Cursor Projects/opusgraph`
-  - Branch: `main`
-  - Scope: production auth-verification closeout and handoff refresh
+  - Branch: `docs/auth-rls-signoff`
+  - Scope: auth/RLS signoff doc closeout and handoff transition to IMSLP
   - File ownership:
     - `docs/ACTIVE_CONTEXT.md`
     - `docs/AUTH_AND_RLS_VERIFICATION.md`
@@ -92,6 +92,11 @@ Finish the remaining auth-verification closeout checks, then mark the signed-in 
   - a fresh production `token_hash` sets the session cookie on `/auth/confirm`
   - the flow first redirects to the requested verification-org catalog
   - downstream org access rules correctly fall the new outsider user back to their personal library
+- Final production auth/RLS signoff checks now pass:
+  - a real platform-admin login from `/admin/review` returns to `/admin/review`
+  - a non-admin login from `/admin/review` still falls back to the user's personal library
+  - owner login from `/library/auth-rls-verification-20260320/catalog?view=all` still returns to the requested route
+  - auth/RLS verification is now complete and no longer the active implementation blocker
 - IMSLP ingestion planning review is complete:
   - the current reference import pipeline is CSV-only
   - admin CRUD, duplicate review, `external_ids`, `extra_metadata`, `review_flag`, and `revision` provide reusable building blocks
@@ -102,15 +107,14 @@ Finish the remaining auth-verification closeout checks, then mark the signed-in 
 
 ## Next 3 Steps
 
-1. Verify the remaining positive `/admin/review` login-return path with a platform-admin account.
-2. Write the final auth/RLS verification signoff summary in the runbook and worklog if the admin path passes.
-3. Begin `T0-1` through `T0-4`, then `T1-1`, `T2-1` through `T2-3`, `T4-1`, and `T5-1` from `docs/specs/imslp-reference-ingestion.md` once auth verification is fully signed off.
+1. Start `T0-1` through `T0-4` from `docs/specs/imslp-reference-ingestion.md` to lock the generic ingestion boundaries, job model, and review/provenance decisions.
+2. Implement `T1-1`, then `T2-1` through `T2-3` so the repo has the first generic ingestion job table, TypeScript contracts, and adapter interface.
+3. Move into `T4-1` and `T5-1` to create the first ingestion job flow and the IMSLP adapter bootstrap once the framework slice is in place.
 
 ## Known Blockers
 
 - This session has no local `.env` file and no running local Supabase stack, so the cloud environment remains the practical verification target.
-- The positive platform-admin login check is still pending because this shell does not currently have a clean noninteractive path to the admin-app credential.
-- IMSLP implementation should not start until auth/RLS verification is either signed off or narrowed into a known follow-up fix slice.
+- IMSLP implementation still depends on staying disciplined about the generic adapter boundary so the first IMSLP slice does not collapse back into a one-off importer.
 
 ## Key Files
 
@@ -157,7 +161,8 @@ Finish the remaining auth-verification closeout checks, then mark the signed-in 
 - Keep `0013` historically representative. Use `0014` as the upgrade repair path.
 - Keep `0015` as the forward repair for the auth bootstrap trigger; do not rewrite `0005` again without a deliberate migration-history decision.
 - Non-admin users should never be bounced back into `/admin/*` after auth.
-- The current stack-ranked order is: remaining auth-verification closeout, auth/RLS failure triage if anything else appears, handoff-doc reconciliation, then IMSLP ingestion implementation.
+- The auth/RLS verification pass is signed off in production; use `docs/AUTH_AND_RLS_VERIFICATION.md` as historical evidence rather than as the active objective.
+- The current stack-ranked order is: IMSLP ingestion foundation, then remaining library-management roadmap work, then billing/commercial packaging.
 - The live verification fixture is:
   - org slug `auth-rls-verification-20260320`
   - org id `6228fd52-3a52-49b1-a3fa-50d8bf3a4d00`
@@ -167,6 +172,7 @@ Finish the remaining auth-verification closeout checks, then mark the signed-in 
   - outsider `auth-rls-outsider-20260320@example.com`
 - The latest hosted verification findings are:
   - owner redirect/login works
+  - platform-admin `/admin/review` login-return works
   - outsider fallback works for both `/admin/*` and another org's library route
   - member `/catalog/new` access and create affordances are now fixed in production
   - manager and owner create paths remain intact
