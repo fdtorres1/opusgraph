@@ -8,7 +8,7 @@ Start the generic source-ingestion foundation with IMSLP as the first adapter no
 
 ## Current Branch
 
-- `docs/auth-rls-signoff`
+- `docs/imslp-t0-decisions`
 
 ## Parallel Work Coordination
 
@@ -25,15 +25,14 @@ Start the generic source-ingestion foundation with IMSLP as the first adapter no
 
 - Agent: current Codex session
   - Worktree: current checkout at `/Volumes/Felix-SSD-1/Cursor Projects/opusgraph`
-  - Branch: `docs/auth-rls-signoff`
-  - Scope: auth/RLS signoff doc closeout and handoff transition to IMSLP
+  - Branch: `docs/imslp-t0-decisions`
+  - Scope: codify IMSLP-grounded `T0-1` through `T0-4` ingestion decisions in the spec and handoff docs
   - File ownership:
     - `docs/ACTIVE_CONTEXT.md`
-    - `docs/AUTH_AND_RLS_VERIFICATION.md`
-    - `docs/ROADMAP.md`
+    - `docs/specs/imslp-reference-ingestion.md`
     - `docs/WORKLOG.md`
   - Status: active
-  - Notes: member-catalog-create and signup-confirm fixes are merged and deployed; current task is to close the final verification gap and leave a clean handoff
+  - Notes: auth/RLS is already signed off; current task is to lock the first ingestion-framework decisions before schema and TypeScript implementation starts
 
 ## In Progress
 
@@ -104,6 +103,11 @@ Start the generic source-ingestion foundation with IMSLP as the first adapter no
   - the plan has been revised so the target architecture is a generic source-ingestion framework with IMSLP as the first adapter
   - the spec is now decomposed into smallest-unit execution tasks with task IDs `T0-*` through `T12-*`, explicit dependencies, and a recommended first-10-task sequence
   - a focused spec now exists at `docs/specs/imslp-reference-ingestion.md`
+- IMSLP-grounded `T0-1` through `T0-4` decisions are now being codified:
+  - use canonical resolved IMSLP page title + URL as durable source identity rather than raw list `pageid`
+  - keep a simple six-state ingest job lifecycle
+  - use a structured JSON cursor that maps IMSLP `start` into a generic offset model
+  - define dry-run as full fetch/parse/match simulation without any composer/work/review writes
 
 ## Next 3 Steps
 
