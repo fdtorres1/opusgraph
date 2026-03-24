@@ -298,3 +298,14 @@ Append-only log for implementation, investigation, and planning sessions. Keep e
 - Follow-up:
   - review the migration shape
   - implement `T2-1` through `T2-3`
+
+### Manual backup path documented; home-network IPv6 issue confirmed
+- Verified that Supabase-managed backups/PITR are not currently available for the OpusGraph project through the management API.
+- Confirmed the direct database host is IPv6-only and does not have a usable route from the home network.
+- Confirmed the direct `psql`/`pg_dump` path works from the phone/mobile network instead.
+- Created a successful manual logical backup artifact:
+  - `/Users/felixtorres/backups/opusgraph-20260324-110603.dump`
+- Operational decision for now:
+  - do not pay for timed/managed backups yet
+  - use manual logical backups before linked-cloud migration work
+  - if backing up from this machine, switch to the phone/mobile network until the home-network IPv6 issue is solved

@@ -2,6 +2,19 @@
 
 Record durable product and architecture decisions here. Keep entries brief and biased toward rationale and consequences.
 
+## 2026-03-24: Use manual logical backups instead of managed timed backups for now
+
+- Decision: Do not enable paid managed/timed Supabase backups yet for OpusGraph. Until that changes, create manual logical backups before linked-cloud migration work.
+- Context: The Supabase management API showed that managed backups/PITR are not currently available on the project. Manual backup testing also showed that the direct database host is IPv6-only and unreachable from the home network, while the same direct `psql`/`pg_dump` path works on the phone/mobile network.
+- Why:
+  - avoids paying for managed backups before they are needed
+  - still preserves a repeatable recovery step before schema changes
+  - captures the current network constraint so future sessions do not waste time retrying broken home-network backup paths
+- Consequences:
+  - before applying linked-cloud migrations, create or verify a fresh manual logical backup if the existing backup is no longer recent enough
+  - use the phone/mobile network when running direct `psql` or `pg_dump` from this machine until the home-network IPv6 issue is fixed
+  - if the project’s operational risk or migration frequency increases, revisit enabling managed backups/PITR
+
 ## 2026-03-20: Catalog creation must be owner-or-manager only at both UI and route levels
 
 - Decision: Treat library-entry creation as an owner/manager capability everywhere, not just at the API layer. Members must not see create affordances and must be redirected away from `/library/[orgSlug]/catalog/new`.
