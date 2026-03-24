@@ -4,11 +4,11 @@ This is the canonical handoff file for the next session. Rewrite freely as prior
 
 ## Current Objective
 
-Continue the generic source-ingestion foundation with IMSLP as the first adapter now that `T1-1` is merged and the current operational constraint around manual backups is documented.
+Continue the generic source-ingestion foundation with IMSLP as the first adapter now that `0016_source_ingest_job.sql` is applied in the linked cloud and the next implementation slice is `T2-1` through `T2-3`.
 
 ## Current Branch
 
-- `docs/backup-network-note`
+- `docs/source-ingest-migration-applied`
 
 ## Parallel Work Coordination
 
@@ -25,14 +25,14 @@ Continue the generic source-ingestion foundation with IMSLP as the first adapter
 
 - Agent: current Codex session
   - Worktree: current checkout at `/Volumes/Felix-SSD-1/Cursor Projects/opusgraph`
-  - Branch: `docs/backup-network-note`
-  - Scope: document the current backup/network constraint and the manual backup procedure before applying linked-cloud migrations
+  - Branch: `docs/source-ingest-migration-applied`
+  - Scope: record that the manual backup succeeded, `0016_source_ingest_job.sql` is now applied in the linked cloud, and the next active work is `T2-*`
   - File ownership:
     - `docs/ACTIVE_CONTEXT.md`
-    - `docs/DECISIONS.md`
+    - `docs/ROADMAP.md`
     - `docs/WORKLOG.md`
   - Status: active
-  - Notes: auth/RLS is already signed off; `T1-1` is merged, and the current task is to capture the backup/network requirement clearly before further linked-cloud migration work
+  - Notes: auth/RLS is already signed off; the manual backup requirement remains in force for future linked-cloud migrations, but `0016` has now been applied successfully and the next task slice is generic ingest types and adapter contracts
 
 ## In Progress
 
@@ -112,6 +112,11 @@ Continue the generic source-ingestion foundation with IMSLP as the first adapter
 - `T1-1` is now merged:
   - `0016_source_ingest_job.sql` introduces a queue-ready ingestion job control-plane table
   - the migration uses the existing `entity_kind` enum, new job status/mode enums, JSONB cursor/options/summaries, execution counters, retry fields, claim/heartbeat fields, and `updated_at` trigger support
+- `T1-1` is now applied to the linked Supabase cloud project:
+  - a fresh manual logical backup was verified first at `/Users/felixtorres/backups/opusgraph-20260324-110603.dump`
+  - the old remote-only `0002` migration-history mismatch was repaired with `supabase migration repair --status reverted 0002`
+  - `supabase db push --linked --include-all` then replayed the harmless `0002_add_activity_view_rls.sql` comment migration and applied `0016_source_ingest_job.sql`
+  - post-apply verification confirmed the new enums, `source_ingest_job` table, and `trg_source_ingest_job_updated_at` trigger exist in the linked cloud database
 - Current backup/recovery constraint:
   - Supabase-managed backups/PITR are not enabled for the OpusGraph project right now
   - manual logical backup is the current safety path before linked-cloud schema changes
@@ -122,9 +127,9 @@ Continue the generic source-ingestion foundation with IMSLP as the first adapter
 
 ## Next 3 Steps
 
-1. Before applying new linked-cloud migrations, create or confirm a fresh manual backup while on the phone/mobile network if needed, then apply `0016_source_ingest_job.sql`.
-2. Implement `T2-1` through `T2-3` so the repo has generic ingest job types, normalized candidate types, and the first adapter contract.
-3. Move into `T4-1` and `T5-1` once the schema/type slice is in place.
+1. Implement `T2-1` through `T2-3` so the repo has generic ingest job types, normalized candidate types, and the first adapter contract.
+2. Move into `T4-1` and `T5-1` once the schema/type slice is in place.
+3. Before any future linked-cloud migration, create or confirm a fresh manual backup while on the phone/mobile network until the home-network IPv6 issue is fixed or managed backups are enabled.
 
 ## Known Blockers
 

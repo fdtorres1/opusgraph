@@ -259,6 +259,30 @@ Append-only log for implementation, investigation, and planning sessions. Keep e
   - the signed-in auth and `org_member` RLS verification pass is now signed off in production
   - the next active implementation objective is the generic source-ingestion foundation with IMSLP as the first adapter
 
+## 2026-03-24
+
+### Manual backup verified and `0016_source_ingest_job.sql` applied to the linked cloud project
+- Re-verified the manual logical backup artifact:
+  - `/Users/felixtorres/backups/opusgraph-20260324-110603.dump`
+  - `pg_restore --list` succeeds and shows a valid custom-format dump from Postgres `17.6`
+- Confirmed the longstanding migration-history wrinkle still existed in the linked cloud project:
+  - remote-only orphaned `0002`
+  - local-only `0002` entry in normal `supabase migration list --linked` output
+- Repaired the remote history entry using the CLI-recommended command:
+  - `supabase migration repair --status reverted 0002`
+- Applied the pending linked-cloud migrations with:
+  - `supabase db push --linked --include-all`
+- Result:
+  - harmless `0002_add_activity_view_rls.sql` comment migration replayed
+  - `0016_source_ingest_job.sql` applied successfully
+  - post-apply verification confirmed:
+    - enums `source_ingest_job_status` and `source_ingest_job_mode`
+    - table `public.source_ingest_job`
+    - trigger `trg_source_ingest_job_updated_at`
+- Follow-up:
+  - start `T2-1` through `T2-3`
+  - continue requiring a fresh manual backup on the phone/mobile network before future linked-cloud migrations until the home-network IPv6 issue is fixed or managed backups are enabled
+
 ### IMSLP `T0-1` through `T0-4` decisions grounded against live IMSLP payloads
 - Re-checked the IMSLP source contract directly against:
   - the official list API documented at `IMSLP:API`
