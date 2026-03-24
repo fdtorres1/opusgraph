@@ -79,20 +79,19 @@ tags: relevant, keywords
 
 **Incorrect (description):**
 
-```sql
+~~~sql
 -- Comment explaining what's wrong
 [Bad SQL example]
-```
-````
+~~~
 
 **Correct (description):**
 
-```sql
+~~~sql
 -- Comment explaining why this is better
 [Good SQL example]
-```
+~~~
 
-```
+````
 ## Writing Guidelines
 
 See `references/_contributing.md` for detailed guidelines. Key principles:

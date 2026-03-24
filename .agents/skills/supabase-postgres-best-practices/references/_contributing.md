@@ -103,22 +103,22 @@ Most references should focus on pure SQL patterns. This keeps examples portable.
 ````markdown
 **Incorrect (N+1 in application):**
 
-```typescript
+~~~typescript
 for (const user of users) {
   const posts = await db.query("SELECT * FROM posts WHERE user_id = $1", [
-    user.id,
+  user.id,
   ]);
 }
-```
-````
+~~~
 
 **Correct (batch query):**
 
-```typescript
+~~~typescript
 const posts = await db.query("SELECT * FROM posts WHERE user_id = ANY($1)", [
   userIds,
 ]);
-```
+~~~
+````
 
 ---
 
