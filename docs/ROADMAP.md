@@ -6,15 +6,15 @@ This file is the current priority view for OpusGraph. Keep it short, current, an
 
 ### Generic source-ingestion foundation with IMSLP as the first adapter
 - Status: In progress
-- Why now: Auth/RLS verification is signed off in production, `T0-1` through `T0-4` are codified, `T1-1` is merged and now applied in the linked cloud, and the next active slice is the generic ingest type/adapter layer.
+- Why now: Auth/RLS verification is signed off in production, `T0-1` through `T0-4` are codified, `T1-1` is applied in the linked cloud, and both the ingest type layer and persistence groundwork are now in place.
 - Scope:
   - add a platform-agnostic ingestion framework with jobs, cursors, provenance, and review handling
   - implement IMSLP as the first source adapter for composer and work seeding
   - use source identity in `external_ids` and raw payloads in `extra_metadata`
   - route ambiguous matches into `review_flag` instead of auto-merging
 - Immediate task slice:
-  - `T3-1` through `T3-4` for source-identity lookup, duplicate handling, and composer/work persistence helpers
-  - `T4-1` and `T5-1` for initial job creation flow once the persistence slice is in place
+  - `T4-1` through `T4-4` for job creation/loading, transition guards, and the first batch runner
+  - `T5-1` through `T5-3` for initial admin ingest job APIs once the job-service contract is stable
   - future linked-cloud migrations still require a fresh manual backup while on the phone/mobile network until the home-network IPv6 issue is fixed
 - Primary spec: `docs/specs/imslp-reference-ingestion.md`
 
