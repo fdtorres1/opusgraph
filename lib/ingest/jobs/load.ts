@@ -1,66 +1,45 @@
-import type { IngestIssue } from "@/lib/ingest/domain";
-import { issue } from "@/lib/ingest/persist/support";
-import type { IngestJobSupabaseClient } from "@/lib/ingest/jobs/create";
-import type { IngestJobRecord } from "@/lib/ingest/jobs/transitions";
+import type { IngestIssue, JsonObject } from "@/lib/ingest/domain";
 
-export interface LoadIngestJobParams {
-  supabase: IngestJobSupabaseClient;
-  jobId: string;
-  actorUserId: string;
-  canAccessAllJobs?: boolean;
+import type {
+  IngestJobRecord,
+  LoadIngestJobInput,
+  ServiceResult,
+} from "@/lib/ingest/jobs/types";
+import { SOURCE_INGEST_JOB_SELECT, mapIngestJobRow } from "@/lib/ingest/jobs/types";
+
+function issue(
+  code: string,
+  message: string,
+  metadata?: JsonObject,
+): IngestIssue {
+  return {
+    code,
+    message,
+    severity: "error",
+    ...(metadata ? { metadata } : {}),
+  };
 }
 
-export interface LoadIngestJobSuccess {
-  ok: true;
-  job: IngestJobRecord;
-  issues: IngestIssue[];
+function canAccessJob(job: IngestJobRecord, input: LoadIngestJobInput): boolean {
+  return input.access.canReadAll === true || job.createdBy === input.access.actorUserId;
 }
-
-export interface LoadIngestJobFailure {
-  ok: false;
-  job: null;
-  issues: IngestIssue[];
-}
-
-export type LoadIngestJobResult = LoadIngestJobSuccess | LoadIngestJobFailure;
 
 export async function loadIngestJob({
   supabase,
   jobId,
-  actorUserId,
-  canAccessAllJobs = false,
-}: LoadIngestJobParams): Promise<LoadIngestJobResult> {
-  if (!jobId.trim()) {
-    return {
-      ok: false,
-      job: null,
-      issues: [issue("missing_job_id", "Job id is required.")],
-    };
-  }
-
-  if (!actorUserId.trim()) {
-    return {
-      ok: false,
-      job: null,
-      issues: [issue("missing_actor_user_id", "Actor user id is required.")],
-    };
-  }
-
+  access,
+}: LoadIngestJobInput): Promise<ServiceResult<IngestJobRecord>> {
   const { data, error } = await supabase
     .from("source_ingest_job")
-    .select("*")
-    .eq("id", jobId.trim())
+    .select(SOURCE_INGEST_JOB_SELECT)
+    .eq("id", jobId)
     .maybeSingle();
 
   if (error) {
     return {
       ok: false,
-      job: null,
       issues: [
-        issue(
-          "ingest_job_load_failed",
-          error.message ?? "Failed to load ingest job.",
-        ),
+        issue("load_ingest_job_failed", error.message, { jobId }),
       ],
     };
   }
@@ -68,24 +47,28 @@ export async function loadIngestJob({
   if (!data) {
     return {
       ok: false,
-      job: null,
-      issues: [issue("ingest_job_not_found", "Ingest job was not found.")],
+      issues: [
+        issue("ingest_job_not_found", `Ingest job ${jobId} was not found.`, { jobId }),
+      ],
     };
   }
 
-  const job = data as IngestJobRecord;
-
-  if (!canAccessAllJobs && job.created_by !== actorUserId.trim()) {
+  const job = mapIngestJobRow(data);
+  if (!canAccessJob(job, { supabase, jobId, access })) {
     return {
       ok: false,
-      job: null,
-      issues: [issue("ingest_job_forbidden", "You do not have access to this job.")],
+      issues: [
+        issue("forbidden_ingest_job_access", "You cannot access this ingest job.", {
+          jobId,
+          actorUserId: access.actorUserId,
+        }),
+      ],
     };
   }
 
   return {
     ok: true,
-    job,
+    data: job,
     issues: [],
   };
 }

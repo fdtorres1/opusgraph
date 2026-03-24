@@ -433,3 +433,29 @@ Append-only log for implementation, investigation, and planning sessions. Keep e
   - do not pay for timed/managed backups yet
   - use manual logical backups before linked-cloud migration work
   - if backing up from this machine, switch to the phone/mobile network until the home-network IPv6 issue is solved
+
+### `T4-1` through `T4-4` job-service layer implemented locally
+- Opened branch `feat/ingest-t4-jobs`.
+- Added the first route-agnostic job orchestration layer under `lib/ingest/jobs/`:
+  - `types.ts`
+  - `create.ts`
+  - `load.ts`
+  - `transitions.ts`
+  - `run.ts`
+  - `index.ts`
+- Implemented:
+  - job creation with runtime validation and adapter-backed option validation
+  - job loading with owner-or-global access control
+  - centralized job status transition guards
+  - first single-batch runner with:
+    - adapter lookup
+    - running/paused/completed/failed state updates
+    - counter and cursor updates
+    - summary payload updates
+    - injected dry-run or persistence candidate processing
+- Updated `lib/ingest/index.ts` to export the jobs layer.
+- Verification:
+  - `npm run build` passes
+- Follow-up:
+  - implement `T5-1` through `T5-3`
+  - keep the `T4` services independent of `NextRequest`, cookies, and route-level auth checks
