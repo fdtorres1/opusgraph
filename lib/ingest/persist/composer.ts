@@ -92,7 +92,7 @@ export async function persistComposerCandidate({
   const existingRow = sourceMatch
     ? await supabase
         .from("composer")
-        .select("id, external_ids, extra_metadata")
+        .select("id, status, external_ids, extra_metadata")
         .eq("id", sourceMatch.entityId)
         .single()
         .then(({ data }) => data)
@@ -104,7 +104,7 @@ export async function persistComposerCandidate({
     birth_year: candidate.birthYear ?? null,
     death_year: candidate.deathYear ?? null,
     gender_id: candidate.genderId ?? null,
-    status: "draft",
+    status: existingRow?.status ?? "draft",
     external_ids: mergeExternalIds(existingRow?.external_ids, candidate),
     extra_metadata: mergeExtraMetadata(existingRow?.extra_metadata, candidate),
   };

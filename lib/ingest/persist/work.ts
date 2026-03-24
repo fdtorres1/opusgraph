@@ -144,7 +144,7 @@ export async function persistWorkCandidate({
   const existingRow = sourceMatch
     ? await supabase
         .from("work")
-        .select("id, external_ids, extra_metadata")
+        .select("id, status, external_ids, extra_metadata")
         .eq("id", sourceMatch.entityId)
         .single()
         .then(({ data }) => data)
@@ -152,9 +152,8 @@ export async function persistWorkCandidate({
 
   let durationSeconds: number | null = null;
   if (candidate.durationText?.trim()) {
-    try {
-      durationSeconds = parseDuration(candidate.durationText.trim());
-    } catch {
+    durationSeconds = parseDuration(candidate.durationText.trim());
+    if (durationSeconds == null) {
       return {
         outcome: "failed_parse",
         entityKind: "work",
@@ -182,7 +181,7 @@ export async function persistWorkCandidate({
     opus_number: candidate.opusNumber ?? null,
     catalog_number: candidate.catalogNumber ?? null,
     movements: candidate.movements ?? null,
-    status: "draft",
+    status: existingRow?.status ?? "draft",
     external_ids: mergeExternalIds(existingRow?.external_ids, candidate),
     extra_metadata: mergeExtraMetadata(existingRow?.extra_metadata, candidate),
   };
