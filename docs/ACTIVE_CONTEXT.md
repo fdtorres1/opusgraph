@@ -4,11 +4,11 @@ This is the canonical handoff file for the next session. Rewrite freely as prior
 
 ## Current Objective
 
-Start the generic source-ingestion foundation with IMSLP as the first adapter now that the signed-in auth and `org_member` RLS verification pass is complete.
+Continue the generic source-ingestion foundation with IMSLP as the first adapter now that `T1-1` is merged and the current operational constraint around manual backups is documented.
 
 ## Current Branch
 
-- `feat/source-ingest-job-schema`
+- `docs/backup-network-note`
 
 ## Parallel Work Coordination
 
@@ -25,14 +25,14 @@ Start the generic source-ingestion foundation with IMSLP as the first adapter no
 
 - Agent: current Codex session
   - Worktree: current checkout at `/Volumes/Felix-SSD-1/Cursor Projects/opusgraph`
-  - Branch: `feat/source-ingest-job-schema`
-  - Scope: implement `T1-1` by adding the queue-ready `source_ingest_job` migration and refreshing handoff docs
+  - Branch: `docs/backup-network-note`
+  - Scope: document the current backup/network constraint and the manual backup procedure before applying linked-cloud migrations
   - File ownership:
     - `docs/ACTIVE_CONTEXT.md`
-    - `supabase/migrations/0016_source_ingest_job.sql`
+    - `docs/DECISIONS.md`
     - `docs/WORKLOG.md`
   - Status: active
-  - Notes: auth/RLS is already signed off; `T0-1` through `T0-4` are now explicit in the spec, and the current task is the first schema slice
+  - Notes: auth/RLS is already signed off; `T1-1` is merged, and the current task is to capture the backup/network requirement clearly before further linked-cloud migration work
 
 ## In Progress
 
@@ -109,19 +109,28 @@ Start the generic source-ingestion foundation with IMSLP as the first adapter no
   - use a structured JSON cursor that maps IMSLP `start` into a generic offset model
   - define dry-run as full fetch/parse/match simulation without any composer/work/review writes
 - `T1-1` is now in flight:
+- `T1-1` is now merged:
   - `0016_source_ingest_job.sql` introduces a queue-ready ingestion job control-plane table
   - the migration uses the existing `entity_kind` enum, new job status/mode enums, JSONB cursor/options/summaries, execution counters, retry fields, claim/heartbeat fields, and `updated_at` trigger support
+- Current backup/recovery constraint:
+  - Supabase-managed backups/PITR are not enabled for the OpusGraph project right now
+  - manual logical backup is the current safety path before linked-cloud schema changes
+  - the direct database host is IPv6-only and does not work from the home network
+  - the direct `pg_dump` path does work when the machine is on the phone hotspot/mobile network
+  - latest successful manual backup artifact:
+    - `/Users/felixtorres/backups/opusgraph-20260324-110603.dump`
 
 ## Next 3 Steps
 
-1. Review and land `0016_source_ingest_job.sql`, then verify the migration shape against local schema conventions.
+1. Before applying new linked-cloud migrations, create or confirm a fresh manual backup while on the phone/mobile network if needed, then apply `0016_source_ingest_job.sql`.
 2. Implement `T2-1` through `T2-3` so the repo has generic ingest job types, normalized candidate types, and the first adapter contract.
-3. Move into `T4-1` and `T5-1` to create the first ingestion job flow and the IMSLP adapter bootstrap once the schema/type slice is in place.
+3. Move into `T4-1` and `T5-1` once the schema/type slice is in place.
 
 ## Known Blockers
 
 - This session has no local `.env` file and no running local Supabase stack, so the cloud environment remains the practical verification target.
 - IMSLP implementation still depends on staying disciplined about the generic adapter boundary so the first IMSLP slice does not collapse back into a one-off importer.
+- Home-network IPv6 routing does not currently reach the Supabase direct DB host, so manual logical backups from this machine require the phone/mobile network until the network issue is fixed.
 
 ## Key Files
 
@@ -190,4 +199,5 @@ Start the generic source-ingestion foundation with IMSLP as the first adapter no
 - For source ingestion, keep the framework generic and isolate IMSLP-specific logic inside an adapter that uses official IMSLP list endpoints for discovery and `api.php` for detailed page extraction before considering HTML scraping.
 - For implementation sequencing, use the task IDs in `docs/specs/imslp-reference-ingestion.md` rather than phase labels; the current starting slice is `T0-1` through `T0-4`, then `T1-1`, `T2-1` through `T2-3`, `T4-1`, and `T5-1`.
 - `T1-1` currently uses a queue-ready control-plane design rather than a minimal passive log table because large backfills are expected.
+- Until the home-network IPv6 issue is fixed or managed backups are enabled, do manual logical backups from the phone/mobile network before linked-cloud migration work.
 - Prefer updating the worklog and this file before ending a session.
