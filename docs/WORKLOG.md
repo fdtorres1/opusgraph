@@ -341,6 +341,48 @@ Append-only log for implementation, investigation, and planning sessions. Keep e
   - begin `T3-1` through `T3-4`
   - keep the first persistence helpers aligned to these result unions instead of inventing ad hoc return shapes
 
+### `T3-1` through `T3-4` completed for generic persistence groundwork
+- Opened branch `feat/ingest-t3-persistence`.
+- Added the generic persistence layer under `lib/ingest/persist/`:
+  - `source-identity.ts`
+  - `duplicate.ts`
+  - `support.ts`
+  - `composer.ts`
+  - `work.ts`
+  - `index.ts`
+- `source-identity.ts` now provides generic `external_ids` matching for `composer` and `work`.
+- `duplicate.ts` now provides a reusable duplicate wrapper that:
+  - respects source-identity matches first
+  - falls back to the existing duplicate RPCs
+  - shapes duplicate review details for `review_flag`
+- `composer.ts` now persists normalized composer candidates by:
+  - checking source match / duplicate state
+  - creating a duplicate `review_flag` when needed
+  - creating or updating `composer`
+  - replacing `composer_nationality`
+  - replacing `composer_link`
+  - writing provenance into `external_ids` and `extra_metadata`
+- `work.ts` now persists normalized work candidates by:
+  - requiring a resolved composer id
+  - checking source match / duplicate state
+  - creating a duplicate `review_flag` when needed
+  - creating or updating `work`
+  - resolving publisher by name
+  - replacing `work_source`
+  - replacing `work_recording` with `detectRecording()` enrichment
+  - writing provenance into `external_ids` and `extra_metadata`
+- `support.ts` centralizes small shared helpers used by both persistence services:
+  - source metadata merge
+  - duplicate review-flag creation
+  - revision insertion
+  - ordered URL normalization
+- Updated `lib/ingest/index.ts` so the persistence layer is exported with the rest of the ingest surface.
+- Verification:
+  - `npm run build` passes
+- Follow-up:
+  - move into `T4-1` through `T4-4`
+  - use the completed persistence services as the execution boundary for the first job runner
+
 ### IMSLP `T0-1` through `T0-4` decisions grounded against live IMSLP payloads
 - Re-checked the IMSLP source contract directly against:
   - the official list API documented at `IMSLP:API`
