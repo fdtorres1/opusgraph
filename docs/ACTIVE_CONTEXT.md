@@ -4,11 +4,11 @@ This is the canonical handoff file for the next session. Rewrite freely as prior
 
 ## Current Objective
 
-Continue the generic source-ingestion foundation with IMSLP as the first adapter now that `0016_source_ingest_job.sql` is applied in the linked cloud and the next implementation slice is `T2-1` through `T2-3`.
+Continue the generic source-ingestion foundation with IMSLP as the first adapter now that `0016_source_ingest_job.sql` is applied in the linked cloud and `T2-1` through `T2-4` are implemented locally.
 
 ## Current Branch
 
-- `docs/source-ingest-migration-applied`
+- `feat/ingest-t2-types`
 
 ## Parallel Work Coordination
 
@@ -25,14 +25,17 @@ Continue the generic source-ingestion foundation with IMSLP as the first adapter
 
 - Agent: current Codex session
   - Worktree: current checkout at `/Volumes/Felix-SSD-1/Cursor Projects/opusgraph`
-  - Branch: `docs/source-ingest-migration-applied`
-  - Scope: record that the manual backup succeeded, `0016_source_ingest_job.sql` is now applied in the linked cloud, and the next active work is `T2-*`
+  - Branch: `feat/ingest-t2-types`
+  - Scope: complete the generic ingest type layer through `T2-4` and document the next move into `T3-*` persistence helpers
   - File ownership:
     - `docs/ACTIVE_CONTEXT.md`
-    - `docs/ROADMAP.md`
+    - `lib/ingest/domain.ts`
+    - `lib/ingest/candidates.ts`
+    - `lib/ingest/adapters/types.ts`
+    - `lib/ingest/index.ts`
     - `docs/WORKLOG.md`
   - Status: active
-  - Notes: auth/RLS is already signed off; the manual backup requirement remains in force for future linked-cloud migrations, but `0016` has now been applied successfully and the next task slice is generic ingest types and adapter contracts
+  - Notes: auth/RLS is already signed off; the manual backup requirement remains in force for future linked-cloud migrations, `0016` is applied in the linked cloud, `T2` is now complete locally, and the next task slice is `T3-*`
 
 ## In Progress
 
@@ -117,6 +120,35 @@ Continue the generic source-ingestion foundation with IMSLP as the first adapter
   - the old remote-only `0002` migration-history mismatch was repaired with `supabase migration repair --status reverted 0002`
   - `supabase db push --linked --include-all` then replayed the harmless `0002_add_activity_view_rls.sql` comment migration and applied `0016_source_ingest_job.sql`
   - post-apply verification confirmed the new enums, `source_ingest_job` table, and `trg_source_ingest_job_updated_at` trigger exist in the linked cloud database
+- `T2-1` through `T2-4` are now implemented locally under `lib/ingest/`:
+  - `lib/ingest/domain.ts` defines generic job/domain contracts:
+    - source key
+    - ingest entity kind
+    - job status and mode
+    - structured cursor
+    - job input
+    - execution summary
+    - dry-run result
+  - `lib/ingest/candidates.ts` defines normalized candidate contracts:
+    - source identity
+    - raw payload
+    - candidate warnings
+    - `ComposerCandidate`
+    - `WorkCandidate`
+  - `lib/ingest/adapters/types.ts` defines the first adapter contract:
+    - job-option validation
+    - batch fetch
+    - batch parse
+    - normalized candidate batch
+  - `lib/ingest/results.ts` defines normalized persistence-result outcomes:
+    - `created`
+    - `updated`
+    - `skipped_existing_source_match`
+    - `flagged_duplicate`
+    - `failed_parse`
+    - `failed_write`
+  - `lib/ingest/index.ts` exports the new type surface
+  - `npm run build` passes after the new ingest type layer was added
 - Current backup/recovery constraint:
   - Supabase-managed backups/PITR are not enabled for the OpusGraph project right now
   - manual logical backup is the current safety path before linked-cloud schema changes
@@ -127,8 +159,8 @@ Continue the generic source-ingestion foundation with IMSLP as the first adapter
 
 ## Next 3 Steps
 
-1. Implement `T2-1` through `T2-3` so the repo has generic ingest job types, normalized candidate types, and the first adapter contract.
-2. Move into `T4-1` and `T5-1` once the schema/type slice is in place.
+1. Move into `T3-1` through `T3-4` to add source-identity lookup, duplicate-detection wrapping, and composer/work persistence helpers on top of the new type layer.
+2. Use the new result types from `lib/ingest/results.ts` when shaping the first persistence-helper return values.
 3. Before any future linked-cloud migration, create or confirm a fresh manual backup while on the phone/mobile network until the home-network IPv6 issue is fixed or managed backups are enabled.
 
 ## Known Blockers
@@ -146,6 +178,11 @@ Continue the generic source-ingestion foundation with IMSLP as the first adapter
 - `app/auth/confirm/route.ts`
 - `lib/auth-redirect.ts`
 - `lib/post-auth-redirect.ts`
+- `lib/ingest/domain.ts`
+- `lib/ingest/candidates.ts`
+- `lib/ingest/adapters/types.ts`
+- `lib/ingest/index.ts`
+- `lib/ingest/results.ts`
 - `supabase/migrations/0005_organizations.sql`
 - `supabase/migrations/0013_fix_org_member_rls.sql`
 - `supabase/migrations/0014_backfill_org_member_rls_helpers.sql`
