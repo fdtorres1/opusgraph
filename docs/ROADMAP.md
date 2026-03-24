@@ -13,8 +13,8 @@ This file is the current priority view for OpusGraph. Keep it short, current, an
   - use source identity in `external_ids` and raw payloads in `extra_metadata`
   - route ambiguous matches into `review_flag` instead of auto-merging
 - Immediate task slice:
-  - `T2-1` through `T2-3` for generic ingest types and adapter contract
-  - `T4-1` and `T5-1` for initial job creation flow
+  - `T3-1` through `T3-4` for source-identity lookup, duplicate handling, and composer/work persistence helpers
+  - `T4-1` and `T5-1` for initial job creation flow once the persistence slice is in place
   - future linked-cloud migrations still require a fresh manual backup while on the phone/mobile network until the home-network IPv6 issue is fixed
 - Primary spec: `docs/specs/imslp-reference-ingestion.md`
 

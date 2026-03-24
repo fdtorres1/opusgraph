@@ -283,6 +283,64 @@ Append-only log for implementation, investigation, and planning sessions. Keep e
   - start `T2-1` through `T2-3`
   - continue requiring a fresh manual backup on the phone/mobile network before future linked-cloud migrations until the home-network IPv6 issue is fixed or managed backups are enabled
 
+### `T2-1` through `T2-3` implemented for the generic ingest type layer
+- Opened branch `feat/ingest-t2-types`.
+- Added the new ingest-owned type namespace:
+  - `lib/ingest/domain.ts`
+  - `lib/ingest/candidates.ts`
+  - `lib/ingest/adapters/types.ts`
+  - `lib/ingest/index.ts`
+- `lib/ingest/domain.ts` now defines the generic framework contracts for:
+  - source key
+  - ingest entity kind
+  - job status and mode
+  - structured cursor
+  - job input
+  - execution summary
+  - dry-run result
+- `lib/ingest/candidates.ts` now defines:
+  - source identity
+  - candidate warnings
+  - raw payload
+  - `ComposerCandidate`
+  - `WorkCandidate`
+- `lib/ingest/adapters/types.ts` now defines the minimum adapter contract for:
+  - validating job options
+  - fetching a batch
+  - parsing a batch
+  - returning a normalized candidate batch
+- Design choices in this slice:
+  - new types live under `lib/ingest/` rather than `lib/validators/` because they are internal framework contracts, not request validators
+  - source identity, raw payload, and warnings are first-class instead of being buried inside adapter-specific metadata
+  - CSV-specific fields such as `rowIndex` were intentionally left out of the generic candidate model
+  - the generic candidate fields align with existing `composer` / `work` write surfaces and the current duplicate-review flow
+- Verification:
+  - `npm run build` passes
+- Follow-up:
+  - add `T2-4` persistence-result types
+  - start `T3-1` through `T3-4` on top of the new type layer
+
+### `T2-4` completed with normalized persistence-result types
+- Added `lib/ingest/results.ts`.
+- The result layer now defines normalized outcomes for:
+  - `created`
+  - `updated`
+  - `skipped_existing_source_match`
+  - `flagged_duplicate`
+  - `failed_parse`
+  - `failed_write`
+- The result types also preserve enough context for the next persistence slice:
+  - `entityKind`
+  - partial `sourceIdentity`
+  - optional candidate payload
+  - structured issues
+- Updated `lib/ingest/index.ts` so the result types are exported with the rest of the ingest surface.
+- Verification:
+  - `npm run build` passes after adding `lib/ingest/results.ts`
+- Follow-up:
+  - begin `T3-1` through `T3-4`
+  - keep the first persistence helpers aligned to these result unions instead of inventing ad hoc return shapes
+
 ### IMSLP `T0-1` through `T0-4` decisions grounded against live IMSLP payloads
 - Re-checked the IMSLP source contract directly against:
   - the official list API documented at `IMSLP:API`
