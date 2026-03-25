@@ -4,11 +4,11 @@ This is the canonical handoff file for the next session. Rewrite freely as prior
 
 ## Current Objective
 
-Continue the generic source-ingestion foundation with IMSLP as the first adapter now that `0016_source_ingest_job.sql` is applied in the linked cloud, `T4-1` through `T4-4` are merged on `main`, and `T5-1` through `T5-3` are implemented locally on the current branch.
+Continue the generic source-ingestion foundation with the first real IMSLP adapter slice now that `T4-1` through `T4-4` and `T5-1` through `T5-3` are merged on `main` and the current branch is wiring a composer-only `imslp` adapter into the new ingest APIs.
 
 ## Current Branch
 
-- `feat/ingest-t5-admin-api`
+- `feat/imslp-composer-adapter`
 
 ## Parallel Work Coordination
 
@@ -25,19 +25,24 @@ Continue the generic source-ingestion foundation with IMSLP as the first adapter
 
 - Agent: current Codex session
   - Worktree: current checkout at `/Volumes/Felix-SSD-1/Cursor Projects/opusgraph`
-  - Branch: `feat/ingest-t5-admin-api`
-  - Scope: implement `T5-1` through `T5-3` and document the next move into adapter wiring
+  - Branch: `feat/imslp-composer-adapter`
+  - Scope: implement the first real IMSLP composer adapter, move the adapter registry out of the route layer, and document the next move into end-to-end dry-run verification
   - File ownership:
     - `docs/ACTIVE_CONTEXT.md`
     - `app/api/admin/ingest/_shared.ts`
     - `app/api/admin/ingest/jobs/route.ts`
-    - `app/api/admin/ingest/jobs/[id]/route.ts`
     - `app/api/admin/ingest/jobs/[id]/run/route.ts`
-    - `lib/validators/ingest-job.ts`
+    - `lib/ingest/adapters/index.ts`
+    - `lib/ingest/adapters/imslp/constants.ts`
+    - `lib/ingest/adapters/imslp/client.ts`
+    - `lib/ingest/adapters/imslp/parser.ts`
+    - `lib/ingest/adapters/imslp/mapper.ts`
+    - `lib/ingest/adapters/imslp/index.ts`
+    - `lib/ingest/index.ts`
     - `docs/WORKLOG.md`
     - `docs/ROADMAP.md`
   - Status: active
-  - Notes: auth/RLS is already signed off; the manual backup requirement remains in force for future linked-cloud migrations; `0016` is applied in the linked cloud; `T4` is merged as a route-agnostic job-service layer; `T5` is now implemented locally as the first admin API layer; the next task slice is adapter wiring
+  - Notes: auth/RLS is already signed off; the manual backup requirement remains in force for future linked-cloud migrations; `0016` is applied in the linked cloud; `T4` and `T5` are merged on `main`; the current task slice is the first IMSLP composer adapter
 
 ## In Progress
 
@@ -225,9 +230,24 @@ Continue the generic source-ingestion foundation with IMSLP as the first adapter
   - `app/api/admin/ingest/jobs/route.ts` adds `POST /api/admin/ingest/jobs`
   - `app/api/admin/ingest/jobs/[id]/route.ts` adds `GET /api/admin/ingest/jobs/[id]`
   - `app/api/admin/ingest/jobs/[id]/run/route.ts` adds `POST /api/admin/ingest/jobs/[id]/run`
-  - important current limitation:
-    - the adapter registry is still empty, so create/run requests will surface unsupported-source or missing-adapter issues until the first real source adapter is wired
   - `npm run build` passes after the new admin ingest routes were added
+- The first IMSLP adapter slice is now implemented locally on `feat/imslp-composer-adapter`:
+  - `lib/ingest/adapters/index.ts` now owns the real adapter registry
+  - `lib/ingest/adapters/imslp/` now contains:
+    - `constants.ts`
+    - `client.ts`
+    - `parser.ts`
+    - `mapper.ts`
+    - `index.ts`
+  - the current adapter supports only IMSLP `type=1` composer/person list ingestion
+  - `app/api/admin/ingest/jobs/route.ts` now rejects `source: "imslp"` with `entityKind: "work"` until the work adapter exists
+  - `app/api/admin/ingest/jobs/[id]/run/route.ts` now imports the registry from `lib/ingest/adapters`
+  - live verification confirmed the documented slash-delimited IMSLP list API shape
+  - adapter sanity check now succeeds locally:
+    - 5 raw rows fetched successfully
+    - a valid next offset cursor is returned
+    - parsed composer candidates and warning issues are produced from the batch
+  - `npm run build` passes after the adapter wiring was added
 - Current backup/recovery constraint:
   - Supabase-managed backups/PITR are not enabled for the OpusGraph project right now
   - manual logical backup is the current safety path before linked-cloud schema changes
@@ -238,9 +258,9 @@ Continue the generic source-ingestion foundation with IMSLP as the first adapter
 
 ## Next 3 Steps
 
-1. Finish reviewing and merging `T5-1` through `T5-3` from `feat/ingest-t5-admin-api`.
-2. Add the first real adapter registry wiring and source adapter needed to exercise the new job services end to end.
-3. Before any future linked-cloud migration, create or confirm a fresh manual backup while on the phone/mobile network until the home-network IPv6 issue is fixed or managed backups are enabled.
+1. Run one end-to-end dry-run job through the admin ingest APIs against the new `imslp` adapter.
+2. Review whether the current IMSLP `type=1` composer classifier is too noisy on live data and tighten it if needed.
+3. Open the next slice for richer IMSLP parsing or work ingestion once the dry-run path is stable.
 
 ## Known Blockers
 

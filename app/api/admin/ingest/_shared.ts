@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 
 import type { IngestIssue } from "@/lib/ingest/domain";
-import type { IngestAdapterRegistry } from "@/lib/ingest/jobs";
 import type { ComposerCandidate, WorkCandidate } from "@/lib/ingest/candidates";
 import type { CandidateProcessorArgs } from "@/lib/ingest/jobs/types";
 import { parseDuration } from "@/lib/duration";
@@ -27,8 +26,6 @@ export interface AdminIngestRouteContext {
   userId: string;
   adminRole: Exclude<AdminRole, "none">;
 }
-
-export const ingestAdapterRegistry: IngestAdapterRegistry = {};
 
 function normalizeAdminRole(value: unknown): AdminRole {
   return typeof value === "string" && value in ADMIN_ROLE_RANK

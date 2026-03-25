@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 
+import { ingestAdapterRegistry } from "@/lib/ingest/adapters";
 import { runIngestJobBatch } from "@/lib/ingest/jobs";
 import { IngestJobIdParams, RunIngestJobBatchBody } from "@/lib/validators/ingest-job";
 import {
-  ingestAdapterRegistry,
   jsonIssues,
   processIngestCandidate,
   requireAdminIngestContext,

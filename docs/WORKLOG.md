@@ -482,3 +482,32 @@ Append-only log for implementation, investigation, and planning sessions. Keep e
 - Follow-up:
   - review and merge the `T5` route slice
   - add the first real adapter registry entry and source adapter implementation
+
+### First IMSLP composer adapter slice implemented locally
+- Opened branch `feat/imslp-composer-adapter`.
+- Confirmed the official IMSLP list API shape from `IMSLP:API` uses slash-delimited query values, e.g.:
+  - `https://imslp.org/imslpscripts/API.ISCR.php?account=worklist/disclaimer=accepted/sort=id/type=1/start=0/retformat=json`
+- Added the first real adapter registry at `lib/ingest/adapters/index.ts` and moved route imports to use it instead of route-local adapter state.
+- Added the first IMSLP adapter files under `lib/ingest/adapters/imslp/`:
+  - `constants.ts`
+  - `client.ts`
+  - `parser.ts`
+  - `mapper.ts`
+  - `index.ts`
+- Implemented the first usable IMSLP slice:
+  - composer-only support
+  - `type=1` list fetch
+  - offset cursor mapping into IMSLP `start`
+  - raw row parsing and conservative composer/person classification
+  - `ComposerCandidate` mapping with IMSLP provenance in `external_ids.imslp` and `extra_metadata.imslp`
+- Added a temporary guard in `POST /api/admin/ingest/jobs` to reject `source: "imslp"` with `entityKind: "work"` until the work adapter exists.
+- Verification:
+  - `npm run build` passes
+  - adapter sanity check via `tsx` confirmed:
+    - 5 IMSLP rows fetched successfully
+    - a valid next offset cursor returned
+    - composer candidates and warning issues were produced from the parsed batch
+- Follow-up:
+  - run one end-to-end dry-run job through the admin ingest APIs
+  - review how noisy the current `type=1` composer classifier is on live IMSLP data
+  - then branch into the next IMSLP parsing/work-support slice
