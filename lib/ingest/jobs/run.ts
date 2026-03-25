@@ -103,6 +103,39 @@ function summarizeBatchResult(
   };
 }
 
+function hasErrorSeverityIssue(issues: IngestIssue[]): boolean {
+  return issues.some((item) => item.severity === "error");
+}
+
+async function failRunningJob(
+  input: RunIngestJobBatchInput,
+  runningJob: IngestJobRecord,
+  issues: IngestIssue[],
+): Promise<ServiceResult<RunIngestJobBatchOutput>> {
+  const failedAt = new Date().toISOString();
+  const failed = await updateJobState(input, runningJob.id, {
+    status: "failed",
+    error_summary: summarizeIssues(issues),
+    last_error_at: failedAt,
+    last_heartbeat_at: failedAt,
+    claimed_by: null,
+    claimed_at: null,
+    finished_at: failedAt,
+  });
+
+  if (!failed.ok) {
+    return {
+      ok: false,
+      issues: [...issues, ...failed.issues],
+    };
+  }
+
+  return {
+    ok: false,
+    issues,
+  };
+}
+
 async function updateJobState(
   input: RunIngestJobBatchInput,
   jobId: string,
@@ -340,6 +373,10 @@ export async function runIngestJobBatch(
       ...parsed.issues,
     ];
 
+    if (hasErrorSeverityIssue(batchIssues)) {
+      return failRunningJob(input, runningJob, batchIssues);
+    }
+
     const itemResults: CandidatePersistResult[] = [];
 
     for (const candidate of parsed.candidates) {
@@ -436,27 +473,6 @@ export async function runIngestJobBatch(
       "run_ingest_job_batch_failed",
       error instanceof Error ? error.message : "Ingest job batch failed.",
     );
-
-    const failed = await updateJobState(input, runningJob.id, {
-      status: "failed",
-      error_summary: summarizeIssues([failureIssue]),
-      last_error_at: new Date().toISOString(),
-      last_heartbeat_at: new Date().toISOString(),
-      claimed_by: null,
-      claimed_at: null,
-      finished_at: new Date().toISOString(),
-    });
-
-    if (!failed.ok) {
-      return {
-        ok: false,
-        issues: [failureIssue, ...failed.issues],
-      };
-    }
-
-    return {
-      ok: false,
-      issues: [failureIssue],
-    };
+    return failRunningJob(input, runningJob, [failureIssue]);
   }
 }

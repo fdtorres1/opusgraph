@@ -482,3 +482,59 @@ Append-only log for implementation, investigation, and planning sessions. Keep e
 - Follow-up:
   - review and merge the `T5` route slice
   - add the first real adapter registry entry and source adapter implementation
+
+### First IMSLP composer adapter slice implemented locally
+- Opened branch `feat/imslp-composer-adapter`.
+- Confirmed the official IMSLP list API shape from `IMSLP:API` uses slash-delimited query values, e.g.:
+  - `https://imslp.org/imslpscripts/API.ISCR.php?account=worklist/disclaimer=accepted/sort=id/type=1/start=0/retformat=json`
+- Added the first real adapter registry at `lib/ingest/adapters/index.ts` and moved route imports to use it instead of route-local adapter state.
+- Added the first IMSLP adapter files under `lib/ingest/adapters/imslp/`:
+  - `constants.ts`
+  - `client.ts`
+  - `parser.ts`
+  - `mapper.ts`
+  - `index.ts`
+- Implemented the first usable IMSLP slice:
+  - composer-only support
+  - `type=1` list fetch
+  - offset cursor mapping into IMSLP `start`
+  - raw row parsing and conservative composer/person classification
+  - `ComposerCandidate` mapping with IMSLP provenance in `external_ids.imslp` and `extra_metadata.imslp`
+- Added a temporary guard in `POST /api/admin/ingest/jobs` to reject `source: "imslp"` with `entityKind: "work"` until the work adapter exists.
+- Verification:
+  - `npm run build` passes
+  - adapter sanity check via `tsx` confirmed:
+    - 5 IMSLP rows fetched successfully
+    - a valid next offset cursor returned
+    - composer candidates and warning issues were produced from the parsed batch
+- Follow-up execution verification:
+  - restored local Supabase env from the `Supabase (OpusGraph)` 1Password item into `.env.local`
+  - ran the real job services against the linked cloud using the stored platform-admin actor `f2ed501c-74ad-4c2e-bb66-c97f5a6aa0ba`
+  - first 5-row dry-run showed the initial classifier was too permissive on junk rows like `.q, Wulfi`
+  - tightened the classifier to reject rows with invalid name parts instead of mapping them to composers
+  - reran the 5-row dry-run:
+    - zero candidates
+    - warnings only
+    - paused next-cursor at offset 5
+  - ran a 25-row dry-run:
+    - `source_ingest_job.id = 8f95737f-13ed-4336-a6c3-147dd4d4f85e`
+    - status paused at next offset 25
+    - 8 dry-run composer candidates
+    - warning codes concentrated in:
+      - `imslp_type1_non_composer_row`
+      - `imslp_type1_invalid_name_parts`
+      - `imslp_type1_unusual_name_format`
+- Review-driven hardening:
+  - fixed the generic runner so any fetch/parse `error`-severity issue now fails the job instead of being misread as a completed empty batch
+  - verified this with a synthetic `testsource` adapter:
+    - service returned `ok: false`
+    - persisted job status became `failed`
+    - `error_summary` captured the synthetic fetch failure
+  - changed IMSLP negation keyword checks from raw substring matching to token-based matching to avoid dropping legitimate names that merely contain fragments like `band`, `duo`, or `trio`
+  - reran the real 25-row IMSLP dry-run after the fix:
+    - `source_ingest_job.id = 6bb74a3c-b078-42f5-9ffa-717d2900a6fd`
+    - status paused
+    - 8 dry-run composer candidates
+- Follow-up:
+  - review how noisy the current `type=1` composer classifier still is on live IMSLP data
+  - then branch into the next IMSLP parsing/work-support slice

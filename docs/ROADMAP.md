@@ -13,9 +13,10 @@ This file is the current priority view for OpusGraph. Keep it short, current, an
   - use source identity in `external_ids` and raw payloads in `extra_metadata`
   - route ambiguous matches into `review_flag` instead of auto-merging
 - Immediate task slice:
-  - review and merge `T5-1` through `T5-3` for the first admin ingest job APIs on top of the new `lib/ingest/jobs/*` service layer
-  - add adapter-registry wiring for the first real source execution path after the admin API contract is stable
-  - implement the first IMSLP adapter slice so create/run routes stop returning unsupported-source errors
+  - review and merge the first IMSLP composer adapter slice on `feat/imslp-composer-adapter`
+  - review the successful linked-cloud dry-run results from the real `imslp` adapter
+  - tighten composer classification further only if the current warning mix is still too noisy
+  - extend from composer-only IMSLP support into the next parsing or work-ingestion slice after the dry-run path is stable
   - future linked-cloud migrations still require a fresh manual backup while on the phone/mobile network until the home-network IPv6 issue is fixed
 - Primary spec: `docs/specs/imslp-reference-ingestion.md`
 
