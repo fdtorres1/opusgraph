@@ -4,11 +4,11 @@ This is the canonical handoff file for the next session. Rewrite freely as prior
 
 ## Current Objective
 
-Continue the generic source-ingestion foundation with IMSLP as the first adapter now that `0016_source_ingest_job.sql` is applied in the linked cloud, `T3-1` through `T3-4` are merged, and `T4-1` through `T4-4` are implemented locally on the current branch.
+Continue the generic source-ingestion foundation with IMSLP as the first adapter now that `0016_source_ingest_job.sql` is applied in the linked cloud, `T4-1` through `T4-4` are merged on `main`, and `T5-1` through `T5-3` are implemented locally on the current branch.
 
 ## Current Branch
 
-- `feat/ingest-t4-jobs`
+- `feat/ingest-t5-admin-api`
 
 ## Parallel Work Coordination
 
@@ -25,21 +25,19 @@ Continue the generic source-ingestion foundation with IMSLP as the first adapter
 
 - Agent: current Codex session
   - Worktree: current checkout at `/Volumes/Felix-SSD-1/Cursor Projects/opusgraph`
-  - Branch: `feat/ingest-t4-jobs`
-  - Scope: implement `T4-1` through `T4-4` and document the next move into admin ingest APIs
+  - Branch: `feat/ingest-t5-admin-api`
+  - Scope: implement `T5-1` through `T5-3` and document the next move into adapter wiring
   - File ownership:
     - `docs/ACTIVE_CONTEXT.md`
-    - `lib/ingest/jobs/types.ts`
-    - `lib/ingest/jobs/create.ts`
-    - `lib/ingest/jobs/load.ts`
-    - `lib/ingest/jobs/transitions.ts`
-    - `lib/ingest/jobs/run.ts`
-    - `lib/ingest/jobs/index.ts`
-    - `lib/ingest/index.ts`
+    - `app/api/admin/ingest/_shared.ts`
+    - `app/api/admin/ingest/jobs/route.ts`
+    - `app/api/admin/ingest/jobs/[id]/route.ts`
+    - `app/api/admin/ingest/jobs/[id]/run/route.ts`
+    - `lib/validators/ingest-job.ts`
     - `docs/WORKLOG.md`
     - `docs/ROADMAP.md`
   - Status: active
-  - Notes: auth/RLS is already signed off; the manual backup requirement remains in force for future linked-cloud migrations; `0016` is applied in the linked cloud; `T4` is now implemented locally as a route-agnostic job-service layer; the next task slice is `T5-*`
+  - Notes: auth/RLS is already signed off; the manual backup requirement remains in force for future linked-cloud migrations; `0016` is applied in the linked cloud; `T4` is merged as a route-agnostic job-service layer; `T5` is now implemented locally as the first admin API layer; the next task slice is adapter wiring
 
 ## In Progress
 
@@ -178,7 +176,7 @@ Continue the generic source-ingestion foundation with IMSLP as the first adapter
     - provenance writes to `external_ids` / `extra_metadata`
   - `lib/ingest/index.ts` now exports the persistence layer
   - `npm run build` passes after the persistence helpers were added
-- `T4-1` through `T4-4` are now implemented locally under `lib/ingest/jobs/`:
+- `T4-1` through `T4-4` are now merged under `lib/ingest/jobs/`:
   - `lib/ingest/jobs/types.ts` defines the shared job-service contract:
     - job row mapping
     - service result envelopes
@@ -214,6 +212,22 @@ Continue the generic source-ingestion foundation with IMSLP as the first adapter
   - `lib/ingest/jobs/index.ts` exports the job service layer
   - `lib/ingest/index.ts` now exports the jobs layer
   - `npm run build` passes after the job-service layer was added
+- `T5-1` through `T5-3` are now implemented locally under `app/api/admin/ingest/`:
+  - `app/api/admin/ingest/_shared.ts` adds thin admin-route support for:
+    - contributor-plus admin gating
+    - normalized issue-to-HTTP mapping
+    - route-time candidate processing
+    - a placeholder adapter registry for future source wiring
+  - `lib/validators/ingest-job.ts` adds request validation for:
+    - job id params
+    - job creation body
+    - single-batch run body
+  - `app/api/admin/ingest/jobs/route.ts` adds `POST /api/admin/ingest/jobs`
+  - `app/api/admin/ingest/jobs/[id]/route.ts` adds `GET /api/admin/ingest/jobs/[id]`
+  - `app/api/admin/ingest/jobs/[id]/run/route.ts` adds `POST /api/admin/ingest/jobs/[id]/run`
+  - important current limitation:
+    - the adapter registry is still empty, so create/run requests will surface unsupported-source or missing-adapter issues until the first real source adapter is wired
+  - `npm run build` passes after the new admin ingest routes were added
 - Current backup/recovery constraint:
   - Supabase-managed backups/PITR are not enabled for the OpusGraph project right now
   - manual logical backup is the current safety path before linked-cloud schema changes
@@ -224,8 +238,8 @@ Continue the generic source-ingestion foundation with IMSLP as the first adapter
 
 ## Next 3 Steps
 
-1. Move into `T5-1` through `T5-3` to add the first admin ingest job APIs on top of the completed `lib/ingest/jobs/*` service layer.
-2. Add the first real adapter registry wiring and request-validation slice needed to exercise the new job services end to end.
+1. Finish reviewing and merging `T5-1` through `T5-3` from `feat/ingest-t5-admin-api`.
+2. Add the first real adapter registry wiring and source adapter needed to exercise the new job services end to end.
 3. Before any future linked-cloud migration, create or confirm a fresh manual backup while on the phone/mobile network until the home-network IPv6 issue is fixed or managed backups are enabled.
 
 ## Known Blockers
@@ -253,6 +267,11 @@ Continue the generic source-ingestion foundation with IMSLP as the first adapter
 - `lib/ingest/jobs/transitions.ts`
 - `lib/ingest/jobs/run.ts`
 - `lib/ingest/jobs/index.ts`
+- `app/api/admin/ingest/_shared.ts`
+- `app/api/admin/ingest/jobs/route.ts`
+- `app/api/admin/ingest/jobs/[id]/route.ts`
+- `app/api/admin/ingest/jobs/[id]/run/route.ts`
+- `lib/validators/ingest-job.ts`
 - `lib/ingest/results.ts`
 - `lib/ingest/persist/source-identity.ts`
 - `lib/ingest/persist/duplicate.ts`
@@ -315,7 +334,7 @@ Continue the generic source-ingestion foundation with IMSLP as the first adapter
   - a fresh outsider signup correctly lands in the new user’s personal library rather than the requested verification org
 - For concurrent agent work, prefer separate worktrees and branches, and claim file ownership in `Parallel Work Coordination` before editing.
 - For source ingestion, keep the framework generic and isolate IMSLP-specific logic inside an adapter that uses official IMSLP list endpoints for discovery and `api.php` for detailed page extraction before considering HTML scraping.
-- For implementation sequencing, use the task IDs in `docs/specs/imslp-reference-ingestion.md` rather than phase labels; the current path is `T5-1` through `T5-3`, then adapter wiring and the first IMSLP execution slice.
+- For implementation sequencing, use the task IDs in `docs/specs/imslp-reference-ingestion.md` rather than phase labels; the current path is adapter wiring and the first IMSLP execution slice after `T5-1` through `T5-3`.
 - `T1-1` currently uses a queue-ready control-plane design rather than a minimal passive log table because large backfills are expected.
 - Until the home-network IPv6 issue is fixed or managed backups are enabled, do manual logical backups from the phone/mobile network before linked-cloud migration work.
 - Prefer updating the worklog and this file before ending a session.

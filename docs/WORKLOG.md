@@ -459,3 +459,26 @@ Append-only log for implementation, investigation, and planning sessions. Keep e
 - Follow-up:
   - implement `T5-1` through `T5-3`
   - keep the `T4` services independent of `NextRequest`, cookies, and route-level auth checks
+
+### `T5-1` through `T5-3` admin ingest API slice implemented locally
+- Opened branch `feat/ingest-t5-admin-api`.
+- Added the first admin ingest API layer on top of the completed job services:
+  - `app/api/admin/ingest/_shared.ts`
+  - `app/api/admin/ingest/jobs/route.ts`
+  - `app/api/admin/ingest/jobs/[id]/route.ts`
+  - `app/api/admin/ingest/jobs/[id]/run/route.ts`
+  - `lib/validators/ingest-job.ts`
+- Implemented:
+  - contributor-plus admin gating for the new ingest routes
+  - request validation for create, id params, and single-batch run inputs
+  - `POST /api/admin/ingest/jobs`
+  - `GET /api/admin/ingest/jobs/[id]`
+  - `POST /api/admin/ingest/jobs/[id]/run`
+  - route-time candidate processor wiring to `persistComposerCandidate(...)` and `persistWorkCandidate(...)`
+- Important current limitation:
+  - the adapter registry is still a placeholder, so create/run requests will continue returning unsupported-source or missing-adapter issues until the first real adapter is wired
+- Verification:
+  - `npm run build` passes
+- Follow-up:
+  - review and merge the `T5` route slice
+  - add the first real adapter registry entry and source adapter implementation
