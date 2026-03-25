@@ -1,4 +1,3 @@
-import type { IngestCandidate } from "@/lib/ingest/candidates";
 import type {
   IngestExecutionSummary,
   IngestIssue,
@@ -44,12 +43,7 @@ function getOutcomeCounts(result: CandidatePersistResult) {
     failedCount:
       result.outcome === "failed_parse" || result.outcome === "failed_write" ? 1 : 0,
     skippedCount: result.outcome === "skipped_existing_source_match" ? 1 : 0,
-    warningCount: result.issues.filter((item) => item.severity === "warning").length,
   };
-}
-
-function candidateWarningCount(candidate: IngestCandidate): number {
-  return candidate.warnings.filter((warning) => warning.severity === "warning").length;
 }
 
 function summarizeBatchResult(
@@ -67,7 +61,6 @@ function summarizeBatchResult(
       acc.flaggedCount += counts.flaggedCount;
       acc.failedCount += counts.failedCount;
       acc.skippedCount += counts.skippedCount;
-      acc.warningCount += counts.warningCount;
       return acc;
     },
     {
@@ -77,7 +70,6 @@ function summarizeBatchResult(
       flaggedCount: 0,
       failedCount: 0,
       skippedCount: 0,
-      warningCount: 0,
     },
   );
 
@@ -92,7 +84,7 @@ function summarizeBatchResult(
     flaggedCount: job.flaggedCount + deltas.flaggedCount,
     failedCount: job.failedCount + deltas.failedCount,
     skippedCount: job.skippedCount + deltas.skippedCount,
-    warningCount: job.warningCount + deltas.warningCount + warningIssues.length,
+    warningCount: job.warningCount + warningIssues.length,
     status,
     nextCursor,
     errorSummary: summarizeIssues(errorIssues) ?? undefined,
@@ -132,6 +124,74 @@ async function updateJobState(
           error?.message ?? "Failed to update ingest job.",
           "error",
           { jobId },
+        ),
+      ],
+    };
+  }
+
+  return {
+    ok: true,
+    data: mapIngestJobRow(data),
+    issues: [],
+  };
+}
+
+async function claimRunningJob(
+  input: RunIngestJobBatchInput,
+  job: IngestJobRecord,
+  claimedBy: string,
+  now: string,
+): Promise<ServiceResult<IngestJobRecord>> {
+  let query = input.supabase
+    .from("source_ingest_job")
+    .update({
+      status: "running",
+      started_at: job.startedAt ?? now,
+      claimed_by: claimedBy,
+      claimed_at: now,
+      last_heartbeat_at: now,
+      attempt_count: job.attemptCount + 1,
+      finished_at: null,
+    })
+    .eq("id", job.id)
+    .eq("status", job.status)
+    .eq("attempt_count", job.attemptCount);
+
+  query = job.claimedBy == null
+    ? query.is("claimed_by", null)
+    : query.eq("claimed_by", job.claimedBy);
+
+  query = job.claimedAt == null
+    ? query.is("claimed_at", null)
+    : query.eq("claimed_at", job.claimedAt);
+
+  const { data, error } = await query
+    .select(SOURCE_INGEST_JOB_SELECT)
+    .maybeSingle();
+
+  if (error) {
+    return {
+      ok: false,
+      issues: [
+        issue(
+          "claim_ingest_job_failed",
+          error.message,
+          "error",
+          { jobId: job.id },
+        ),
+      ],
+    };
+  }
+
+  if (!data) {
+    return {
+      ok: false,
+      issues: [
+        issue(
+          "claim_ingest_job_conflict",
+          "The ingest job changed before it could be claimed.",
+          "error",
+          { jobId: job.id, expectedStatus: job.status },
         ),
       ],
     };
@@ -198,15 +258,12 @@ export async function runIngestJobBatch(
   }
 
   const now = new Date().toISOString();
-  const started = await updateJobState(input, currentJob.id, {
-    status: "running",
-    started_at: currentJob.startedAt ?? now,
-    claimed_by: input.workerIdentity ?? "manual:run",
-    claimed_at: now,
-    last_heartbeat_at: now,
-    attempt_count: currentJob.attemptCount + 1,
-    finished_at: null,
-  });
+  const started = await claimRunningJob(
+    input,
+    currentJob,
+    input.workerIdentity ?? "manual:run",
+    now,
+  );
 
   if (!started.ok || !started.data) {
     return {
@@ -302,12 +359,7 @@ export async function runIngestJobBatch(
         continue;
       }
 
-      batchIssues.push(
-        ...candidate.warnings.map((warning) => ({
-          ...warning,
-          severity: warning.severity,
-        })),
-      );
+      batchIssues.push(...candidate.warnings);
 
       try {
         const result = await input.processCandidate({
