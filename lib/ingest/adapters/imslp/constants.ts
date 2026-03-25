@@ -10,6 +10,7 @@ export const IMSLP_LIST_TYPE_PEOPLE = 1 as const;
 export const IMSLP_LIST_TYPE_WORKS = 2 as const;
 
 export const IMSLP_SOURCE_ENTITY_KIND_PERSON = "person" as const;
+export const IMSLP_SOURCE_ENTITY_KIND_WORK = "work" as const;
 
 export const IMSLP_CURSOR_VERSION = 1 as const;
 export const IMSLP_DEFAULT_BATCH_SIZE = 100;

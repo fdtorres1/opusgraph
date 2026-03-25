@@ -17,7 +17,7 @@ import {
   IMSLP_LIST_RETFORMAT,
   IMSLP_LIST_SORT,
   IMSLP_LIST_TYPE_PEOPLE,
-  IMSLP_SOURCE_ENTITY_KIND_PERSON,
+  IMSLP_LIST_TYPE_WORKS,
   IMSLP_TRANSPORT_ISSUE_CODES,
 } from "./constants";
 
@@ -141,12 +141,12 @@ function normalizeBatchSize(batchSize: number | undefined): {
   return { batchSize: Math.trunc(batchSize), issues: [] };
 }
 
-function buildImslpListUrl(start: number, limit: number): string {
+function buildImslpListUrl(start: number, limit: number, type: number): string {
   const query =
     `account=${IMSLP_LIST_ACCOUNT}` +
     `/disclaimer=${IMSLP_LIST_DISCLAIMER}` +
     `/sort=${IMSLP_LIST_SORT}` +
-    `/type=${IMSLP_LIST_TYPE_PEOPLE}` +
+    `/type=${type}` +
     `/limit=${limit}` +
     `/start=${start}` +
     `/retformat=${IMSLP_LIST_RETFORMAT}`;
@@ -255,22 +255,29 @@ function buildFailureIssues(
   return [issue(code, message, "error", metadata)];
 }
 
-function getListEntityKindIssue(entityKind: IngestEntityKind): IngestIssue {
+function getListEntityKindIssue(
+  type: number,
+  entityKind: IngestEntityKind,
+  supportedEntityKind: IngestEntityKind,
+): IngestIssue {
   return issue(
     IMSLP_TRANSPORT_ISSUE_CODES.unsupportedEntityKind,
-    `IMSLP type=1 list transport only supports ${IMSLP_SOURCE_ENTITY_KIND_PERSON} batches for now.`,
+    `IMSLP type=${type} list transport only supports ${supportedEntityKind} batches for now.`,
     "error",
     { entityKind },
   );
 }
 
-export async function fetchImslpType1Batch(
+async function fetchImslpListBatch(
   args: FetchBatchArgs,
+  type: number,
+  supportedEntityKind: IngestEntityKind,
+  sourceEntityKind: "person" | "work",
 ): Promise<FetchBatchResult<ImslpListRecord>> {
-  if (args.entityKind !== "composer") {
+  if (args.entityKind !== supportedEntityKind) {
     return {
       items: [],
-      issues: [getListEntityKindIssue(args.entityKind)],
+      issues: [getListEntityKindIssue(type, args.entityKind, supportedEntityKind)],
     };
   }
 
@@ -278,7 +285,7 @@ export async function fetchImslpType1Batch(
   const batchSize = normalizeBatchSize(args.batchSize);
   const issues = [...cursor.issues, ...batchSize.issues];
 
-  const url = buildImslpListUrl(cursor.offset, batchSize.batchSize);
+  const url = buildImslpListUrl(cursor.offset, batchSize.batchSize, type);
 
   let response: Response;
   try {
@@ -373,8 +380,20 @@ export async function fetchImslpType1Batch(
             offset: nextOffset,
             batchSize: normalized.meta?.limit ?? batchSize.batchSize,
             sort: IMSLP_LIST_SORT,
-            sourceEntityKind: IMSLP_SOURCE_ENTITY_KIND_PERSON,
+            sourceEntityKind,
           },
     issues,
   };
+}
+
+export async function fetchImslpType1Batch(
+  args: FetchBatchArgs,
+): Promise<FetchBatchResult<ImslpListRecord>> {
+  return fetchImslpListBatch(args, IMSLP_LIST_TYPE_PEOPLE, "composer", "person");
+}
+
+export async function fetchImslpType2Batch(
+  args: FetchBatchArgs,
+): Promise<FetchBatchResult<ImslpListRecord>> {
+  return fetchImslpListBatch(args, IMSLP_LIST_TYPE_WORKS, "work", "work");
 }
