@@ -507,7 +507,23 @@ Append-only log for implementation, investigation, and planning sessions. Keep e
     - 5 IMSLP rows fetched successfully
     - a valid next offset cursor returned
     - composer candidates and warning issues were produced from the parsed batch
+- Follow-up execution verification:
+  - restored local Supabase env from the `Supabase (OpusGraph)` 1Password item into `.env.local`
+  - ran the real job services against the linked cloud using the stored platform-admin actor `f2ed501c-74ad-4c2e-bb66-c97f5a6aa0ba`
+  - first 5-row dry-run showed the initial classifier was too permissive on junk rows like `.q, Wulfi`
+  - tightened the classifier to reject rows with invalid name parts instead of mapping them to composers
+  - reran the 5-row dry-run:
+    - zero candidates
+    - warnings only
+    - paused next-cursor at offset 5
+  - ran a 25-row dry-run:
+    - `source_ingest_job.id = 8f95737f-13ed-4336-a6c3-147dd4d4f85e`
+    - status paused at next offset 25
+    - 8 dry-run composer candidates
+    - warning codes concentrated in:
+      - `imslp_type1_non_composer_row`
+      - `imslp_type1_invalid_name_parts`
+      - `imslp_type1_unusual_name_format`
 - Follow-up:
-  - run one end-to-end dry-run job through the admin ingest APIs
-  - review how noisy the current `type=1` composer classifier is on live IMSLP data
+  - review how noisy the current `type=1` composer classifier still is on live IMSLP data
   - then branch into the next IMSLP parsing/work-support slice

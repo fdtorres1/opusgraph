@@ -146,6 +146,18 @@ function hasAlphabeticText(value: string): boolean {
   return /[\p{L}]/u.test(value);
 }
 
+function countLetters(value: string): number {
+  return Array.from(value).filter((char) => /\p{L}/u.test(char)).length;
+}
+
+function hasDigits(value: string): boolean {
+  return /\d/.test(value);
+}
+
+function startsWithNameCharacter(value: string): boolean {
+  return /^[\p{L}'’]/u.test(value);
+}
+
 function hasComposerNegation(value: string): boolean {
   const lower = value.toLowerCase();
   return COMPOSER_NEGATION_KEYWORDS.some((keyword) => lower.includes(keyword));
@@ -222,14 +234,28 @@ export function classifyImslpType1Row(
     };
   }
 
-  if (!hasAlphabeticText(canonicalName.firstName) || !hasAlphabeticText(canonicalName.lastName)) {
+  if (
+    !hasAlphabeticText(canonicalName.firstName) ||
+    !hasAlphabeticText(canonicalName.lastName) ||
+    hasDigits(canonicalName.firstName) ||
+    hasDigits(canonicalName.lastName) ||
+    countLetters(canonicalName.firstName) < 2 ||
+    countLetters(canonicalName.lastName) < 2 ||
+    !startsWithNameCharacter(canonicalName.firstName) ||
+    !startsWithNameCharacter(canonicalName.lastName)
+  ) {
     warnings.push({
-      code: "imslp_type1_uncertain_name_parts",
+      code: "imslp_type1_invalid_name_parts",
       message:
-        "IMSLP type=1 row has comma-form name parts that still look uncertain.",
+        "IMSLP type=1 row has name parts that do not look like a composer name.",
       severity: "warning",
       metadata: { list_id: listId },
     });
+    return {
+      classification: "person",
+      reason: "invalid_name_parts",
+      warnings,
+    };
   }
 
   return {

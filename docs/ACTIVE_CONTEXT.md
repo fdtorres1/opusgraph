@@ -247,6 +247,13 @@ Continue the generic source-ingestion foundation with the first real IMSLP adapt
     - 5 raw rows fetched successfully
     - a valid next offset cursor is returned
     - parsed composer candidates and warning issues are produced from the batch
+  - local linked-cloud dry-run verification now succeeds through the real job services with the existing platform-admin actor:
+    - a 5-row dry-run proved the stricter classifier now rejects the initial junk rows instead of emitting fake composers
+    - a 25-row dry-run created a real `source_ingest_job` row and produced 8 dry-run composer candidates with a paused next-cursor state at offset 25
+    - current first-batch warning mix is still noisy but now explicitly categorized:
+      - `imslp_type1_non_composer_row`
+      - `imslp_type1_invalid_name_parts`
+      - `imslp_type1_unusual_name_format`
   - `npm run build` passes after the adapter wiring was added
 - Current backup/recovery constraint:
   - Supabase-managed backups/PITR are not enabled for the OpusGraph project right now
@@ -258,9 +265,9 @@ Continue the generic source-ingestion foundation with the first real IMSLP adapt
 
 ## Next 3 Steps
 
-1. Run one end-to-end dry-run job through the admin ingest APIs against the new `imslp` adapter.
-2. Review whether the current IMSLP `type=1` composer classifier is too noisy on live data and tighten it if needed.
-3. Open the next slice for richer IMSLP parsing or work ingestion once the dry-run path is stable.
+1. Review whether the current IMSLP `type=1` composer classifier still needs another tightening pass after the successful 25-row dry-run.
+2. Decide whether the next slice should be richer composer enrichment or first work-ingestion support.
+3. Open the PR for `feat/imslp-composer-adapter` once the current verification notes are acceptable.
 
 ## Known Blockers
 

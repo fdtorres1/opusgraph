@@ -14,8 +14,8 @@ This file is the current priority view for OpusGraph. Keep it short, current, an
   - route ambiguous matches into `review_flag` instead of auto-merging
 - Immediate task slice:
   - review and merge the first IMSLP composer adapter slice on `feat/imslp-composer-adapter`
-  - run one end-to-end dry-run ingest job through the admin APIs against the real `imslp` adapter
-  - tighten composer classification if the first dry-run yields too many noisy `type=1` candidates
+  - review the successful linked-cloud dry-run results from the real `imslp` adapter
+  - tighten composer classification further only if the current warning mix is still too noisy
   - extend from composer-only IMSLP support into the next parsing or work-ingestion slice after the dry-run path is stable
   - future linked-cloud migrations still require a fresh manual backup while on the phone/mobile network until the home-network IPv6 issue is fixed
 - Primary spec: `docs/specs/imslp-reference-ingestion.md`
