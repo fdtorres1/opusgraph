@@ -524,6 +524,17 @@ Append-only log for implementation, investigation, and planning sessions. Keep e
       - `imslp_type1_non_composer_row`
       - `imslp_type1_invalid_name_parts`
       - `imslp_type1_unusual_name_format`
+- Review-driven hardening:
+  - fixed the generic runner so any fetch/parse `error`-severity issue now fails the job instead of being misread as a completed empty batch
+  - verified this with a synthetic `testsource` adapter:
+    - service returned `ok: false`
+    - persisted job status became `failed`
+    - `error_summary` captured the synthetic fetch failure
+  - changed IMSLP negation keyword checks from raw substring matching to token-based matching to avoid dropping legitimate names that merely contain fragments like `band`, `duo`, or `trio`
+  - reran the real 25-row IMSLP dry-run after the fix:
+    - `source_ingest_job.id = 6bb74a3c-b078-42f5-9ffa-717d2900a6fd`
+    - status paused
+    - 8 dry-run composer candidates
 - Follow-up:
   - review how noisy the current `type=1` composer classifier still is on live IMSLP data
   - then branch into the next IMSLP parsing/work-support slice

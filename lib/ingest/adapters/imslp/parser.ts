@@ -159,8 +159,12 @@ function startsWithNameCharacter(value: string): boolean {
 }
 
 function hasComposerNegation(value: string): boolean {
-  const lower = value.toLowerCase();
-  return COMPOSER_NEGATION_KEYWORDS.some((keyword) => lower.includes(keyword));
+  const tokens = value
+    .toLowerCase()
+    .split(/[^\p{L}]+/u)
+    .filter((token) => token.length > 0);
+
+  return COMPOSER_NEGATION_KEYWORDS.some((keyword) => tokens.includes(keyword));
 }
 
 export function parseImslpCanonicalName(value: string): ImslpCanonicalName {

@@ -254,6 +254,9 @@ Continue the generic source-ingestion foundation with the first real IMSLP adapt
       - `imslp_type1_non_composer_row`
       - `imslp_type1_invalid_name_parts`
       - `imslp_type1_unusual_name_format`
+  - follow-up review fixes are now in place locally:
+    - the generic job runner now marks a batch `failed` if fetch/parse returns any `error`-severity issue instead of silently completing on an empty `nextCursor`
+    - IMSLP negation keywords now match tokenized words instead of raw substrings, avoiding false negatives on legitimate names containing fragments like `band` or `trio`
   - `npm run build` passes after the adapter wiring was added
 - Current backup/recovery constraint:
   - Supabase-managed backups/PITR are not enabled for the OpusGraph project right now
