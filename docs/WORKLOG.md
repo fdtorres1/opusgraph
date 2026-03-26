@@ -945,3 +945,53 @@ Append-only log for implementation, investigation, and planning sessions. Keep e
   - the failed `100`-to-`199` work slice has now been recovered successfully
   - the earlier failures were caused by missing composer coverage, not by a new IMSLP parser/persistence bug
   - the next clean move is a fresh live job starting at offset `200`
+
+### Fresh live offset-`200` run exposed the next composer-coverage gap, then targeted recovery nearly cleared it
+- Started a fresh live IMSLP work job from offset `200` instead of resuming the older cumulative job:
+  - live job `d9b19914-4e5b-428b-8f07-0bfaed491fde`
+  - `100` processed
+  - `29` created
+  - `1` updated
+  - `70` failed
+  - paused at offset `300`
+- Error summary for that fresh offset-`200` run:
+  - `missing_resolved_composer_id` (`70`)
+  - `imslp_work_page_invalid_payload` (`1`)
+- Warning summary for that fresh offset-`200` run:
+  - `imslp_work_page_redirected` (`4`)
+  - `imslp_work_unparsed_movements` (`124`)
+  - `imslp_work_page_invalid_payload` (`1`)
+- Replayed the same `200`-to-`299` range directly through the IMSLP adapter and composer-resolution logic:
+  - confirmed `70` unresolved work rows in that slice
+  - those failures collapsed to `62` unique missing composer identities
+- Seeded those `62` missing composers directly with IMSLP source identity and work-slice metadata:
+  - `62` new IMSLP composer rows created
+  - IMSLP composer coverage with `external_ids.imslp` is now `265`
+- Ran a targeted live backfill for the failed `200`-to-`299` work range:
+  - backfill job `c89bf4ee-7b04-41f0-ab25-e759dc2aaf38`
+  - `100` processed
+  - `67` created
+  - `31` updated
+  - `1` failed
+  - `1` flagged duplicate
+  - paused at offset `300`
+- Error summary for the backfill:
+  - `invalid_duration_text` (`1`)
+  - `imslp_work_page_invalid_payload` (`1`)
+- Warning summary for the backfill:
+  - `imslp_work_page_redirected` (`4`)
+  - `imslp_work_unparsed_movements` (`124`)
+  - `imslp_work_page_invalid_payload` (`1`)
+- Interpretation:
+  - composer coverage was again the dominant blocker, and the targeted seeding loop fixed it for this slice
+  - the `200`-to-`299` range is now reduced to one real failed row plus one duplicate-review case
+  - the next choice is whether to isolate those residual cases first or accept them and continue a fresh live job from offset `300`
+- Post-seed dry-run replay of the same `200`-to-`299` range identified the exact residual rows:
+  - dry-run job `ee26e1c7-8099-41e6-9b58-45678e1a8834`
+  - duplicate-review case:
+    - work `'Tis but a little faded Flower`
+    - composer `Thomas, John Rogers`
+    - duplicate target `977a660f-ed50-43d1-825f-846ce681d71b`
+  - failed-parse case:
+    - work `'Tis to Waft, Op.26 (Armstrong, Peter McKenzie)`
+    - duration text `2 minutes each`

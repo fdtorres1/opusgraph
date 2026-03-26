@@ -4,7 +4,7 @@ This is the canonical handoff file for the next session. Rewrite freely as prior
 
 ## Current Objective
 
-Continue the generic source-ingestion foundation by deciding how to continue live IMSLP work ingestion after recovering the failed `100`-to-`199` slice.
+Continue the generic source-ingestion foundation by recovering the fresh live IMSLP work run at offset `200` and deciding whether the next clean move is a parser cleanup or a fresh live run from offset `300`.
 
 ## Current Branch
 
@@ -459,6 +459,51 @@ Continue the generic source-ingestion foundation by deciding how to continue liv
     - the failed `100`-to-`199` work slice has now been recovered successfully
     - the resumed-job failures were a composer-coverage problem, not a new ingestion bug
     - the next operational choice is whether to continue from offset `200` using a fresh clean job or to keep resuming the earlier cumulative job with historical failures in its totals
+  - fresh live offset-`200` run is now complete:
+    - fresh live job `d9b19914-4e5b-428b-8f07-0bfaed491fde`
+    - `100` processed
+    - `29` created
+    - `1` updated
+    - `70` failed
+    - paused at offset `300`
+    - error summary:
+      - `missing_resolved_composer_id` (`70`)
+      - `imslp_work_page_invalid_payload` (`1`)
+    - warning summary:
+      - `imslp_work_page_redirected` (`4`)
+      - `imslp_work_unparsed_movements` (`124`)
+      - `imslp_work_page_invalid_payload` (`1`)
+  - targeted composer recovery for the failed `200`-to-`299` work slice is now mostly complete:
+    - direct adapter replay of that slice confirmed `70` unresolved work rows collapsing to `62` unique missing composers
+    - targeted IMSLP composer seeding then created all `62` missing composer rows
+    - IMSLP composer coverage with `external_ids.imslp` is now `265`
+  - targeted live backfill for the failed `200`-to-`299` range is now mostly complete:
+    - backfill job `c89bf4ee-7b04-41f0-ab25-e759dc2aaf38`
+    - `100` processed
+    - `67` created
+    - `31` updated
+    - `1` failed
+    - `1` flagged duplicate
+    - paused at offset `300`
+    - error summary:
+      - `invalid_duration_text` (`1`)
+      - `imslp_work_page_invalid_payload` (`1`)
+    - warning summary:
+      - `imslp_work_page_redirected` (`4`)
+      - `imslp_work_unparsed_movements` (`124`)
+      - `imslp_work_page_invalid_payload` (`1`)
+  - current conclusion:
+    - composer coverage was again the dominant blocker for this slice and targeted seeding fixed it
+    - the `200`-to-`299` range is now reduced to one real failed row plus one duplicate-review case
+    - post-seed dry-run `ee26e1c7-8099-41e6-9b58-45678e1a8834` identified the exact residual rows:
+      - duplicate review:
+        - `'Tis but a little faded Flower`
+        - composer `Thomas, John Rogers`
+        - duplicate target `977a660f-ed50-43d1-825f-846ce681d71b`
+      - failed parse:
+        - `'Tis to Waft, Op.26 (Armstrong, Peter McKenzie)`
+        - duration text `2 minutes each`
+    - the next decision is whether to isolate those two residual cases first or accept them and continue live ingestion from offset `300`
 - Current backup/recovery constraint:
   - Supabase-managed daily physical backups are now present for the OpusGraph project after the March 26, 2026 plan upgrade
   - latest managed physical backup reported by `supabase backups list`:
@@ -472,9 +517,14 @@ Continue the generic source-ingestion foundation by deciding how to continue liv
 
 ## Next 3 Steps
 
-1. Start the next live IMSLP work run from offset `200`, preferably as a fresh clean job rather than by resuming the older cumulative job `95e5fd1e-765b-4c8d-89f2-df25ba364a04`.
-2. Watch whether composer coverage remains stable past offset `200` or whether another targeted seed/backfill loop is needed.
-3. Decide whether `imslp_work_page_missing_wikitext` needs special handling or can remain a tracked warning class.
+1. Decide whether to treat the remaining duplicate-review case as acceptable operational debt:
+   - `'Tis but a little faded Flower`
+   - composer `Thomas, John Rogers`
+   - duplicate target `977a660f-ed50-43d1-825f-846ce681d71b`
+2. Decide whether to normalize the remaining IMSLP-specific duration edge case before scaling:
+   - `'Tis to Waft, Op.26 (Armstrong, Peter McKenzie)`
+   - duration text `2 minutes each`
+3. If those residual cases are acceptable, start a fresh live IMSLP work job at offset `300` and keep targeted composer seeding available if the next slice exposes another coverage gap.
 
 ## Known Blockers
 
