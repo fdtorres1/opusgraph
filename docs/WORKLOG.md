@@ -995,3 +995,30 @@ Append-only log for implementation, investigation, and planning sessions. Keep e
   - failed-parse case:
     - work `'Tis to Waft, Op.26 (Armstrong, Peter McKenzie)`
     - duration text `2 minutes each`
+- Fixed the remaining duration parse edge case in `lib/ingest/adapters/imslp/work-fields.ts`:
+  - IMSLP-specific `Average Duration` text like `2 minutes each` now normalizes to `2 minutes` before the generic duration parser runs
+- Verified the parser fix:
+  - `npm run build` passes
+  - post-fix dry-run job `9195e31d-bd3c-407b-97e1-a5b3c783e93e`
+  - outcomes:
+    - `1` created
+    - `98` updated
+    - `1` flagged duplicate
+    - `0` failed
+  - remaining non-green row is only the duplicate-review case:
+    - work `'Tis but a little faded Flower`
+    - composer `Thomas, John Rogers`
+    - duplicate target `977a660f-ed50-43d1-825f-846ce681d71b`
+- Ran a final live backfill for the same `200`-to-`299` range after the duration fix:
+  - backfill job `313d8c35-6f13-4bcc-8de8-5b935fe77bda`
+  - `100` processed
+  - `1` created
+  - `98` updated
+  - `0` failed
+  - `1` flagged duplicate
+  - paused at offset `300`
+  - error summary now contains only `imslp_work_page_invalid_payload` (`1`)
+- Final interpretation for the offset-`200` slice:
+  - composer coverage and duration parsing are no longer blocking this range
+  - the slice is fully write-recovered except for the one intentional duplicate-review path
+  - the next clean operational move is a fresh live IMSLP work job from offset `300` if that duplicate-review case is acceptable

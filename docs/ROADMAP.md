@@ -14,10 +14,10 @@ This file is the current priority view for OpusGraph. Keep it short, current, an
   - route ambiguous matches into `review_flag` instead of auto-merging
 - Immediate task slice:
   - finish closing the offset-`200` slice after the fresh live run and targeted composer-seeding recovery
-  - the fresh live offset-`200` job exposed `70` new composer-resolution misses; targeted seeding then created `62` more IMSLP composers and a clean backfill reduced the slice to:
-    - `1` failed row
+  - the fresh live offset-`200` job exposed `70` new composer-resolution misses; targeted seeding then created `62` more IMSLP composers and follow-up backfills reduced the slice to:
+    - `0` failed rows
     - `1` duplicate-review case
-  - decide whether to isolate those residual cases first or accept them and continue from offset `300`
+  - decide whether to accept that duplicate-review case and continue from offset `300`
   - inspect the remaining warning mix at real write scale:
     - movement parsing
     - redirected IMSLP pages

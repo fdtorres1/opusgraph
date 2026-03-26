@@ -4,7 +4,7 @@ This is the canonical handoff file for the next session. Rewrite freely as prior
 
 ## Current Objective
 
-Continue the generic source-ingestion foundation by recovering the fresh live IMSLP work run at offset `200` and deciding whether the next clean move is a parser cleanup or a fresh live run from offset `300`.
+Continue the generic source-ingestion foundation by deciding whether to accept the single duplicate-review case left in the `200` slice and then continue live IMSLP work ingestion from offset `300`.
 
 ## Current Branch
 
@@ -494,16 +494,23 @@ Continue the generic source-ingestion foundation by recovering the fresh live IM
       - `imslp_work_page_invalid_payload` (`1`)
   - current conclusion:
     - composer coverage was again the dominant blocker for this slice and targeted seeding fixed it
-    - the `200`-to-`299` range is now reduced to one real failed row plus one duplicate-review case
-    - post-seed dry-run `ee26e1c7-8099-41e6-9b58-45678e1a8834` identified the exact residual rows:
+    - post-seed dry-run `ee26e1c7-8099-41e6-9b58-45678e1a8834` first reduced the `200`-to-`299` range to one failed row plus one duplicate-review case
+    - an IMSLP-specific duration normalization fix for `2 minutes each` is now implemented in `lib/ingest/adapters/imslp/work-fields.ts`
+    - post-fix dry-run `9195e31d-bd3c-407b-97e1-a5b3c783e93e` reduced the slice to just one duplicate-review case with no failed rows
+    - the exact residual row is now:
       - duplicate review:
         - `'Tis but a little faded Flower`
         - composer `Thomas, John Rogers`
         - duplicate target `977a660f-ed50-43d1-825f-846ce681d71b`
-      - failed parse:
-        - `'Tis to Waft, Op.26 (Armstrong, Peter McKenzie)`
-        - duration text `2 minutes each`
-    - the next decision is whether to isolate those two residual cases first or accept them and continue live ingestion from offset `300`
+    - post-fix live backfill `313d8c35-6f13-4bcc-8de8-5b935fe77bda` confirms the `200`-to-`299` slice is now fully write-recovered apart from that duplicate-review path:
+      - `100` processed
+      - `1` created
+      - `98` updated
+      - `0` failed
+      - `1` flagged duplicate
+      - paused at offset `300`
+      - error summary now only contains `imslp_work_page_invalid_payload` (`1`)
+    - the next decision is whether to accept that duplicate-review case and continue live ingestion from offset `300`
 - Current backup/recovery constraint:
   - Supabase-managed daily physical backups are now present for the OpusGraph project after the March 26, 2026 plan upgrade
   - latest managed physical backup reported by `supabase backups list`:
@@ -521,10 +528,8 @@ Continue the generic source-ingestion foundation by recovering the fresh live IM
    - `'Tis but a little faded Flower`
    - composer `Thomas, John Rogers`
    - duplicate target `977a660f-ed50-43d1-825f-846ce681d71b`
-2. Decide whether to normalize the remaining IMSLP-specific duration edge case before scaling:
-   - `'Tis to Waft, Op.26 (Armstrong, Peter McKenzie)`
-   - duration text `2 minutes each`
-3. If those residual cases are acceptable, start a fresh live IMSLP work job at offset `300` and keep targeted composer seeding available if the next slice exposes another coverage gap.
+2. If that duplicate-review case is acceptable, start a fresh live IMSLP work job at offset `300`.
+3. Keep targeted composer seeding available if the next slice exposes another coverage gap.
 
 ## Known Blockers
 

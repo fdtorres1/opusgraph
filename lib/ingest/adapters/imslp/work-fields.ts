@@ -103,6 +103,13 @@ function normalizeImslpDurationText(value: string | null): string | null {
     return null;
   }
 
+  const eachMatch = /^(\d+(?:\.\d+)?)\s+(minutes?|mins?|min|seconds?|secs?|sec|hours?|hrs?|hr)\s+each$/i.exec(
+    value,
+  );
+  if (eachMatch?.[1] && eachMatch[2]) {
+    return `${eachMatch[1]} ${eachMatch[2]}`;
+  }
+
   // IMSLP work pages sometimes store average duration as a bare numeral.
   // Treat that source-specific shorthand as minutes without changing the
   // preserved raw field text.
