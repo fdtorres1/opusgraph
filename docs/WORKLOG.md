@@ -343,17 +343,32 @@ Append-only log for implementation, investigation, and planning sessions. Keep e
   - unambiguous fuzzy duplicate fallback via `find_duplicate_composers(...)` third
 - Verification:
   - `npm run build` passes
-  - linked-cloud dry-run for a 5-row IMSLP work batch still pauses cleanly but returns:
+  - initial linked-cloud dry-run for a 5-row IMSLP work batch still returned:
     - job `5d730166-2bb7-4fd3-806f-b830077d073c`
     - `5` `missing_resolved_composer_id` failures
-  - direct DB inspection of the first five IMSLP work-row composer names shows:
+  - direct DB inspection of the first five IMSLP work-row composer names showed:
     - `0` exact composer matches
     - `0` fuzzy duplicate matches
+- Targeted linked-cloud composer seeding completed for the first missing work composers:
+  - `Stankovych, Tatiana`
+  - `Ladd, Gertrude I.`
+  - `Esnaola, Juan Pedro`
+  - `Eisenbrey, Keith`
+  - `West, Alfred H.`
+  - all 5 composer writes succeeded with IMSLP source identity stored on the created rows
+- Post-seed verification:
+  - work job `d2721735-445d-441a-a68c-6c1a62d38eee` no longer shows 5 missing-composer failures
+  - detailed rerun outcome for the same first 5 work candidates:
+    - `created`:
+      - `"Mrs. Ramsay rose. Lily rose." (Eisenbrey, Keith)`
+      - `"My Old Dutch" Waltz (West, Alfred H.)`
+    - `failed_parse` due to `invalid_duration_text`:
+      - `Four hands 'Amicizia' (Stankovych, Tatiana)`
+      - `"In Memoriam" A. Lincoln (Ladd, Gertrude I.)`
+      - `Los ojos tiernos (Esnaola, Juan Pedro)`
 - Conclusion:
-  - the current remaining work-job failures are due to missing composer coverage in the reference DB, not because the resolution helper is still too weak
-- Most likely next move:
-  - run enough IMSLP composer ingestion in write mode first
-  - then retry IMSLP work dry-runs once source-identity composer matches exist
+  - targeted composer seeding was enough to unblock composer resolution for the first IMSLP work batch
+  - the next practical work-ingestion blocker is duration normalization for human text like `1 minute` / `3 minutes`
 
 ## 2026-03-24
 

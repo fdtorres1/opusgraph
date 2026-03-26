@@ -274,17 +274,24 @@ Continue the generic source-ingestion foundation with composer-resolution follow
     - source-identity match
     - exact canonical-name match
     - unambiguous fuzzy duplicate fallback via `find_duplicate_composers(...)`
-  - linked-cloud dry-run result is unchanged for the first 5 work rows:
-    - job `5d730166-2bb7-4fd3-806f-b830077d073c`
-    - still `5` `missing_resolved_composer_id` failures
-  - direct DB inspection confirms the first 5 composer names from IMSLP work rows have:
+  - direct DB inspection initially confirmed the first 5 composer names from IMSLP work rows had:
     - `0` exact composer matches
     - `0` fuzzy duplicate matches
+  - targeted IMSLP composer seeding is now done in the linked cloud for:
+    - `Stankovych, Tatiana`
+    - `Ladd, Gertrude I.`
+    - `Esnaola, Juan Pedro`
+    - `Eisenbrey, Keith`
+    - `West, Alfred H.`
+  - post-seed linked-cloud dry-run result:
+    - work job `d2721735-445d-441a-a68c-6c1a62d38eee` no longer fails entirely on missing composers
+    - detailed rerun shows all five composers now resolve
+    - current first-batch outcomes are:
+      - `created` for the two works with null duration text
+      - `failed_parse` with `invalid_duration_text` for the three works whose IMSLP duration is human text like `1 minute`
   - conclusion:
-    - the remaining first-batch work-job failures are now a data-coverage problem, not a matching bug
-    - the next meaningful improvement is likely one of:
-      - seed enough IMSLP composers first so work jobs resolve by source identity
-      - or design a workflow for creating/importing missing composers from the work path
+    - composer-resolution is now good enough for the first IMSLP work batch after targeted seeding
+    - the next concrete blocker for early work ingestion is duration normalization, not composer matching
 - Current backup/recovery constraint:
   - Supabase-managed backups/PITR are not enabled for the OpusGraph project right now
   - manual logical backup is the current safety path before linked-cloud schema changes
