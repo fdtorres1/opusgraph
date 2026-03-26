@@ -4,7 +4,7 @@ This is the canonical handoff file for the next session. Rewrite freely as prior
 
 ## Current Objective
 
-Continue the generic source-ingestion foundation by deciding whether to broaden IMSLP composer coverage for larger work batches or begin a first small write-mode IMSLP work ingest now that the early work slice is green in dry-run mode.
+Continue the generic source-ingestion foundation by deciding whether to normalize one last IMSLP bare-numeric duration edge case and then start a small write-mode IMSLP work ingest, or to stop at the current `99/100` larger-batch dry-run state and defer that edge case.
 
 ## Current Branch
 
@@ -333,9 +333,40 @@ Continue the generic source-ingestion foundation by deciding whether to broaden 
     - `25` processed
     - `25` dry-run `created`
     - `0` failed
+  - larger-batch dry-run then confirmed composer coverage was still the dominant blocker:
+    - `source_ingest_job.id = c973dbc8-8ff4-4107-b719-0948c45dab6e`
+    - `100` processed
+    - `34` dry-run `created`
+    - `66` failed
+    - failure mix:
+      - `65` `missing_resolved_composer_id`
+      - `1` `invalid_duration_text`
+  - targeted work-derived composer seeding was then used on the unresolved 100-row slice:
+    - `50` additional IMSLP composers created from missing composer names in that slice
+    - linked-cloud IMSLP composer coverage is now `154`
+    - sample targeted seeds include:
+      - `Von Calged, Kosta`
+      - `Valente, Vincenzo`
+      - `Cangiullo, Francesco`
+      - `D'Arienzo, Nicola`
+      - `Liucci, Giacinto`
+      - `Criscuolo, Luigi`
+      - `Sava, Raffaele`
+      - `De Curtis, Giambattista`
+      - `Berruti, Giuseppe`
+      - `Musella, Roberto`
+  - linked-cloud 100-row work dry-run after targeted seeding:
+    - `source_ingest_job.id = 2db2dd64-15e5-4353-9a73-8b3652a25c46`
+    - `100` processed
+    - `99` dry-run `created`
+    - `1` failed
+    - remaining failure:
+      - `invalid_duration_text` on `'A cagnacavalle (Albertin)`
+      - extracted IMSLP `Average Duration` text is the bare numeral `2`
   - conclusion:
-    - the first 25 IMSLP work rows are now green in dry-run mode
-    - the next practical move is to choose between broader composer seeding for larger batches and a first small write-mode IMSLP work ingest
+    - targeted work-derived composer seeding scales well enough to materially improve larger work batches
+    - composer resolution is no longer the dominant blocker for the first 100 IMSLP work rows
+    - the only remaining known failure in that 100-row slice is a bare-numeric IMSLP duration edge case
 - Current backup/recovery constraint:
   - Supabase-managed backups/PITR are not enabled for the OpusGraph project right now
   - manual logical backup is the current safety path before linked-cloud schema changes
@@ -346,9 +377,9 @@ Continue the generic source-ingestion foundation by deciding whether to broaden 
 
 ## Next 3 Steps
 
-1. Rerun a larger linked-cloud IMSLP work dry-run, likely `batchSize = 100`, to measure how much composer coverage still limits later rows.
-2. Decide whether to keep seeding missing composers from work-context slices or to run another broader composer seed batch before any write-mode work ingest.
-3. If the larger dry-run error mix looks manageable, run a first small write-mode IMSLP work ingest with a conservative limit and backup discipline.
+1. Decide whether to normalize IMSLP bare numeric duration text like `2` as minutes in the IMSLP path, rather than globally for every import source.
+2. If that edge case is fixed, rerun the linked-cloud 100-row work dry-run and confirm the first 100 IMSLP rows are fully green.
+3. Then take a fresh manual backup and run a first small write-mode IMSLP work ingest with a conservative limit.
 
 ## Known Blockers
 

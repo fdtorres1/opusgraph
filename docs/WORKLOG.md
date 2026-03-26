@@ -745,3 +745,44 @@ Append-only log for implementation, investigation, and planning sessions. Keep e
 - Conclusion:
   - the first 25 IMSLP work rows are now green in dry-run mode
   - the next decision is whether to broaden composer coverage for larger batches or begin a small write-mode IMSLP work ingest
+
+### Targeted composer seeding lifts the first 100-row IMSLP work dry-run to 99/100
+- Continued work on branch `feat/imslp-work-composer-resolution`.
+- Ran a linked-cloud 100-row IMSLP work dry-run before any further seeding:
+  - `source_ingest_job.id = c973dbc8-8ff4-4107-b719-0948c45dab6e`
+  - results:
+    - `34` created
+    - `66` failed
+  - failure mix:
+    - `65` `missing_resolved_composer_id`
+    - `1` `invalid_duration_text`
+- Conclusion from that run:
+  - another write-mode work ingest would still be premature
+  - composer coverage, not parsing quality, was still the dominant blocker at `batchSize = 100`
+- Derived the unresolved composer names directly from the failed 100-row work slice and seeded them with IMSLP provenance plus work-context metadata.
+- Targeted work-derived seeding results:
+  - `50` composers created
+  - linked-cloud IMSLP composer coverage increased from `104` to `154`
+  - sample targeted seeds:
+    - `Von Calged, Kosta`
+    - `Valente, Vincenzo`
+    - `Cangiullo, Francesco`
+    - `D'Arienzo, Nicola`
+    - `Liucci, Giacinto`
+    - `Criscuolo, Luigi`
+    - `Sava, Raffaele`
+    - `De Curtis, Giambattista`
+    - `Berruti, Giuseppe`
+    - `Musella, Roberto`
+- Reran the linked-cloud 100-row IMSLP work dry-run after targeted seeding:
+  - `source_ingest_job.id = 2db2dd64-15e5-4353-9a73-8b3652a25c46`
+  - results:
+    - `99` created
+    - `1` failed
+  - remaining failed work:
+    - `'A cagnacavalle (Albertin)`
+    - issue: `invalid_duration_text`
+    - extracted IMSLP `Average Duration` is the bare numeral `2`
+- Conclusion:
+  - targeted work-derived composer seeding is effective enough to keep using
+  - the first 100-row IMSLP work slice is now blocked by one narrow duration edge case, not by composer resolution
