@@ -4,7 +4,7 @@ This is the canonical handoff file for the next session. Rewrite freely as prior
 
 ## Current Objective
 
-Continue the generic source-ingestion foundation with composer-resolution follow-up for IMSLP work jobs now that the first IMSLP work adapter is merged on `main`.
+Continue the generic source-ingestion foundation with duration-normalization follow-up for IMSLP work jobs now that broader composer seeding has materially improved early work-batch resolution.
 
 ## Current Branch
 
@@ -26,7 +26,7 @@ Continue the generic source-ingestion foundation with composer-resolution follow
 - Agent: current Codex session
   - Worktree: current checkout at `/Volumes/Felix-SSD-1/Cursor Projects/opusgraph`
   - Branch: `feat/imslp-work-composer-resolution`
-  - Scope: improve composer resolution for IMSLP work jobs, verify whether the remaining first-batch failures are algorithmic or data-coverage related, and document the next move
+  - Scope: broaden IMSLP composer coverage enough to improve early work-batch resolution, verify whether the next blocker is still composer matching or downstream normalization, and document the next move
   - File ownership:
     - `docs/ACTIVE_CONTEXT.md`
     - `app/api/admin/ingest/_shared.ts`
@@ -291,10 +291,42 @@ Continue the generic source-ingestion foundation with composer-resolution follow
     - current warnings are only:
       - `imslp_work_page_redirected`
       - `imslp_work_unparsed_movements`
+  - broader linked-cloud composer seeding now improved larger early work coverage:
+    - IMSLP composer coverage with `external_ids.imslp` is now `104`
+    - broad 100-row composer seed job:
+      - `source_ingest_job.id = 0f10634b-9c97-4120-b0f1-710ff469b301`
+      - `79` created
+      - `0` failed
+      - next cursor offset `100`
+    - targeted seeding then created `20` more IMSLP composers directly from the first unresolved 25-row work slice:
+      - `Hakobjanyan, Anna`
+      - `Galuza, Artiom`
+      - `Gonzaga, Thales`
+      - `Hamilton, Jesse J.`
+      - `Salbert, Dieter`
+      - `Mahler, Gustav`
+      - `Feng, Thomas`
+      - `Ochs, Siegfried`
+      - `Paër, Ferdinando`
+      - `Bohn, James`
+      - `Wesley, Samuel`
+      - `Shannon, William R.`
+      - `Nutile, Emmanuele`
+      - `Caccavale, Giuseppe`
+      - `Costa, Pasquale Mario`
+      - `Di Chiara, Vincenzo`
+      - `Taranto, Guido`
+      - `Albertin`
+      - `Segrè, Raffaele`
+      - `Fragna, Luigi`
+    - after broader seeding, linked-cloud 25-row work dry-run `7d4efb7b-2a71-4b62-8a53-6c7e9cf1481e` improved to:
+      - `25` processed
+      - `21` dry-run `created`
+      - `4` failed
+      - remaining failure code is only `invalid_duration_text`
   - conclusion:
-    - composer-resolution is now good enough for the first IMSLP work batch after targeted seeding
-    - duration normalization is not the current blocker for those first rows
-    - the next practical move is to broaden composer coverage enough for larger work batches, then decide when to run the first small write-mode IMSLP work ingest
+    - composer resolution is no longer the main blocker for the first 25 IMSLP work rows
+    - the next practical move is to fix the remaining human-duration strings before deciding whether to broaden composer seeding further or begin a small write-mode work ingest
 - Current backup/recovery constraint:
   - Supabase-managed backups/PITR are not enabled for the OpusGraph project right now
   - manual logical backup is the current safety path before linked-cloud schema changes
@@ -305,9 +337,9 @@ Continue the generic source-ingestion foundation with composer-resolution follow
 
 ## Next 3 Steps
 
-1. Review whether the current IMSLP `type=1` composer classifier still needs another tightening pass after the successful 25-row dry-run.
-2. Decide whether the next slice should be richer composer enrichment or first work-ingestion support.
-3. Open the PR for `feat/imslp-composer-adapter` once the current verification notes are acceptable.
+1. Fix the remaining IMSLP human-duration strings behind the four `invalid_duration_text` failures in the first 25-row work dry-run.
+2. Rerun the linked-cloud 25-row work dry-run to confirm the early IMSLP work slice is fully green after duration normalization improves.
+3. If the early work slice stays green, decide whether to broaden composer coverage for larger work batches or start a first small write-mode IMSLP work ingest.
 
 ## Known Blockers
 

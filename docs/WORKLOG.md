@@ -654,3 +654,64 @@ Append-only log for implementation, investigation, and planning sessions. Keep e
 - Follow-up:
   - review how noisy the current `type=1` composer classifier still is on live IMSLP data
   - then branch into the next IMSLP parsing/work-support slice
+
+### Broader IMSLP composer seeding materially improved early work-batch coverage
+- Continued work on branch `feat/imslp-work-composer-resolution`.
+- Measured linked-cloud IMSLP composer coverage before broader seeding:
+  - `5` composers with `external_ids.imslp`
+- Ran a broader linked-cloud composer seed batch through the real job services:
+  - `source_ingest_job.id = 0f10634b-9c97-4120-b0f1-710ff469b301`
+  - source `imslp`
+  - entity kind `composer`
+  - write mode (`dryRun = false`)
+  - batch size `100`
+  - results:
+    - `79` created
+    - `0` failed
+    - `21` warnings
+    - next cursor offset `100`
+- Reran a linked-cloud 25-row IMSLP work dry-run after that broader batch:
+  - composer coverage rose to `84`
+  - `source_ingest_job.id = 08f624a9-3aac-45c5-b086-c92c7108fa80`
+  - results:
+    - `5` created
+    - `20` failed
+    - all remaining failures were still `missing_resolved_composer_id`
+- Parsed the first 25 IMSLP work candidates directly and extracted the still-missing composer identities from that slice.
+- Seeded `20` additional IMSLP composers directly from that unresolved first-25 work slice with IMSLP provenance and work-context metadata:
+  - `Hakobjanyan, Anna`
+  - `Galuza, Artiom`
+  - `Gonzaga, Thales`
+  - `Hamilton, Jesse J.`
+  - `Salbert, Dieter`
+  - `Mahler, Gustav`
+  - `Feng, Thomas`
+  - `Ochs, Siegfried`
+  - `Paër, Ferdinando`
+  - `Bohn, James`
+  - `Wesley, Samuel`
+  - `Shannon, William R.`
+  - `Nutile, Emmanuele`
+  - `Caccavale, Giuseppe`
+  - `Costa, Pasquale Mario`
+  - `Di Chiara, Vincenzo`
+  - `Taranto, Guido`
+  - `Albertin`
+  - `Segrè, Raffaele`
+  - `Fragna, Luigi`
+- Measured linked-cloud IMSLP composer coverage after broader seeding:
+  - `104` composers with `external_ids.imslp`
+- Reran the linked-cloud 25-row IMSLP work dry-run:
+  - `source_ingest_job.id = 7d4efb7b-2a71-4b62-8a53-6c7e9cf1481e`
+  - results:
+    - `21` created
+    - `4` failed
+    - remaining failure code is now only `invalid_duration_text`
+  - remaining failed works:
+    - `The Girl from the Bus Station (Gonzaga, Thales)`
+    - `Symphony No.2, GMW 30 (Mahler, Gustav)`
+    - `"of being a self in a song" (Feng, Thomas)`
+    - `'4-4-8' Claves Quartet (Shannon, William R.)`
+- Conclusion:
+  - composer resolution is no longer the main blocker for the first 25 IMSLP work rows
+  - the next concrete defect is duration-text normalization
