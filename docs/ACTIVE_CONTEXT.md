@@ -419,8 +419,11 @@ Continue the generic source-ingestion foundation by validating and scaling the f
     - redirected-page examples like `12 Short Pieces for the Organ (Wesley, Samuel)` resolved to the expected canonical page title
     - the dominant `imslp_work_unparsed_movements` warnings are mostly single-count or descriptive movement text such as `1`, `1 movement`, or `13 pieces actually, and a voluntary`, which is acceptable to preserve as raw metadata for now
 - Current backup/recovery constraint:
-  - Supabase-managed backups/PITR are not enabled for the OpusGraph project right now
-  - manual logical backup is the current safety path before linked-cloud schema changes
+  - Supabase-managed daily physical backups are now present for the OpusGraph project after the March 26, 2026 plan upgrade
+  - latest managed physical backup reported by `supabase backups list`:
+    - `2026-03-26T11:45:07.356Z` (`2026-03-26 06:45:07 CDT`)
+  - PITR is still not enabled
+  - manual logical backup is no longer the only safety path, but it is still the best option when a downloadable artifact is required before high-risk linked-cloud work
   - the direct database host is IPv6-only and does not work from the home network
   - the direct `pg_dump` path does work when the machine is on the phone hotspot/mobile network
   - latest successful manual backup artifact:

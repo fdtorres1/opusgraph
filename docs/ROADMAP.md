@@ -20,7 +20,7 @@ This file is the current priority view for OpusGraph. Keep it short, current, an
     - redirected IMSLP pages
     - ambiguous composition years
   - keep targeted composer seeding available as an operational tool if later work slices expose new coverage gaps
-  - future linked-cloud migrations still require a fresh manual backup while on the phone/mobile network until the home-network IPv6 issue is fixed
+  - Supabase-managed daily physical backups are now available after the plan upgrade, but PITR is still off and phone-network manual dumps remain useful when a downloadable artifact is needed
 - Primary spec: `docs/specs/imslp-reference-ingestion.md`
 
 ## Next

@@ -880,3 +880,16 @@ Append-only log for implementation, investigation, and planning sessions. Keep e
 - Conclusion:
   - the current warning mix looks acceptable for continuing the live job
   - the next safe operational step is another phone-network backup, then resuming paused job `95e5fd1e-765b-4c8d-89f2-df25ba364a04` from offset `100`
+
+### Supabase-managed physical backups are now online after the plan upgrade
+- Checked the live project backup inventory with:
+  - `supabase backups list --project-ref vszoxfmjkasnjpzieyyd -o json`
+- Current reported state:
+  - daily physical backups are present and `COMPLETED`
+  - latest backup timestamp:
+    - `2026-03-26T11:45:07.356Z`
+  - older completed physical backups are visible back through `2026-03-19`
+  - `pitr_enabled` is still `false`
+- Operational implication:
+  - the repo should stop describing managed backups as unavailable
+  - manual phone-network logical dumps are still useful when a downloadable backup artifact is required, but they are no longer the only recovery path
