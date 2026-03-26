@@ -4,7 +4,7 @@ This is the canonical handoff file for the next session. Rewrite freely as prior
 
 ## Current Objective
 
-Continue the generic source-ingestion foundation by deciding whether to scale the first successful write-mode IMSLP work ingest beyond the initial 25-row batch.
+Continue the generic source-ingestion foundation by validating and scaling the first successful 100-row write-mode IMSLP work ingest.
 
 ## Current Branch
 
@@ -26,7 +26,7 @@ Continue the generic source-ingestion foundation by deciding whether to scale th
 - Agent: current Codex session
   - Worktree: current checkout at `/Volumes/Felix-SSD-1/Cursor Projects/opusgraph`
   - Branch: `feat/imslp-work-composer-resolution`
-  - Scope: broaden IMSLP composer coverage enough to improve early work-batch resolution, verify whether the next blocker is still composer matching or downstream normalization, and document the next move
+  - Scope: validate the first larger write-mode IMSLP work batch, capture the exact linked-cloud outcome, and define the next safe scale-up step
   - File ownership:
     - `docs/ACTIVE_CONTEXT.md`
     - `app/api/admin/ingest/_shared.ts`
@@ -388,20 +388,44 @@ Continue the generic source-ingestion foundation by deciding whether to scale th
   - conclusion:
     - targeted work-derived composer seeding scales well enough to materially improve larger work batches
     - the first write-mode IMSLP work batch succeeded cleanly
-    - the next practical move is to choose the next scale-up step rather than continue proving the same path at batch size `25`
+    - the next practical move is to validate a larger write-mode batch rather than continue proving the same path at batch size `25`
+  - a fresh manual backup was taken again from the phone/mobile network immediately before the larger write-mode batch:
+    - `/Users/felixtorres/backups/opusgraph-20260326-022553.dump`
+  - the first larger write-mode IMSLP work ingest is now complete:
+    - `source_ingest_job.id = 95e5fd1e-765b-4c8d-89f2-df25ba364a04`
+    - `100` processed
+    - `75` created
+    - `25` updated
+    - `0` failed
+    - paused at offset `100`
+    - warnings only:
+      - `imslp_work_page_redirected` (`18`)
+      - `imslp_work_unparsed_movements` (`182`)
+      - `imslp_work_ambiguous_composition_year` (`4`)
+  - post-write DB spot-check confirms:
+    - `75` new `work` rows were created in this batch window
+    - `100` `revision` rows exist for the batch window:
+      - `75` `create`
+      - `25` `update`
+    - `75` `work_source` rows exist for the newly created works in this batch window
+    - `0` `work_recording` rows exist for the newly created works in this batch window
+  - conclusion:
+    - the larger write-mode IMSLP work path is stable through `100` processed rows
+    - the `25` updates are expected because the first `25` source ids were already written by the earlier pilot batch
+    - the next move should use the paused job cursor at offset `100` rather than replaying offset `0` again
 - Current backup/recovery constraint:
   - Supabase-managed backups/PITR are not enabled for the OpusGraph project right now
   - manual logical backup is the current safety path before linked-cloud schema changes
   - the direct database host is IPv6-only and does not work from the home network
   - the direct `pg_dump` path does work when the machine is on the phone hotspot/mobile network
   - latest successful manual backup artifact:
-    - `/Users/felixtorres/backups/opusgraph-20260324-110603.dump`
+    - `/Users/felixtorres/backups/opusgraph-20260326-022553.dump`
 
 ## Next 3 Steps
 
-1. Decide the next write-mode scale-up, likely `batchSize = 100`, since the matching dry-run slice is already green.
-2. Take another fresh manual backup from the phone/mobile network immediately before that larger write-mode run.
-3. Inspect warning mix and row quality after the larger write batch before scaling further.
+1. Spot-check a representative sample of the `75` newly created works and the `25` updated works from job `95e5fd1e-765b-4c8d-89f2-df25ba364a04`, focusing on movement parsing and redirected IMSLP pages.
+2. Resume the paused live job from offset `100` for the next batch instead of creating another offset-`0` job.
+3. Decide whether `imslp_work_unparsed_movements` should be hardened before the next major scale-up or just tracked as a known warning class.
 
 ## Known Blockers
 

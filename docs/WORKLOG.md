@@ -832,3 +832,37 @@ Append-only log for implementation, investigation, and planning sessions. Keep e
 - Conclusion:
   - the first write-mode IMSLP work batch succeeded cleanly
   - the next decision is how far to scale the next write-mode batch, not whether the path works at all
+
+### First larger write-mode IMSLP work ingest succeeds through 100 processed rows
+- Continued work on branch `feat/imslp-work-composer-resolution`.
+- Took another fresh verified backup from the phone/mobile network before the larger write-mode run:
+  - `/Users/felixtorres/backups/opusgraph-20260326-022553.dump`
+  - `pg_restore --list` succeeds
+  - `677` TOC entries
+- Ran the first larger linked-cloud write-mode IMSLP work ingest:
+  - `source_ingest_job.id = 95e5fd1e-765b-4c8d-89f2-df25ba364a04`
+  - source `imslp`
+  - entity kind `work`
+  - `dryRun = false`
+  - `batchSize = 100`
+- Job results:
+  - `100` processed
+  - `75` created
+  - `25` updated
+  - `0` failed
+  - paused at offset `100`
+  - warnings only:
+    - `imslp_work_page_redirected` (`18`)
+    - `imslp_work_unparsed_movements` (`182`)
+    - `imslp_work_ambiguous_composition_year` (`4`)
+- Post-write DB spot-check:
+  - `75` new `work` rows were created in the batch window
+  - `100` `revision` rows were created in the batch window:
+    - `75` `create`
+    - `25` `update`
+  - `75` `work_source` rows exist for the newly created works in the batch window
+  - `0` `work_recording` rows exist for the newly created works in the batch window
+- Interpretation:
+  - the `25` updates are expected because the earlier pilot write job had already written the first `25` source ids
+  - the live write path now looks stable through `100` processed work rows
+  - the next scale-up should resume the paused job from offset `100` instead of replaying offset `0`
