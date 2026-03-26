@@ -335,6 +335,26 @@ Append-only log for implementation, investigation, and planning sessions. Keep e
   - improve composer resolution for work jobs
   - or seed enough IMSLP composers in write mode first so work dry-runs can resolve composers by source identity
 
+### IMSLP work composer-resolution follow-up
+- Opened branch `feat/imslp-work-composer-resolution`.
+- Improved `app/api/admin/ingest/_shared.ts` work composer resolution to try:
+  - IMSLP source-identity match first
+  - exact canonical-name match second
+  - unambiguous fuzzy duplicate fallback via `find_duplicate_composers(...)` third
+- Verification:
+  - `npm run build` passes
+  - linked-cloud dry-run for a 5-row IMSLP work batch still pauses cleanly but returns:
+    - job `5d730166-2bb7-4fd3-806f-b830077d073c`
+    - `5` `missing_resolved_composer_id` failures
+  - direct DB inspection of the first five IMSLP work-row composer names shows:
+    - `0` exact composer matches
+    - `0` fuzzy duplicate matches
+- Conclusion:
+  - the current remaining work-job failures are due to missing composer coverage in the reference DB, not because the resolution helper is still too weak
+- Most likely next move:
+  - run enough IMSLP composer ingestion in write mode first
+  - then retry IMSLP work dry-runs once source-identity composer matches exist
+
 ## 2026-03-24
 
 ### Manual backup verified and `0016_source_ingest_job.sql` applied to the linked cloud project

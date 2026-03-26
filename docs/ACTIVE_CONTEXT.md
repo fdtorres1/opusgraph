@@ -4,11 +4,11 @@ This is the canonical handoff file for the next session. Rewrite freely as prior
 
 ## Current Objective
 
-Continue the generic source-ingestion foundation with the first IMSLP work-adapter slice now that the composer adapter, job services, and admin ingest APIs are merged on `main`.
+Continue the generic source-ingestion foundation with composer-resolution follow-up for IMSLP work jobs now that the first IMSLP work adapter is merged on `main`.
 
 ## Current Branch
 
-- `feat/imslp-work-adapter`
+- `feat/imslp-work-composer-resolution`
 
 ## Parallel Work Coordination
 
@@ -25,24 +25,14 @@ Continue the generic source-ingestion foundation with the first IMSLP work-adapt
 
 - Agent: current Codex session
   - Worktree: current checkout at `/Volumes/Felix-SSD-1/Cursor Projects/opusgraph`
-  - Branch: `feat/imslp-work-adapter`
-  - Scope: implement the first IMSLP work adapter, including `type=2` list fetch, MediaWiki page fetch, work candidate mapping, and linked-cloud dry-run verification
+  - Branch: `feat/imslp-work-composer-resolution`
+  - Scope: improve composer resolution for IMSLP work jobs, verify whether the remaining first-batch failures are algorithmic or data-coverage related, and document the next move
   - File ownership:
     - `docs/ACTIVE_CONTEXT.md`
     - `app/api/admin/ingest/_shared.ts`
-    - `app/api/admin/ingest/jobs/route.ts`
-    - `lib/ingest/adapters/index.ts`
-    - `lib/ingest/adapters/imslp/constants.ts`
-    - `lib/ingest/adapters/imslp/client.ts`
-    - `lib/ingest/adapters/imslp/parser.ts`
-    - `lib/ingest/adapters/imslp/mapper.ts`
-    - `lib/ingest/adapters/imslp/page-client.ts`
-    - `lib/ingest/adapters/imslp/work-fields.ts`
-    - `lib/ingest/adapters/imslp/index.ts`
     - `docs/WORKLOG.md`
-    - `docs/ROADMAP.md`
   - Status: active
-  - Notes: auth/RLS is already signed off; the manual backup requirement remains in force for future linked-cloud migrations; `0016` is applied in the linked cloud; `T4`, `T5`, and the composer-side IMSLP adapter are merged on `main`; the current task slice is the first IMSLP work adapter
+  - Notes: auth/RLS is already signed off; the manual backup requirement remains in force for future linked-cloud migrations; `0016` is applied in the linked cloud; `T4`, `T5`, the IMSLP composer adapter, and the IMSLP work adapter are merged on `main`; the current task slice is composer resolution quality for work jobs
 
 ## In Progress
 
@@ -279,6 +269,22 @@ Continue the generic source-ingestion foundation with the first IMSLP work-adapt
   - next likely move after review:
     - improve composer resolution for work jobs
     - or run enough IMSLP composer ingestion in write mode first to seed source-identity matches for work batches
+- Composer-resolution follow-up is now in progress on `feat/imslp-work-composer-resolution`:
+  - `app/api/admin/ingest/_shared.ts` now tries:
+    - source-identity match
+    - exact canonical-name match
+    - unambiguous fuzzy duplicate fallback via `find_duplicate_composers(...)`
+  - linked-cloud dry-run result is unchanged for the first 5 work rows:
+    - job `5d730166-2bb7-4fd3-806f-b830077d073c`
+    - still `5` `missing_resolved_composer_id` failures
+  - direct DB inspection confirms the first 5 composer names from IMSLP work rows have:
+    - `0` exact composer matches
+    - `0` fuzzy duplicate matches
+  - conclusion:
+    - the remaining first-batch work-job failures are now a data-coverage problem, not a matching bug
+    - the next meaningful improvement is likely one of:
+      - seed enough IMSLP composers first so work jobs resolve by source identity
+      - or design a workflow for creating/importing missing composers from the work path
 - Current backup/recovery constraint:
   - Supabase-managed backups/PITR are not enabled for the OpusGraph project right now
   - manual logical backup is the current safety path before linked-cloud schema changes

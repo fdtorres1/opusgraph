@@ -123,22 +123,40 @@ async function resolveWorkComposerId(
     return null;
   }
 
-  let query = args.supabase
+  let exactQuery = args.supabase
     .from("composer")
     .select("id")
     .eq("last_name", lastName)
     .limit(2);
 
-  query = firstName
-    ? query.eq("first_name", firstName)
-    : query.eq("first_name", "");
+  exactQuery = firstName
+    ? exactQuery.eq("first_name", firstName)
+    : exactQuery.eq("first_name", "");
 
-  const { data, error } = await query;
-  if (error || !data || data.length !== 1) {
+  const { data: exactData, error: exactError } = await exactQuery;
+  if (!exactError && exactData?.length === 1) {
+    return exactData[0]?.id ?? null;
+  }
+
+  const { data: fuzzyData, error: fuzzyError } = await args.supabase.rpc(
+    "find_duplicate_composers",
+    {
+      in_first: firstName,
+      in_last: lastName,
+      in_birth_year: null,
+    },
+  );
+
+  if (
+    fuzzyError ||
+    !Array.isArray(fuzzyData) ||
+    fuzzyData.length !== 1 ||
+    typeof fuzzyData[0] !== "string"
+  ) {
     return null;
   }
 
-  return data[0]?.id ?? null;
+  return fuzzyData[0];
 }
 
 function dryRunEntityId(candidate: ComposerCandidate | WorkCandidate): string {
