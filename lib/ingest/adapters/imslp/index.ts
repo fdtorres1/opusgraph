@@ -103,6 +103,27 @@ function normalizeRowIssues(
   return issues;
 }
 
+function normalizeWorkRowIssues(
+  rowIssues: IngestIssue[],
+  listId: string,
+): IngestIssue[] {
+  return rowIssues.map((item) => {
+    if (item.severity !== "error") {
+      return item;
+    }
+
+    return {
+      ...item,
+      severity: "warning",
+      metadata: {
+        ...(item.metadata ?? {}),
+        listId,
+        downgradedFrom: item.severity,
+      },
+    };
+  });
+}
+
 async function parseImslpComposerBatch(
   items: ImslpListRecord[],
 ): Promise<ParseBatchResult> {
@@ -165,11 +186,16 @@ async function parseImslpWorkBatch(
       batch.map(async (row) => {
         const page = await fetchImslpWorkPage({ title: row.listId });
         const fields = extractImslpWorkFields(page.wikitext, row.canonicalTitle);
-        return mapImslpWorkCandidate({
+        const mapped = mapImslpWorkCandidate({
           row,
           page,
           fields,
         });
+
+        return {
+          ...mapped,
+          issues: normalizeWorkRowIssues(mapped.issues, row.listId),
+        };
       }),
     );
 
