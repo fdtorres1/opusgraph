@@ -283,15 +283,18 @@ Continue the generic source-ingestion foundation with composer-resolution follow
     - `Esnaola, Juan Pedro`
     - `Eisenbrey, Keith`
     - `West, Alfred H.`
-  - post-seed linked-cloud dry-run result:
-    - work job `d2721735-445d-441a-a68c-6c1a62d38eee` no longer fails entirely on missing composers
-    - detailed rerun shows all five composers now resolve
-    - current first-batch outcomes are:
-      - `created` for the two works with null duration text
-      - `failed_parse` with `invalid_duration_text` for the three works whose IMSLP duration is human text like `1 minute`
+  - post-seed linked-cloud dry-run result is now fully green for the first work batch:
+    - work job `1598b23b-55e1-44e6-8d31-99033ab1f8c3`
+    - `5` processed
+    - `5` dry-run `created`
+    - `0` failed
+    - current warnings are only:
+      - `imslp_work_page_redirected`
+      - `imslp_work_unparsed_movements`
   - conclusion:
     - composer-resolution is now good enough for the first IMSLP work batch after targeted seeding
-    - the next concrete blocker for early work ingestion is duration normalization, not composer matching
+    - duration normalization is not the current blocker for those first rows
+    - the next practical move is to broaden composer coverage enough for larger work batches, then decide when to run the first small write-mode IMSLP work ingest
 - Current backup/recovery constraint:
   - Supabase-managed backups/PITR are not enabled for the OpusGraph project right now
   - manual logical backup is the current safety path before linked-cloud schema changes

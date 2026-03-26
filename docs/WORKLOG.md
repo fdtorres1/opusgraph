@@ -357,18 +357,23 @@ Append-only log for implementation, investigation, and planning sessions. Keep e
   - `West, Alfred H.`
   - all 5 composer writes succeeded with IMSLP source identity stored on the created rows
 - Post-seed verification:
-  - work job `d2721735-445d-441a-a68c-6c1a62d38eee` no longer shows 5 missing-composer failures
-  - detailed rerun outcome for the same first 5 work candidates:
-    - `created`:
-      - `"Mrs. Ramsay rose. Lily rose." (Eisenbrey, Keith)`
-      - `"My Old Dutch" Waltz (West, Alfred H.)`
-    - `failed_parse` due to `invalid_duration_text`:
+  - intermediate rerun improved immediately after seeding, and the current-truth rerun is now fully green for the same first 5 work candidates:
+    - work job `1598b23b-55e1-44e6-8d31-99033ab1f8c3`
+    - `5` processed
+    - `5` `created`
+    - `0` failed
+    - result rows:
       - `Four hands 'Amicizia' (Stankovych, Tatiana)`
       - `"In Memoriam" A. Lincoln (Ladd, Gertrude I.)`
       - `Los ojos tiernos (Esnaola, Juan Pedro)`
+      - `"Mrs. Ramsay rose. Lily rose." (Eisenbrey, Keith)`
+      - `"My Old Dutch" Waltz (West, Alfred H.)`
+    - remaining warnings are batch-level parse warnings only:
+      - `imslp_work_page_redirected`
+      - `imslp_work_unparsed_movements`
 - Conclusion:
-  - targeted composer seeding was enough to unblock composer resolution for the first IMSLP work batch
-  - the next practical work-ingestion blocker is duration normalization for human text like `1 minute` / `3 minutes`
+  - targeted composer seeding was enough to fully unblock the first IMSLP work batch
+  - the next scaling question is no longer the first-batch parser; it is how broadly to seed composers before attempting larger work batches or the first write-mode work ingest
 
 ## 2026-03-24
 
