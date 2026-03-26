@@ -4,7 +4,7 @@ This is the canonical handoff file for the next session. Rewrite freely as prior
 
 ## Current Objective
 
-Continue the generic source-ingestion foundation by accepting the duplicate-review cases left in the recovered `200`, `300`, and `400` slices, then continue live IMSLP work ingestion from offset `500`.
+Continue the generic source-ingestion foundation by using the composer catch-up phase to reduce work-slice composer misses, then retry live IMSLP work ingestion from offset `500`.
 
 ## Current Branch
 
@@ -26,7 +26,7 @@ Continue the generic source-ingestion foundation by accepting the duplicate-revi
 - Agent: current Codex session
   - Worktree: current checkout at `/Volumes/Felix-SSD-1/Cursor Projects/opusgraph`
   - Branch: `feat/imslp-work-composer-resolution`
-  - Scope: record the offset-`400` composer-link recovery, capture the successful backfill, and define the cleanest way to continue from offset `500`
+  - Scope: record the first larger composer catch-up batch, measure coverage growth, and define the cleanest way to resume work ingestion from offset `500`
   - File ownership:
     - `docs/ACTIVE_CONTEXT.md`
     - `lib/ingest/adapters/imslp/work-fields.ts`
@@ -87,6 +87,26 @@ Continue the generic source-ingestion foundation by accepting the duplicate-revi
     - `imslp_work_unparsed_movements` (`186`)
     - `imslp_work_ambiguous_composition_year` (`6`)
   - current IMSLP work coverage is `490`
+- The first deliberate composer catch-up batch is now complete:
+  - dry-run job `80fd31f3-8aed-44ec-85eb-5d06eebde358`
+    - `218` processed
+    - `137` created
+    - `80` updated
+    - `1` flagged
+    - `0` failed
+  - matching live job `581c0014-331b-4f9e-9b40-33da9efb6fe7`
+    - `218` processed
+    - `130` created
+    - `80` updated
+    - `8` flagged duplicates
+    - `0` failed
+    - paused at offset `250`
+  - warning mix stayed limited to IMSLP type=1 classifier noise:
+    - `imslp_type1_non_composer_row` (`2`)
+    - `imslp_type1_invalid_name_parts` (`11`)
+    - `imslp_type1_unusual_name_format` (`19`)
+  - IMSLP composer coverage is now `568`
+  - this is a better scaling pattern than rescuing work slices one-by-one while composer coverage lags
 - An ad hoc inspection replay of the `300` slice was accidentally run once with `dryRun: false` before being corrected to `dryRun: true`:
   - that caused extra source-match update churn on already-ingested work rows
   - no new parser or composer-resolution defects surfaced from it

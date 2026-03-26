@@ -1151,3 +1151,39 @@ Append-only log for implementation, investigation, and planning sessions. Keep e
   - no new parser defect appeared in this slice
   - the slice is fully write-recovered except for the six intentional duplicate-review paths
   - the next clean operational move is a fresh live IMSLP work job from offset `500`
+
+### First deliberate composer catch-up batch confirms the better scaling path
+- Ran a larger IMSLP composer dry-run from offset `0` with `batchSize = 250`:
+  - dry-run job `80fd31f3-8aed-44ec-85eb-5d06eebde358`
+  - `218` processed
+  - `137` created
+  - `80` updated
+  - `1` flagged duplicate
+  - `0` failed
+  - paused at offset `250`
+- Warning summary for that dry-run:
+  - `imslp_type1_non_composer_row` (`2`)
+  - `imslp_type1_invalid_name_parts` (`11`)
+  - `imslp_type1_unusual_name_format` (`19`)
+- Interpretation:
+  - the first larger composer batch is materially cleaner than the reactive work-slice recovery loop
+  - there is no parse-failure blocker in this composer slice
+  - the warning mix is limited to type=1 classifier noise and non-composer rows
+- Ran the matching live composer batch from the same offset:
+  - live job `581c0014-331b-4f9e-9b40-33da9efb6fe7`
+  - `218` processed
+  - `130` created
+  - `80` updated
+  - `8` flagged duplicates
+  - `0` failed
+  - paused at offset `250`
+- Warning summary for that live composer batch:
+  - `imslp_type1_non_composer_row` (`2`)
+  - `imslp_type1_invalid_name_parts` (`11`)
+  - `imslp_type1_unusual_name_format` (`19`)
+- Current linked-cloud IMSLP coverage is now:
+  - `568` composers
+  - `490` works
+- Conclusion:
+  - the composer-first catch-up phase is a better use of time than rescuing each work slice reactively
+  - the next decision is whether to run one more larger composer catch-up slice before retrying work offset `500`

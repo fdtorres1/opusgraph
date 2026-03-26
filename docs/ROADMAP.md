@@ -13,15 +13,18 @@ This file is the current priority view for OpusGraph. Keep it short, current, an
   - use source identity in `external_ids` and raw payloads in `extra_metadata`
   - route ambiguous matches into `review_flag` instead of auto-merging
 - Immediate task slice:
-  - continue live IMSLP work ingestion from offset `500`
+  - decide whether to run one more larger composer catch-up slice before retrying work offset `500`
   - the `200`, `300`, and `400` slices are now operationally recovered to:
     - `0` failed rows
     - only duplicate-review cases remaining
+  - the first deliberate composer catch-up batch succeeded:
+    - dry-run `218` usable rows with `137` creates and `0` failures
+    - live `218` usable rows with `130` creates, `80` updates, `8` duplicate flags, and `0` failures
   - the fresh live offset-`400` job exposed `96` new composer-resolution misses; the follow-up composer-link pass resolved them by updating `86` existing composers with IMSLP source identity, and the backfill reduced the slice to:
     - `0` failed rows
     - `6` duplicate-review cases
   - current linked-cloud IMSLP coverage is:
-    - `438` composers
+    - `568` composers
     - `490` works
   - inspect the remaining warning mix at real write scale:
     - movement parsing
