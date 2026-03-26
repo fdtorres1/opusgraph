@@ -4,7 +4,7 @@ This is the canonical handoff file for the next session. Rewrite freely as prior
 
 ## Current Objective
 
-Continue the generic source-ingestion foundation with duration-normalization follow-up for IMSLP work jobs now that broader composer seeding has materially improved early work-batch resolution.
+Continue the generic source-ingestion foundation by deciding whether to broaden IMSLP composer coverage for larger work batches or begin a first small write-mode IMSLP work ingest now that the early work slice is green in dry-run mode.
 
 ## Current Branch
 
@@ -324,9 +324,18 @@ Continue the generic source-ingestion foundation with duration-normalization fol
       - `21` dry-run `created`
       - `4` failed
       - remaining failure code is only `invalid_duration_text`
+  - duration normalization is now broadened in `lib/duration.ts` for:
+    - semicolon-separated alternative durations
+    - numeric ranges such as `80-90 minutes`
+    - decimal minute values such as `2.5 minutes`
+  - linked-cloud verification after the duration fix:
+    - `source_ingest_job.id = dcdd2a72-c249-4be6-956c-f1162948a5d0`
+    - `25` processed
+    - `25` dry-run `created`
+    - `0` failed
   - conclusion:
-    - composer resolution is no longer the main blocker for the first 25 IMSLP work rows
-    - the next practical move is to fix the remaining human-duration strings before deciding whether to broaden composer seeding further or begin a small write-mode work ingest
+    - the first 25 IMSLP work rows are now green in dry-run mode
+    - the next practical move is to choose between broader composer seeding for larger batches and a first small write-mode IMSLP work ingest
 - Current backup/recovery constraint:
   - Supabase-managed backups/PITR are not enabled for the OpusGraph project right now
   - manual logical backup is the current safety path before linked-cloud schema changes
@@ -337,9 +346,9 @@ Continue the generic source-ingestion foundation with duration-normalization fol
 
 ## Next 3 Steps
 
-1. Fix the remaining IMSLP human-duration strings behind the four `invalid_duration_text` failures in the first 25-row work dry-run.
-2. Rerun the linked-cloud 25-row work dry-run to confirm the early IMSLP work slice is fully green after duration normalization improves.
-3. If the early work slice stays green, decide whether to broaden composer coverage for larger work batches or start a first small write-mode IMSLP work ingest.
+1. Rerun a larger linked-cloud IMSLP work dry-run, likely `batchSize = 100`, to measure how much composer coverage still limits later rows.
+2. Decide whether to keep seeding missing composers from work-context slices or to run another broader composer seed batch before any write-mode work ingest.
+3. If the larger dry-run error mix looks manageable, run a first small write-mode IMSLP work ingest with a conservative limit and backup discipline.
 
 ## Known Blockers
 

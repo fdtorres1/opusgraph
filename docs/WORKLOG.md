@@ -715,3 +715,33 @@ Append-only log for implementation, investigation, and planning sessions. Keep e
 - Conclusion:
   - composer resolution is no longer the main blocker for the first 25 IMSLP work rows
   - the next concrete defect is duration-text normalization
+
+### IMSLP duration normalization now clears the first 25-row work dry-run
+- Continued work on branch `feat/imslp-work-composer-resolution`.
+- Confirmed the remaining four duration failures all came from human-readable duration text that was not a simple single integer-unit form:
+  - `5 minutes ; 6 minutes (New Edition)`
+  - `80-90 minutes`
+  - `2-3 minutes`
+  - `2.5 minutes`
+- Broadened `lib/duration.ts` so `parseDuration(...)` now handles:
+  - semicolon-separated alternative durations by taking the first parseable variant
+  - numeric duration ranges by taking the midpoint
+  - decimal unit values
+  - parenthetical edition/qualifier text stripping before unit parsing
+- Direct verification:
+  - `5 minutes ; 6 minutes (New Edition)` → `300`
+  - `80-90 minutes` → `5100`
+  - `2-3 minutes` → `150`
+  - `2.5 minutes` → `150`
+- Verification:
+  - `npm run build` passes
+  - linked-cloud 25-row IMSLP work dry-run `dcdd2a72-c249-4be6-956c-f1162948a5d0` now returns:
+    - `25` created
+    - `0` failed
+    - warnings only:
+      - `imslp_work_page_redirected`
+      - `imslp_work_unparsed_movements`
+      - `imslp_work_ambiguous_composition_year`
+- Conclusion:
+  - the first 25 IMSLP work rows are now green in dry-run mode
+  - the next decision is whether to broaden composer coverage for larger batches or begin a small write-mode IMSLP work ingest

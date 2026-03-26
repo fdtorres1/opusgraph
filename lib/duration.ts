@@ -8,10 +8,125 @@ export const formatDuration = (seconds?: number | null) => {
                : `${m}:${String(s).padStart(2,'0')}`;
 };
 
-export const parseDuration = (text: string): number | null => {
-  if (!text) return null;
+function parseColonDuration(text: string): number | null {
   const parts = text.split(":").map(Number);
   if (parts.some(isNaN)) return null;
-  return parts.length === 2 ? parts[0]*60 + parts[1] : parts[0]*3600 + parts[1]*60 + parts[2];
-};
+  if (parts.length === 2) return parts[0] * 60 + parts[1];
+  if (parts.length === 3) return parts[0] * 3600 + parts[1] * 60 + parts[2];
+  return null;
+}
 
+function normalizeDurationText(text: string): string {
+  return text
+    .trim()
+    .toLowerCase()
+    .replace(/\b(?:ca\.?|circa|approx\.?|approximately|about)\b/g, "")
+    .replace(/\([^)]*\)/g, " ")
+    .replace(/,/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function durationUnitToSeconds(unit: string, value: number): number | null {
+  if (!Number.isFinite(value)) return null;
+
+  if (/^(hours?|hrs?|hr|h)$/.test(unit)) {
+    return value * 3600;
+  }
+
+  if (/^(minutes?|mins?|min|m)$/.test(unit)) {
+    return value * 60;
+  }
+
+  if (/^(seconds?|secs?|sec|s)$/.test(unit)) {
+    return value;
+  }
+
+  return null;
+}
+
+function parseRangeDuration(text: string): number | null {
+  const normalized = normalizeDurationText(text);
+  if (!normalized) return null;
+
+  const match = normalized.match(
+    /^(\d+(?:\.\d+)?)\s*[-–]\s*(\d+(?:\.\d+)?)\s*(hours?|hrs?|hr|h|minutes?|mins?|min|m|seconds?|secs?|sec|s)\b$/,
+  );
+  if (!match) return null;
+
+  const lower = Number(match[1]);
+  const upper = Number(match[2]);
+  const unit = match[3];
+
+  if (!Number.isFinite(lower) || !Number.isFinite(upper) || !unit) {
+    return null;
+  }
+
+  const midpoint = (lower + upper) / 2;
+  const seconds = durationUnitToSeconds(unit, midpoint);
+  return seconds == null ? null : Math.round(seconds);
+}
+
+function parseUnitDuration(text: string): number | null {
+  const normalized = normalizeDurationText(text);
+  if (!normalized) return null;
+
+  const unitPattern =
+    /(\d+(?:\.\d+)?)\s*(hours?|hrs?|hr|h|minutes?|mins?|min|m|seconds?|secs?|sec|s)\b/g;
+  let totalSeconds = 0;
+  let matched = false;
+
+  for (const match of normalized.matchAll(unitPattern)) {
+    const value = Number(match[1]);
+    const unit = match[2];
+
+    if (!Number.isFinite(value) || !unit) {
+      return null;
+    }
+
+    matched = true;
+    const seconds = durationUnitToSeconds(unit, value);
+    if (seconds == null) return null;
+    totalSeconds += seconds;
+  }
+
+  if (!matched) return null;
+
+  const separatorLength = normalized.replace(unitPattern, "").replace(/\band\b/g, "").replace(/\s+/g, "").length;
+  if (separatorLength > 0) {
+    return null;
+  }
+
+  return Math.round(totalSeconds);
+}
+
+function parseAlternativeDuration(text: string): number | null {
+  const variants = text
+    .split(/\s*[;/]\s*/g)
+    .map((part) => part.trim())
+    .filter(Boolean);
+
+  if (variants.length <= 1) return null;
+
+  for (const variant of variants) {
+    const parsed =
+      parseColonDuration(variant) ??
+      parseRangeDuration(variant) ??
+      parseUnitDuration(variant);
+    if (parsed != null) {
+      return parsed;
+    }
+  }
+
+  return null;
+}
+
+export const parseDuration = (text: string): number | null => {
+  if (!text) return null;
+  return (
+    parseColonDuration(text) ??
+    parseAlternativeDuration(text) ??
+    parseRangeDuration(text) ??
+    parseUnitDuration(text)
+  );
+};
