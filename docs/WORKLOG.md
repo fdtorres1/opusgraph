@@ -1187,3 +1187,72 @@ Append-only log for implementation, investigation, and planning sessions. Keep e
 - Conclusion:
   - the composer-first catch-up phase is a better use of time than rescuing each work slice reactively
   - the next decision is whether to run one more larger composer catch-up slice before retrying work offset `500`
+
+### Larger composer catch-up from offset `250` succeeded, but work offset `500` still needs more coverage
+- Ran a larger IMSLP composer dry-run from offset `250` with `batchSize = 500`:
+  - dry-run job `90a7f9cc-f7a3-4000-9543-8d044ebe059c`
+  - `475` processed
+  - `470` created
+  - `4` updated
+  - `1` flagged duplicate
+  - `0` failed
+  - paused at offset `750`
+- Ran the matching live composer batch:
+  - live job `3fb3d436-7faa-4920-ac7d-25ff1865b48d`
+  - `475` processed
+  - `462` created
+  - `4` updated
+  - `9` flagged duplicates
+  - `0` failed
+  - paused at offset `750`
+- Warning mix for the larger composer catch-up stayed bounded:
+  - `imslp_type1_invalid_name_parts`
+  - `imslp_type1_unusual_name_format`
+- IMSLP composer coverage reached `1030` after that pass.
+- Replayed the IMSLP work slice from offset `500` in dry-run mode to test whether composer-first catch-up had reduced the failure wave enough:
+  - dry-run job `3e6948b7-efe3-4761-9890-adfca59d1e35`
+  - `100` processed
+  - `17` created
+  - `83` failed
+  - `0` updated
+  - paused at offset `600`
+- Error summary for the offset-`500` dry-run:
+  - `missing_resolved_composer_id` (`83`)
+- Warning summary for the same dry-run:
+  - `imslp_work_unparsed_movements` (`194`)
+  - `imslp_work_ambiguous_composition_year` (`8`)
+  - `imslp_work_page_redirected` (`6`)
+- Interpretation:
+  - composer-first catch-up is helping, but `1030` linked IMSLP composers is still not enough to make work offset `500` operationally green
+  - the right move is more composer coverage, not another live work backfill yet
+
+### Offset-`750` composer catch-up is expanding coverage again, but live job state is flushing late
+- Ran another larger IMSLP composer dry-run from offset `750` with `batchSize = 500`:
+  - dry-run job `7578d1e5-6eeb-4b0e-bf54-2aee5e08762c`
+  - `475` processed
+  - `474` created
+  - `1` updated
+  - `0` failed
+  - paused at offset `1250`
+- Warning summary for that dry-run:
+  - `imslp_type1_invalid_name_parts` (`14`)
+  - `imslp_type1_unusual_name_format` (`11`)
+- A smaller overlapping dry-run at the same offset also completed after a manual-cancel race:
+  - dry-run job `01c5b36c-084b-4398-9e73-472fb9877c32`
+  - `240` processed
+  - `8` created
+  - `227` updated
+  - `5` flagged duplicates
+  - `0` failed
+  - paused at offset `1000`
+- The matching live composer batch is job `3928019e-652e-48ff-a789-f8c8e045efb8`.
+- Operationally important detail:
+  - the live job row is still stuck at `status = running` with zero flushed counters and a stale initial heartbeat in `source_ingest_job`
+  - despite that stale job-state surface, linked-cloud IMSLP composer coverage continued to rise while the job was running
+- Latest observed coverage during that in-flight live pass:
+  - `1347` IMSLP composers
+  - `490` IMSLP works
+- Interpretation:
+  - the composer catch-up itself is still the right scaling move
+  - but the job-control-plane update pattern for very large composer batches is laggy enough that the operator should trust direct coverage counts more than the in-flight job row until the batch finishes
+  - before retrying work offset `500`, wait for `3928019e-652e-48ff-a789-f8c8e045efb8` to settle cleanly or explicitly clean up the stale job state if it never flushes

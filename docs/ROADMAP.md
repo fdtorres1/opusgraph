@@ -13,18 +13,26 @@ This file is the current priority view for OpusGraph. Keep it short, current, an
   - use source identity in `external_ids` and raw payloads in `extra_metadata`
   - route ambiguous matches into `review_flag` instead of auto-merging
 - Immediate task slice:
-  - decide whether to run one more larger composer catch-up slice before retrying work offset `500`
+  - let the current live composer catch-up batch at offset `750` settle cleanly
+  - then replay work offset `500` in dry-run mode against the expanded composer base before any more live work ingest
   - the `200`, `300`, and `400` slices are now operationally recovered to:
     - `0` failed rows
     - only duplicate-review cases remaining
   - the first deliberate composer catch-up batch succeeded:
     - dry-run `218` usable rows with `137` creates and `0` failures
     - live `218` usable rows with `130` creates, `80` updates, `8` duplicate flags, and `0` failures
+  - the larger composer catch-up from offset `250` also succeeded:
+    - dry-run `475` usable rows with `470` creates and `0` failures
+    - live `475` usable rows with `462` creates, `4` updates, `9` duplicate flags, and `0` failures
+  - replaying work offset `500` after composer coverage reached `1030` was still too early:
+    - dry-run returned `17` creates and `83` composer-resolution failures
+  - the follow-up composer catch-up from offset `750` is materially expanding coverage again:
+    - dry-run `475` usable rows with `474` creates and `0` failures
   - the fresh live offset-`400` job exposed `96` new composer-resolution misses; the follow-up composer-link pass resolved them by updating `86` existing composers with IMSLP source identity, and the backfill reduced the slice to:
     - `0` failed rows
     - `6` duplicate-review cases
   - current linked-cloud IMSLP coverage is:
-    - `568` composers
+    - `1347` composers observed while the offset-`750` live composer batch is still flushing
     - `490` works
   - inspect the remaining warning mix at real write scale:
     - movement parsing

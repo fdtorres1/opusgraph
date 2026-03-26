@@ -4,7 +4,7 @@ This is the canonical handoff file for the next session. Rewrite freely as prior
 
 ## Current Objective
 
-Continue the generic source-ingestion foundation by using the composer catch-up phase to reduce work-slice composer misses, then retry live IMSLP work ingestion from offset `500`.
+Finish the composer catch-up phase cleanly enough to retry IMSLP work ingestion from offset `500` without another large `missing_resolved_composer_id` failure wave.
 
 ## Current Branch
 
@@ -26,7 +26,7 @@ Continue the generic source-ingestion foundation by using the composer catch-up 
 - Agent: current Codex session
   - Worktree: current checkout at `/Volumes/Felix-SSD-1/Cursor Projects/opusgraph`
   - Branch: `feat/imslp-work-composer-resolution`
-  - Scope: record the first larger composer catch-up batch, measure coverage growth, and define the cleanest way to resume work ingestion from offset `500`
+  - Scope: record the larger composer catch-up batches, measure coverage growth, and define the cleanest way to resume work ingestion from offset `500`
   - File ownership:
     - `docs/ACTIVE_CONTEXT.md`
     - `lib/ingest/adapters/imslp/work-fields.ts`
@@ -107,6 +107,60 @@ Continue the generic source-ingestion foundation by using the composer catch-up 
     - `imslp_type1_unusual_name_format` (`19`)
   - IMSLP composer coverage is now `568`
   - this is a better scaling pattern than rescuing work slices one-by-one while composer coverage lags
+- A larger composer-first catch-up pass from offset `250` is now complete and materially expanded coverage:
+  - dry-run job `90a7f9cc-f7a3-4000-9543-8d044ebe059c`
+    - `475` processed
+    - `470` created
+    - `4` updated
+    - `1` flagged duplicate
+    - `0` failed
+    - paused at offset `750`
+  - matching live job `3fb3d436-7faa-4920-ac7d-25ff1865b48d`
+    - `475` processed
+    - `462` created
+    - `4` updated
+    - `9` flagged duplicates
+    - `0` failed
+    - paused at offset `750`
+  - warning mix for both remained bounded:
+    - `imslp_type1_invalid_name_parts` (`12` or `14` depending on pass)
+    - `imslp_type1_unusual_name_format` (`11` or `13`)
+  - IMSLP composer coverage reached `1030` after this pass
+- Retrying the IMSLP work slice from offset `500` immediately after composer coverage reached `1030` was still too early:
+  - dry-run job `3e6948b7-efe3-4761-9890-adfca59d1e35`
+    - `100` processed
+    - `17` created
+    - `83` failed
+    - `0` updated
+    - paused at offset `600`
+  - all `83` failures were still `missing_resolved_composer_id`
+  - warning mix stayed dominated by:
+    - `imslp_work_unparsed_movements` (`194`)
+    - `imslp_work_ambiguous_composition_year` (`8`)
+    - `imslp_work_page_redirected` (`6`)
+- Another composer catch-up window from offset `750` now has enough signal to guide the next step:
+  - dry-run job `7578d1e5-6eeb-4b0e-bf54-2aee5e08762c`
+    - `475` processed
+    - `474` created
+    - `1` updated
+    - `0` failed
+    - paused at offset `1250`
+  - warning summary:
+    - `imslp_type1_invalid_name_parts` (`14`)
+    - `imslp_type1_unusual_name_format` (`11`)
+  - a smaller overlapping dry-run job `01c5b36c-084b-4398-9e73-472fb9877c32` also completed after late state flush:
+    - `240` processed
+    - `8` created
+    - `227` updated
+    - `5` flagged duplicates
+    - `0` failed
+    - paused at offset `1000`
+  - the matching live composer job `3928019e-652e-48ff-a789-f8c8e045efb8` is still showing `status = running` with stale counters in `source_ingest_job`, but linked-cloud composer coverage has continued to rise while it runs
+  - current observed IMSLP composer coverage is `1347`
+  - current observed IMSLP work coverage remains `490`
+  - likely next move:
+    - wait for `3928019e-652e-48ff-a789-f8c8e045efb8` to settle or explicitly clean up its stale job state
+    - then replay work offset `500` in dry-run mode again before any further live work ingest
 - An ad hoc inspection replay of the `300` slice was accidentally run once with `dryRun: false` before being corrected to `dryRun: true`:
   - that caused extra source-match update churn on already-ingested work rows
   - no new parser or composer-resolution defects surfaced from it
