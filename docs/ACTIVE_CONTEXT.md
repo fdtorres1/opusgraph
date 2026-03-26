@@ -4,7 +4,7 @@ This is the canonical handoff file for the next session. Rewrite freely as prior
 
 ## Current Objective
 
-Continue the generic source-ingestion foundation by accepting the single duplicate-review cases left in the recovered `200` and `300` slices, then continue live IMSLP work ingestion from offset `400`.
+Continue the generic source-ingestion foundation by accepting the duplicate-review cases left in the recovered `200`, `300`, and `400` slices, then continue live IMSLP work ingestion from offset `500`.
 
 ## Current Branch
 
@@ -26,7 +26,7 @@ Continue the generic source-ingestion foundation by accepting the single duplica
 - Agent: current Codex session
   - Worktree: current checkout at `/Volumes/Felix-SSD-1/Cursor Projects/opusgraph`
   - Branch: `feat/imslp-work-composer-resolution`
-  - Scope: record the offset-`300` composer-seeding recovery, capture the final duration-fix backfill, and define the cleanest way to continue from offset `400`
+  - Scope: record the offset-`400` composer-link recovery, capture the successful backfill, and define the cleanest way to continue from offset `500`
   - File ownership:
     - `docs/ACTIVE_CONTEXT.md`
     - `lib/ingest/adapters/imslp/work-fields.ts`
@@ -72,6 +72,21 @@ Continue the generic source-ingestion foundation by accepting the single duplica
     retained coherent title/composer/year/instrumentation state in their latest `revision.snapshot`
   - warning-heavy rows are still preserving movement text as raw IMSLP metadata instead of writing obviously bad movement structures
   - the only remaining non-green row in the `300` slice is the expected duplicate-review case for `'t Was in de blijde mei`
+- IMSLP live work ingestion has now advanced through the `400` slice with targeted composer-link recovery:
+  - fresh live offset-`400` job `9174f798-e96d-40f0-b894-be9a6252614e` exposed `96` composer-resolution misses
+  - those failures collapsed to `86` unique missing composers in the slice
+  - the follow-up composer-link pass updated `86` existing composer rows with IMSLP source identity rather than creating new composer rows
+  - IMSLP composer coverage is now `438`
+  - backfill job `c1677e57-9c5a-484e-8e21-f111947baee2` recovered the slice to:
+    - `90` created
+    - `4` updated
+    - `0` failed
+    - `6` flagged duplicates
+    - paused at offset `500`
+  - warning mix for the recovered slice is still dominated by:
+    - `imslp_work_unparsed_movements` (`186`)
+    - `imslp_work_ambiguous_composition_year` (`6`)
+  - current IMSLP work coverage is `490`
 - An ad hoc inspection replay of the `300` slice was accidentally run once with `dryRun: false` before being corrected to `dryRun: true`:
   - that caused extra source-match update churn on already-ingested work rows
   - no new parser or composer-resolution defects surfaced from it

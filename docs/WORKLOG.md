@@ -1111,3 +1111,43 @@ Append-only log for implementation, investigation, and planning sessions. Keep e
   - composer `Tinel, Jef`
 - Conclusion:
   - the recovered `300` slice is good enough to continue live ingestion from offset `400`
+
+### Offset-`400` recovery needed composer-link updates, not a new parser fix
+- Ran a fresh live IMSLP work job from offset `400`:
+  - live job `9174f798-e96d-40f0-b894-be9a6252614e`
+  - `100` processed
+  - `4` created
+  - `0` updated
+  - `96` failed
+  - paused at offset `500`
+- Error summary for that fresh offset-`400` run:
+  - `missing_resolved_composer_id` (`96`)
+- Warning summary for that fresh offset-`400` run:
+  - `imslp_work_unparsed_movements` (`186`)
+  - `imslp_work_ambiguous_composition_year` (`6`)
+- Replayed the same `400`-to-`499` range in dry-run mode:
+  - confirmed `96` unresolved work rows in that slice
+  - those failures collapsed to `86` unique missing composers
+- Ran a targeted composer-link recovery pass for those `86` missing composers:
+  - `0` brand-new composer rows created
+  - `86` existing composer rows updated with IMSLP source identity and seeded metadata
+  - IMSLP composer coverage with `external_ids.imslp` is now `438`
+- Ran a targeted live backfill for the failed `400`-to-`499` work range:
+  - backfill job `c1677e57-9c5a-484e-8e21-f111947baee2`
+  - `100` processed
+  - `90` created
+  - `4` updated
+  - `0` failed
+  - `6` flagged duplicate
+  - paused at offset `500`
+- Warning summary for the backfill:
+  - `imslp_work_unparsed_movements` (`186`)
+  - `imslp_work_ambiguous_composition_year` (`6`)
+- Current linked-cloud IMSLP coverage is now:
+  - `438` composers
+  - `490` works
+- Final interpretation for the offset-`400` slice:
+  - composer resolution is no longer blocking this range
+  - no new parser defect appeared in this slice
+  - the slice is fully write-recovered except for the six intentional duplicate-review paths
+  - the next clean operational move is a fresh live IMSLP work job from offset `500`
