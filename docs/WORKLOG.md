@@ -917,3 +917,31 @@ Append-only log for implementation, investigation, and planning sessions. Keep e
   - the resumed slice did not reveal a new parser or write-path defect
   - the dominant blocker is composer coverage again beyond the first `100` works
   - because the live job already advanced to offset `200`, recovering the `57` failed works will require a targeted backfill or replay of the `100`-to-`199` range after seeding the missing composers
+
+### Targeted composer seeding and backfill recovered the failed `100`-to-`199` work slice
+- Replayed the failed `100`-to-`199` work range in dry-run mode after the failed live resume:
+  - dry-run job `8ffbf943-f1c4-48d7-86ca-10f39a0e2696`
+  - confirmed `57` unresolved work rows in that slice
+  - those `57` failures collapsed to `49` unique missing composer identities
+- Seeded those missing composers directly with IMSLP source identity and work-slice metadata:
+  - `49` new IMSLP composer rows created
+  - `23` already-seeded IMSLP composers refreshed on rerun
+  - IMSLP composer coverage with `external_ids.imslp` is now `203`
+- Ran a targeted live backfill for the failed work range:
+  - backfill job `6c3fbca8-3634-4e62-9e43-c449fae3683e`
+  - cursor offset `100`
+  - `batchSize = 100`
+- Backfill results:
+  - `100` processed
+  - `57` created
+  - `43` updated
+  - `0` failed
+  - paused at offset `200`
+  - warnings only:
+    - `imslp_work_page_redirected` (`10`)
+    - `imslp_work_unparsed_movements` (`154`)
+    - `imslp_work_page_missing_wikitext` (`2`)
+- Interpretation:
+  - the failed `100`-to-`199` work slice has now been recovered successfully
+  - the earlier failures were caused by missing composer coverage, not by a new IMSLP parser/persistence bug
+  - the next clean move is a fresh live job starting at offset `200`

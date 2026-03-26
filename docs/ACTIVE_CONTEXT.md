@@ -4,7 +4,7 @@ This is the canonical handoff file for the next session. Rewrite freely as prior
 
 ## Current Objective
 
-Continue the generic source-ingestion foundation by addressing the new composer-coverage failures exposed by resuming the first 100-row write-mode IMSLP work job.
+Continue the generic source-ingestion foundation by deciding how to continue live IMSLP work ingestion after recovering the failed `100`-to-`199` slice.
 
 ## Current Branch
 
@@ -26,7 +26,7 @@ Continue the generic source-ingestion foundation by addressing the new composer-
 - Agent: current Codex session
   - Worktree: current checkout at `/Volumes/Felix-SSD-1/Cursor Projects/opusgraph`
   - Branch: `feat/imslp-work-composer-resolution`
-  - Scope: capture the resumed live-job outcome, isolate the new failure mix, and define the next targeted composer-seeding or backfill step
+  - Scope: record the composer-seeding recovery work, capture the successful targeted backfill, and define the cleanest way to continue from offset `200`
   - File ownership:
     - `docs/ACTIVE_CONTEXT.md`
     - `app/api/admin/ingest/_shared.ts`
@@ -439,7 +439,26 @@ Continue the generic source-ingestion foundation by addressing the new composer-
   - conclusion:
     - the resumed slice did not expose a new parser or writer defect
     - the dominant blocker past offset `100` is composer coverage again
-    - because the job cursor has already advanced to `200`, recovering the `57` failed works will require a targeted backfill or replay of the `100`-to-`199` slice after seeding the missing composers
+    - because the job cursor had already advanced to `200`, recovering the `57` failed works required a targeted backfill of the `100`-to-`199` slice after seeding the missing composers
+  - targeted composer recovery for the failed `100`-to-`199` slice is now complete:
+    - a dry-run replay of that slice confirmed `57` unresolved work rows collapsing to `49` unique missing composers
+    - targeted IMSLP composer seeding then created `49` new IMSLP composers and refreshed `23` already-seeded composer rows with the same source identities
+    - IMSLP composer coverage with `external_ids.imslp` is now `203`
+  - targeted live backfill for the failed `100`-to-`199` range is now complete:
+    - backfill job `6c3fbca8-3634-4e62-9e43-c449fae3683e`
+    - `100` processed
+    - `57` created
+    - `43` updated
+    - `0` failed
+    - paused at offset `200`
+    - warnings only:
+      - `imslp_work_page_redirected` (`10`)
+      - `imslp_work_unparsed_movements` (`154`)
+      - `imslp_work_page_missing_wikitext` (`2`)
+  - recovery conclusion:
+    - the failed `100`-to-`199` work slice has now been recovered successfully
+    - the resumed-job failures were a composer-coverage problem, not a new ingestion bug
+    - the next operational choice is whether to continue from offset `200` using a fresh clean job or to keep resuming the earlier cumulative job with historical failures in its totals
 - Current backup/recovery constraint:
   - Supabase-managed daily physical backups are now present for the OpusGraph project after the March 26, 2026 plan upgrade
   - latest managed physical backup reported by `supabase backups list`:
@@ -453,9 +472,9 @@ Continue the generic source-ingestion foundation by addressing the new composer-
 
 ## Next 3 Steps
 
-1. Derive the missing composer names from the failed `100`-to-`199` work slice and seed them with IMSLP provenance.
-2. Run a targeted backfill for the failed `100`-to-`199` work range after composer seeding, since job `95e5fd1e-765b-4c8d-89f2-df25ba364a04` has already advanced to offset `200`.
-3. Decide whether to continue the paused live job past offset `200` immediately or wait until the backfill recovers the `57` failed works.
+1. Start the next live IMSLP work run from offset `200`, preferably as a fresh clean job rather than by resuming the older cumulative job `95e5fd1e-765b-4c8d-89f2-df25ba364a04`.
+2. Watch whether composer coverage remains stable past offset `200` or whether another targeted seed/backfill loop is needed.
+3. Decide whether `imslp_work_page_missing_wikitext` needs special handling or can remain a tracked warning class.
 
 ## Known Blockers
 

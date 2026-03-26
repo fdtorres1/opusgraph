@@ -13,9 +13,8 @@ This file is the current priority view for OpusGraph. Keep it short, current, an
   - use source identity in `external_ids` and raw payloads in `extra_metadata`
   - route ambiguous matches into `review_flag` instead of auto-merging
 - Immediate task slice:
-  - handle the resumed live work-job failure mix at offset `100` to `199`
-  - seed the newly missing IMSLP composers exposed by that slice
-  - run a targeted backfill for the failed `100`-to-`199` work range because the live job has already advanced to offset `200`
+  - continue live IMSLP work ingestion from offset `200` after the successful composer-seeding recovery and targeted backfill of the failed `100`-to-`199` slice
+  - prefer a fresh clean job at offset `200` over resuming the older cumulative job with historical failures in its totals
   - inspect the remaining warning mix at real write scale:
     - movement parsing
     - redirected IMSLP pages
