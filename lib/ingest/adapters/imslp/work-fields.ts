@@ -98,6 +98,21 @@ function toWorkFieldValue(value: unknown): string | null {
   return normalized.length > 0 ? normalized : null;
 }
 
+function normalizeImslpDurationText(value: string | null): string | null {
+  if (!value) {
+    return null;
+  }
+
+  // IMSLP work pages sometimes store average duration as a bare numeral.
+  // Treat that source-specific shorthand as minutes without changing the
+  // preserved raw field text.
+  if (/^\d+(?:\.\d+)?$/.test(value)) {
+    return `${value} minutes`;
+  }
+
+  return value;
+}
+
 export function extractImslpWorkFields(
   wikitext: string,
   fallbackTitle?: string | null,
@@ -114,7 +129,9 @@ export function extractImslpWorkFields(
     compositionYearText: pickFirstField(rawFields, COMPOSITION_YEAR_KEYS),
     instrumentationText: pickFirstField(rawFields, INSTRUMENTATION_KEYS),
     movementText: pickFirstField(rawFields, MOVEMENT_KEYS),
-    durationText: pickFirstField(rawFields, DURATION_KEYS),
+    durationText: normalizeImslpDurationText(
+      pickFirstField(rawFields, DURATION_KEYS),
+    ),
     rawFields,
   };
 }

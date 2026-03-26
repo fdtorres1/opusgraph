@@ -4,7 +4,7 @@ This is the canonical handoff file for the next session. Rewrite freely as prior
 
 ## Current Objective
 
-Continue the generic source-ingestion foundation by deciding whether to normalize one last IMSLP bare-numeric duration edge case and then start a small write-mode IMSLP work ingest, or to stop at the current `99/100` larger-batch dry-run state and defer that edge case.
+Continue the generic source-ingestion foundation by taking a fresh manual backup and deciding the first small write-mode IMSLP work ingest now that the first 100-row work slice is green in dry-run mode.
 
 ## Current Branch
 
@@ -363,10 +363,16 @@ Continue the generic source-ingestion foundation by deciding whether to normaliz
     - remaining failure:
       - `invalid_duration_text` on `'A cagnacavalle (Albertin)`
       - extracted IMSLP `Average Duration` text is the bare numeral `2`
+  - IMSLP-specific duration normalization now treats bare `Average Duration` numerals as minutes inside `lib/ingest/adapters/imslp/work-fields.ts`, without widening global duration assumptions
+  - linked-cloud 100-row work dry-run after the bare-duration fix:
+    - `source_ingest_job.id = c74b7c8b-d5ae-404e-8c32-30ea094233d1`
+    - `100` processed
+    - `100` dry-run `created`
+    - `0` failed
   - conclusion:
     - targeted work-derived composer seeding scales well enough to materially improve larger work batches
-    - composer resolution is no longer the dominant blocker for the first 100 IMSLP work rows
-    - the only remaining known failure in that 100-row slice is a bare-numeric IMSLP duration edge case
+    - the first 100 IMSLP work rows are now green in dry-run mode
+    - the next practical move is a fresh backup and a small write-mode IMSLP work ingest
 - Current backup/recovery constraint:
   - Supabase-managed backups/PITR are not enabled for the OpusGraph project right now
   - manual logical backup is the current safety path before linked-cloud schema changes
@@ -377,9 +383,9 @@ Continue the generic source-ingestion foundation by deciding whether to normaliz
 
 ## Next 3 Steps
 
-1. Decide whether to normalize IMSLP bare numeric duration text like `2` as minutes in the IMSLP path, rather than globally for every import source.
-2. If that edge case is fixed, rerun the linked-cloud 100-row work dry-run and confirm the first 100 IMSLP rows are fully green.
-3. Then take a fresh manual backup and run a first small write-mode IMSLP work ingest with a conservative limit.
+1. Take a fresh manual logical backup from the phone/mobile network before any linked-cloud write-mode run.
+2. Run a first small write-mode IMSLP work ingest with a conservative limit.
+3. Inspect the written rows, revisions, and any residual warning mix before scaling past that first controlled batch.
 
 ## Known Blockers
 

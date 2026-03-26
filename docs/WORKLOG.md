@@ -786,3 +786,22 @@ Append-only log for implementation, investigation, and planning sessions. Keep e
 - Conclusion:
   - targeted work-derived composer seeding is effective enough to keep using
   - the first 100-row IMSLP work slice is now blocked by one narrow duration edge case, not by composer resolution
+
+### IMSLP-specific bare-duration normalization clears the first 100-row work dry-run
+- Continued work on branch `feat/imslp-work-composer-resolution`.
+- Kept the last duration fix source-specific rather than widening global parsing rules:
+  - updated `lib/ingest/adapters/imslp/work-fields.ts`
+  - IMSLP bare `Average Duration` numerals like `2` are now normalized to `2 minutes` during IMSLP work-field extraction
+  - raw IMSLP field text remains preserved in `extra_metadata.imslp.extracted_fields.raw_fields`
+- Verification:
+  - `npm run build` passes
+  - linked-cloud 100-row IMSLP work dry-run `c74b7c8b-d5ae-404e-8c32-30ea094233d1` now returns:
+    - `100` created
+    - `0` failed
+    - warnings only:
+      - `imslp_work_page_redirected`
+      - `imslp_work_unparsed_movements`
+      - `imslp_work_ambiguous_composition_year`
+- Conclusion:
+  - the first 100 IMSLP work rows are now green in dry-run mode
+  - the next practical move is a fresh backup followed by a first small write-mode IMSLP work ingest
