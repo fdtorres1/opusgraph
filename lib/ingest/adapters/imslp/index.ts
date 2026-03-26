@@ -30,6 +30,8 @@ export interface ImslpJobOptions extends JsonObject {
     | typeof IMSLP_SOURCE_ENTITY_KIND_WORK;
 }
 
+const IMSLP_WORK_PAGE_FETCH_CONCURRENCY = 4;
+
 function issue(
   code: string,
   message: string,
@@ -146,32 +148,40 @@ async function parseImslpWorkBatch(
 ): Promise<ParseBatchResult> {
   const candidates: WorkCandidate[] = [];
   const issues: IngestIssue[] = [];
-  let parsedCount = 0;
+  const parsedRows = items
+    .map((item) => parseImslpType2Row(item))
+    .filter((row): row is NonNullable<typeof row> => row !== null);
 
-  for (const item of items) {
-    const parsedRow = parseImslpType2Row(item);
-    if (!parsedRow) {
-      continue;
+  for (
+    let startIndex = 0;
+    startIndex < parsedRows.length;
+    startIndex += IMSLP_WORK_PAGE_FETCH_CONCURRENCY
+  ) {
+    const batch = parsedRows.slice(
+      startIndex,
+      startIndex + IMSLP_WORK_PAGE_FETCH_CONCURRENCY,
+    );
+    const mappedBatch = await Promise.all(
+      batch.map(async (row) => {
+        const page = await fetchImslpWorkPage({ title: row.listId });
+        const fields = extractImslpWorkFields(page.wikitext, row.canonicalTitle);
+        return mapImslpWorkCandidate({
+          row,
+          page,
+          fields,
+        });
+      }),
+    );
+
+    for (const mapped of mappedBatch) {
+      issues.push(...mapped.issues);
+      if (mapped.candidate) {
+        candidates.push(mapped.candidate);
+      }
     }
-
-    parsedCount += 1;
-    const page = await fetchImslpWorkPage({ title: parsedRow.listId });
-    const fields = extractImslpWorkFields(page.wikitext, parsedRow.canonicalTitle);
-    const mapped = mapImslpWorkCandidate({
-      row: parsedRow,
-      page,
-      fields,
-    });
-
-    issues.push(...mapped.issues);
-    if (!mapped.candidate) {
-      continue;
-    }
-
-    candidates.push(mapped.candidate);
   }
 
-  const skippedCount = items.length - parsedCount;
+  const skippedCount = items.length - parsedRows.length;
   if (skippedCount > 0) {
     issues.push(
       issue(
