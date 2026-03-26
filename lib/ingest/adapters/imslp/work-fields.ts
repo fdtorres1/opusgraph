@@ -103,11 +103,27 @@ function normalizeImslpDurationText(value: string | null): string | null {
     return null;
   }
 
+  const approximatePrefixMatch =
+    /^(?:ca\.?|circa|approx\.?|approximately)\s*(\d+(?:\.\d+)?)\s+(minutes?|mins?|min|seconds?|secs?|sec|hours?|hrs?|hr)\b/i.exec(
+      value,
+    );
+  if (approximatePrefixMatch?.[1] && approximatePrefixMatch[2]) {
+    return `${approximatePrefixMatch[1]} ${approximatePrefixMatch[2]}`;
+  }
+
   const eachMatch = /^(\d+(?:\.\d+)?)\s+(minutes?|mins?|min|seconds?|secs?|sec|hours?|hrs?|hr)\s+each$/i.exec(
     value,
   );
   if (eachMatch?.[1] && eachMatch[2]) {
     return `${eachMatch[1]} ${eachMatch[2]}`;
+  }
+
+  const leadingDurationMatch =
+    /^(\d+(?:\.\d+)?(?:\s*-\s*\d+(?:\.\d+)?)?)\s+(minutes?|mins?|min|seconds?|secs?|sec|hours?|hrs?|hr)\b(?:\s*ca\.?)?/i.exec(
+      value,
+    );
+  if (leadingDurationMatch?.[1] && leadingDurationMatch[2]) {
+    return `${leadingDurationMatch[1].replace(/\s*-\s*/g, "-")} ${leadingDurationMatch[2]}`;
   }
 
   // IMSLP work pages sometimes store average duration as a bare numeral.

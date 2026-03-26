@@ -4,7 +4,7 @@ This is the canonical handoff file for the next session. Rewrite freely as prior
 
 ## Current Objective
 
-Continue the generic source-ingestion foundation by deciding whether to accept the single duplicate-review case left in the `200` slice and then continue live IMSLP work ingestion from offset `300`.
+Continue the generic source-ingestion foundation by accepting the single duplicate-review cases left in the recovered `200` and `300` slices, then continue live IMSLP work ingestion from offset `400`.
 
 ## Current Branch
 
@@ -26,15 +26,43 @@ Continue the generic source-ingestion foundation by deciding whether to accept t
 - Agent: current Codex session
   - Worktree: current checkout at `/Volumes/Felix-SSD-1/Cursor Projects/opusgraph`
   - Branch: `feat/imslp-work-composer-resolution`
-  - Scope: record the composer-seeding recovery work, capture the successful targeted backfill, and define the cleanest way to continue from offset `200`
+  - Scope: record the offset-`300` composer-seeding recovery, capture the final duration-fix backfill, and define the cleanest way to continue from offset `400`
   - File ownership:
     - `docs/ACTIVE_CONTEXT.md`
-    - `app/api/admin/ingest/_shared.ts`
+    - `lib/ingest/adapters/imslp/work-fields.ts`
     - `docs/WORKLOG.md`
   - Status: active
-  - Notes: auth/RLS is already signed off; the manual backup requirement remains in force for future linked-cloud migrations; `0016` is applied in the linked cloud; `T4`, `T5`, the IMSLP composer adapter, and the IMSLP work adapter are merged on `main`; the current task slice is composer resolution quality for work jobs
+  - Notes: auth/RLS is already signed off; managed daily Supabase physical backups are now available; `0016` is applied in the linked cloud; `T4`, `T5`, the IMSLP composer adapter, and the IMSLP work adapter are merged on `main`; the current task slice is operational recovery and scaling for live IMSLP work ingestion
 
 ## In Progress
+
+- IMSLP live work ingestion has now advanced through the `300` slice with targeted recovery:
+  - fresh live offset-`300` job `578240e6-5a0d-4779-a187-eb79a7057366` exposed `94` composer-resolution misses
+  - targeted seeding created `87` additional IMSLP composers from that slice
+  - IMSLP composer coverage is now `352`
+  - first offset-`300` live backfill `69eefa78-ace9-4089-b7b6-af4df5caa7a4` then reduced the slice to:
+    - `92` created
+    - `6` updated
+    - `1` failed
+    - `1` flagged duplicate
+  - the remaining failed row was:
+    - `10 Charakteristische Tonstücke, Op.86 (Karg-Elert, Sigfrid)`
+    - duration text `50 minutes ca. when played as a set of 10`
+  - `lib/ingest/adapters/imslp/work-fields.ts` now normalizes that IMSLP-specific duration shape to `50 minutes`
+  - post-fix dry-run replay of the same `300`-to-`399` slice leaves only one duplicate-review case:
+    - `'t Was in de blijde mei`
+    - composer `Tinel, Jef`
+  - final live backfill `68146221-a682-4da3-af52-c8948a71c5f7` recovered the slice to:
+    - `1` created
+    - `98` updated
+    - `0` failed
+    - `1` flagged duplicate
+    - paused at offset `400`
+  - current IMSLP work coverage is `396`
+- An ad hoc inspection replay of the `300` slice was accidentally run once with `dryRun: false` before being corrected to `dryRun: true`:
+  - that caused extra source-match update churn on already-ingested work rows
+  - no new parser or composer-resolution defects surfaced from it
+  - subsequent verification and the final backfill used the intended paths
 
 - Middleware now preserves the full internal path plus query string when redirecting unauthenticated users to `/auth/login`.
 - Login and signup now use `redirect` as the canonical auth redirect parameter.

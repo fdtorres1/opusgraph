@@ -13,15 +13,19 @@ This file is the current priority view for OpusGraph. Keep it short, current, an
   - use source identity in `external_ids` and raw payloads in `extra_metadata`
   - route ambiguous matches into `review_flag` instead of auto-merging
 - Immediate task slice:
-  - finish closing the offset-`200` slice after the fresh live run and targeted composer-seeding recovery
-  - the fresh live offset-`200` job exposed `70` new composer-resolution misses; targeted seeding then created `62` more IMSLP composers and follow-up backfills reduced the slice to:
+  - continue live IMSLP work ingestion from offset `400`
+  - both the `200` and `300` slices are now operationally recovered to:
+    - `0` failed rows
+    - `1` duplicate-review case per slice
+  - the fresh live offset-`300` job exposed `94` new composer-resolution misses; targeted seeding then created `87` more IMSLP composers and follow-up backfills reduced the slice to:
     - `0` failed rows
     - `1` duplicate-review case
-  - decide whether to accept that duplicate-review case and continue from offset `300`
+  - current linked-cloud IMSLP coverage is:
+    - `352` composers
+    - `396` works
   - inspect the remaining warning mix at real write scale:
     - movement parsing
     - redirected IMSLP pages
-    - invalid/missing wikitext pages
     - ambiguous composition years
   - keep targeted composer seeding available as an operational tool if later work slices expose new coverage gaps
   - Supabase-managed daily physical backups are now available after the plan upgrade, but PITR is still off and phone-network manual dumps remain useful when a downloadable artifact is needed

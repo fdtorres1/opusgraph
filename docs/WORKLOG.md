@@ -1022,3 +1022,75 @@ Append-only log for implementation, investigation, and planning sessions. Keep e
   - composer coverage and duration parsing are no longer blocking this range
   - the slice is fully write-recovered except for the one intentional duplicate-review path
   - the next clean operational move is a fresh live IMSLP work job from offset `300` if that duplicate-review case is acceptable
+
+### Offset-`300` recovery followed the same pattern and is now green except for one duplicate-review case
+- Ran a fresh live IMSLP work job from offset `300`:
+  - live job `578240e6-5a0d-4779-a187-eb79a7057366`
+  - `100` processed
+  - `6` created
+  - `0` updated
+  - `94` failed
+  - paused at offset `400`
+- Error summary for that fresh offset-`300` run:
+  - `missing_resolved_composer_id` (`94`)
+- Warning summary for that fresh offset-`300` run:
+  - `imslp_work_page_redirected` (`2`)
+  - `imslp_work_unparsed_movements` (`118`)
+  - `imslp_work_ambiguous_composition_year` (`4`)
+- Replayed the same `300`-to-`399` range against the IMSLP adapter and composer-resolution logic:
+  - confirmed `94` unresolved work rows in that slice
+  - those failures collapsed to `87` unique missing composer identities
+- Seeded those `87` missing composers directly with IMSLP source identity and work-slice metadata:
+  - `87` new IMSLP composer rows created
+  - IMSLP composer coverage with `external_ids.imslp` is now `352`
+- Ran a first targeted live backfill for the failed `300`-to-`399` work range:
+  - backfill job `69eefa78-ace9-4089-b7b6-af4df5caa7a4`
+  - `100` processed
+  - `92` created
+  - `6` updated
+  - `1` failed
+  - `1` flagged duplicate
+  - paused at offset `400`
+- Error summary for that first backfill:
+  - `invalid_duration_text` (`1`)
+- Warning summary for that first backfill:
+  - `imslp_work_page_redirected` (`2`)
+  - `imslp_work_unparsed_movements` (`118`)
+  - `imslp_work_ambiguous_composition_year` (`4`)
+- Identified the exact residual rows in the `300` slice:
+  - duplicate-review case:
+    - work `'t Was in de blijde mei`
+    - composer `Tinel, Jef`
+  - failed-parse case:
+    - work `10 Charakteristische Tonstücke`
+    - composer `Karg-Elert, Sigfrid`
+    - duration text `50 minutes ca. when played as a set of 10`
+- Fixed the remaining IMSLP duration edge case in `lib/ingest/adapters/imslp/work-fields.ts`:
+  - IMSLP-specific duration normalization now accepts leading approximate values and trailing explanatory qualifiers like `50 minutes ca. when played as a set of 10`
+- Verified the parser fix:
+  - `npm run build` passes
+  - post-fix dry-run replay of the same `300`-to-`399` range leaves only the duplicate-review case:
+    - work `'t Was in de blijde mei`
+    - composer `Tinel, Jef`
+- Ran a final live backfill for the same `300`-to-`399` range after the duration fix:
+  - backfill job `68146221-a682-4da3-af52-c8948a71c5f7`
+  - `100` processed
+  - `1` created
+  - `98` updated
+  - `0` failed
+  - `1` flagged duplicate
+  - paused at offset `400`
+- Warning summary for the final backfill:
+  - `imslp_work_page_redirected` (`2`)
+  - `imslp_work_unparsed_movements` (`118`)
+  - `imslp_work_ambiguous_composition_year` (`4`)
+- Current linked-cloud IMSLP coverage is now:
+  - `352` composers
+  - `396` works
+- One ad hoc inspection replay of the `300` slice was accidentally executed with `dryRun: false` before being corrected:
+  - that caused extra source-match update churn on already-ingested rows in the same slice
+  - it did not surface any new parser or composer-resolution failures
+- Final interpretation for the offset-`300` slice:
+  - composer coverage and duration parsing are no longer blocking this range
+  - the slice is fully write-recovered except for the one intentional duplicate-review path
+  - the next clean operational move is a fresh live IMSLP work job from offset `400`
