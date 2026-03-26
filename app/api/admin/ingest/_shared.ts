@@ -10,6 +10,7 @@ import {
   persistComposerCandidate,
   persistWorkCandidate,
 } from "@/lib/ingest/persist";
+import { parseImslpCanonicalName } from "@/lib/ingest/adapters/imslp/parser";
 import { findSourceIdentityMatch } from "@/lib/ingest/persist/source-identity";
 import { createServerSupabase } from "@/lib/supabase/server";
 import type { AdminRole } from "@/lib/auth";
@@ -97,17 +98,47 @@ async function resolveWorkComposerId(
   candidate: WorkCandidate,
   args: CandidateProcessorArgs,
 ): Promise<string | null> {
-  if (!candidate.composerSourceId?.trim()) {
+  if (candidate.composerSourceId?.trim()) {
+    const match = await findSourceIdentityMatch(args.supabase, "composer", {
+      source: candidate.sourceIdentity.source,
+      sourceEntityKind: "person",
+      sourceId: candidate.composerSourceId.trim(),
+    });
+
+    if (match?.entityId) {
+      return match.entityId;
+    }
+  }
+
+  const composerDisplayName = candidate.composerDisplayName?.trim();
+  if (!composerDisplayName) {
     return null;
   }
 
-  const match = await findSourceIdentityMatch(args.supabase, "composer", {
-    source: candidate.sourceIdentity.source,
-    sourceEntityKind: "person",
-    sourceId: candidate.composerSourceId.trim(),
-  });
+  const parsedName = parseImslpCanonicalName(composerDisplayName);
+  const firstName = parsedName.firstName.trim();
+  const lastName = parsedName.lastName.trim();
 
-  return match?.entityId ?? null;
+  if (!lastName) {
+    return null;
+  }
+
+  let query = args.supabase
+    .from("composer")
+    .select("id")
+    .eq("last_name", lastName)
+    .limit(2);
+
+  query = firstName
+    ? query.eq("first_name", firstName)
+    : query.eq("first_name", "");
+
+  const { data, error } = await query;
+  if (error || !data || data.length !== 1) {
+    return null;
+  }
+
+  return data[0]?.id ?? null;
 }
 
 function dryRunEntityId(candidate: ComposerCandidate | WorkCandidate): string {

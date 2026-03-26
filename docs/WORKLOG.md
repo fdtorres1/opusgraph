@@ -259,6 +259,82 @@ Append-only log for implementation, investigation, and planning sessions. Keep e
   - the signed-in auth and `org_member` RLS verification pass is now signed off in production
   - the next active implementation objective is the generic source-ingestion foundation with IMSLP as the first adapter
 
+## 2026-03-25
+
+### IMSLP work adapter slice implemented locally
+- Opened branch `feat/imslp-work-adapter`.
+- Extended the IMSLP adapter from composer-only `type=1` support into the first work-oriented `type=2` path:
+  - `lib/ingest/adapters/imslp/client.ts`
+    - generalized the list fetcher for both `type=1` and `type=2`
+    - added `fetchImslpType2Batch(...)`
+  - `lib/ingest/adapters/imslp/parser.ts`
+    - added conservative `type=2` row parsing for:
+      - `id`
+      - `parent`
+      - `permlink`
+      - `intvals.composer`
+      - `intvals.worktitle`
+      - `intvals.icatno`
+      - `intvals.pageid`
+  - `lib/ingest/adapters/imslp/page-client.ts`
+    - added MediaWiki `api.php` page fetch for work rows with redirect support and wikitext capture
+  - `lib/ingest/adapters/imslp/work-fields.ts`
+    - added `WORK INFO` block extraction for:
+      - title
+      - alternative title
+      - opus/catalogue text
+      - composition year text
+      - instrumentation text
+      - movement text
+      - duration text
+  - `lib/ingest/adapters/imslp/mapper.ts`
+    - added first-pass `WorkCandidate` mapping
+    - uses resolved page title/URL as work source identity
+    - stores IMSLP provenance in `sourceIdentity.externalIds` and `extraMetadata`
+    - adds conservative normalization for:
+      - composition year
+      - opus/catalogue text
+      - movements
+  - `lib/ingest/adapters/imslp/index.ts`
+    - now supports both composer and work ingestion jobs
+    - work parsing fetches a MediaWiki page per `type=2` list row before mapping
+  - `lib/ingest/adapters/index.ts`
+    - now registers the unified `imslp` adapter rather than a composer-only export
+- Removed the temporary route-level rejection for `source: "imslp"` + `entityKind: "work"` in:
+  - `app/api/admin/ingest/jobs/route.ts`
+- Tightened work composer resolution in:
+  - `app/api/admin/ingest/_shared.ts`
+  - resolution now tries:
+    - exact source-identity match first
+    - exact canonical-name match second
+  - ambiguous or missing name matches still return `null`
+
+### IMSLP work adapter verification
+- `npm run build` passes after the work adapter integration.
+- Linked-cloud service-level dry-run verification now reaches the real work path:
+  - created job `d233df64-7ef2-4eae-9a7b-8314ca471c57`
+  - batch ran successfully and paused at offset `5`
+  - all 5 results were `failed_parse` with `missing_resolved_composer_id`
+  - this is now a downstream composer-linking/data-coverage issue, not an IMSLP transport or page-parse failure
+- Positive adapter-level verification now exists for the first work row:
+  - fetched 1 IMSLP `type=2` row successfully
+  - parsed 1 `WorkCandidate`
+  - first candidate fields resolved as:
+    - title `Four hands "Amicizia"`
+    - composer source/display `Stankovych, Tatiana`
+    - composition year `2021`
+    - instrumentation `piano 4-hands`
+    - duration `1 minute`
+    - canonical work source identity `Four hands 'Amicizia' (Stankovych, Tatiana)`
+  - current parse warning on that row:
+    - `imslp_work_page_redirected`
+
+### Follow-up
+- review and merge `feat/imslp-work-adapter`
+- decide whether the next slice should:
+  - improve composer resolution for work jobs
+  - or seed enough IMSLP composers in write mode first so work dry-runs can resolve composers by source identity
+
 ## 2026-03-24
 
 ### Manual backup verified and `0016_source_ingest_job.sql` applied to the linked cloud project

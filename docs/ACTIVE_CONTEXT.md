@@ -4,11 +4,11 @@ This is the canonical handoff file for the next session. Rewrite freely as prior
 
 ## Current Objective
 
-Continue the generic source-ingestion foundation with the first real IMSLP adapter slice now that `T4-1` through `T4-4` and `T5-1` through `T5-3` are merged on `main` and the current branch is wiring a composer-only `imslp` adapter into the new ingest APIs.
+Continue the generic source-ingestion foundation with the first IMSLP work-adapter slice now that the composer adapter, job services, and admin ingest APIs are merged on `main`.
 
 ## Current Branch
 
-- `feat/imslp-composer-adapter`
+- `feat/imslp-work-adapter`
 
 ## Parallel Work Coordination
 
@@ -25,24 +25,24 @@ Continue the generic source-ingestion foundation with the first real IMSLP adapt
 
 - Agent: current Codex session
   - Worktree: current checkout at `/Volumes/Felix-SSD-1/Cursor Projects/opusgraph`
-  - Branch: `feat/imslp-composer-adapter`
-  - Scope: implement the first real IMSLP composer adapter, move the adapter registry out of the route layer, and document the next move into end-to-end dry-run verification
+  - Branch: `feat/imslp-work-adapter`
+  - Scope: implement the first IMSLP work adapter, including `type=2` list fetch, MediaWiki page fetch, work candidate mapping, and linked-cloud dry-run verification
   - File ownership:
     - `docs/ACTIVE_CONTEXT.md`
     - `app/api/admin/ingest/_shared.ts`
     - `app/api/admin/ingest/jobs/route.ts`
-    - `app/api/admin/ingest/jobs/[id]/run/route.ts`
     - `lib/ingest/adapters/index.ts`
     - `lib/ingest/adapters/imslp/constants.ts`
     - `lib/ingest/adapters/imslp/client.ts`
     - `lib/ingest/adapters/imslp/parser.ts`
     - `lib/ingest/adapters/imslp/mapper.ts`
+    - `lib/ingest/adapters/imslp/page-client.ts`
+    - `lib/ingest/adapters/imslp/work-fields.ts`
     - `lib/ingest/adapters/imslp/index.ts`
-    - `lib/ingest/index.ts`
     - `docs/WORKLOG.md`
     - `docs/ROADMAP.md`
   - Status: active
-  - Notes: auth/RLS is already signed off; the manual backup requirement remains in force for future linked-cloud migrations; `0016` is applied in the linked cloud; `T4` and `T5` are merged on `main`; the current task slice is the first IMSLP composer adapter
+  - Notes: auth/RLS is already signed off; the manual backup requirement remains in force for future linked-cloud migrations; `0016` is applied in the linked cloud; `T4`, `T5`, and the composer-side IMSLP adapter are merged on `main`; the current task slice is the first IMSLP work adapter
 
 ## In Progress
 
@@ -231,7 +231,7 @@ Continue the generic source-ingestion foundation with the first real IMSLP adapt
   - `app/api/admin/ingest/jobs/[id]/route.ts` adds `GET /api/admin/ingest/jobs/[id]`
   - `app/api/admin/ingest/jobs/[id]/run/route.ts` adds `POST /api/admin/ingest/jobs/[id]/run`
   - `npm run build` passes after the new admin ingest routes were added
-- The first IMSLP adapter slice is now implemented locally on `feat/imslp-composer-adapter`:
+- The first IMSLP composer adapter slice is now merged on `main`:
   - `lib/ingest/adapters/index.ts` now owns the real adapter registry
   - `lib/ingest/adapters/imslp/` now contains:
     - `constants.ts`
@@ -258,6 +258,27 @@ Continue the generic source-ingestion foundation with the first real IMSLP adapt
     - the generic job runner now marks a batch `failed` if fetch/parse returns any `error`-severity issue instead of silently completing on an empty `nextCursor`
     - IMSLP negation keywords now match tokenized words instead of raw substrings, avoiding false negatives on legitimate names containing fragments like `band` or `trio`
   - `npm run build` passes after the adapter wiring was added
+- The IMSLP work adapter slice is now implemented locally on `feat/imslp-work-adapter`:
+  - `lib/ingest/adapters/imslp/client.ts` now supports `type=2` list fetches for work jobs
+  - `lib/ingest/adapters/imslp/parser.ts` now parses IMSLP work rows conservatively
+  - `lib/ingest/adapters/imslp/page-client.ts` now fetches MediaWiki page metadata and wikitext for work rows
+  - `lib/ingest/adapters/imslp/work-fields.ts` now extracts first-pass work fields from the `WORK INFO` block
+  - `lib/ingest/adapters/imslp/mapper.ts` now maps `WorkCandidate`s using resolved page title/URL as source identity
+  - `lib/ingest/adapters/imslp/index.ts` now supports both composer and work parsing paths
+  - `app/api/admin/ingest/jobs/route.ts` no longer rejects `source: "imslp"` + `entityKind: "work"`
+  - `app/api/admin/ingest/_shared.ts` now adds exact-name composer fallback after source-identity matching for work candidates
+  - local verification status:
+    - `npm run build` passes
+    - adapter-level verification successfully fetched and mapped a real IMSLP work candidate:
+      - title `Four hands "Amicizia"`
+      - composer `Stankovych, Tatiana`
+      - year `2021`
+      - instrumentation `piano 4-hands`
+      - duration `1 minute`
+    - linked-cloud dry-run through the generic job runner now reaches the real work path and pauses correctly at offset `5`, but the first five rows still fail later with `missing_resolved_composer_id`
+  - next likely move after review:
+    - improve composer resolution for work jobs
+    - or run enough IMSLP composer ingestion in write mode first to seed source-identity matches for work batches
 - Current backup/recovery constraint:
   - Supabase-managed backups/PITR are not enabled for the OpusGraph project right now
   - manual logical backup is the current safety path before linked-cloud schema changes

@@ -3,17 +3,34 @@ import type {
   SourceIngestAdapter,
   ValidateJobOptionsResult,
 } from "@/lib/ingest/adapters/types";
-import type { CandidateWarning, ComposerCandidate } from "@/lib/ingest/candidates";
+import type {
+  CandidateWarning,
+  ComposerCandidate,
+  WorkCandidate,
+} from "@/lib/ingest/candidates";
 import type { IngestIssue, JsonObject } from "@/lib/ingest/domain";
 
-import { fetchImslpType1Batch, type ImslpListRecord } from "./client";
-import { IMSLP_SOURCE_ENTITY_KIND_PERSON } from "./constants";
-import { mapImslpComposerCandidate } from "./mapper";
-import { parseImslpType1Row } from "./parser";
+import {
+  fetchImslpType1Batch,
+  fetchImslpType2Batch,
+  type ImslpListRecord,
+} from "./client";
+import {
+  IMSLP_SOURCE_ENTITY_KIND_PERSON,
+  IMSLP_SOURCE_ENTITY_KIND_WORK,
+} from "./constants";
+import { mapImslpComposerCandidate, mapImslpWorkCandidate } from "./mapper";
+import { fetchImslpWorkPage } from "./page-client";
+import { parseImslpType1Row, parseImslpType2Row } from "./parser";
+import { extractImslpWorkFields } from "./work-fields";
 
 export interface ImslpJobOptions extends JsonObject {
-  sourceEntityKind: typeof IMSLP_SOURCE_ENTITY_KIND_PERSON;
+  sourceEntityKind:
+    | typeof IMSLP_SOURCE_ENTITY_KIND_PERSON
+    | typeof IMSLP_SOURCE_ENTITY_KIND_WORK;
 }
+
+const IMSLP_WORK_PAGE_FETCH_CONCURRENCY = 4;
 
 function issue(
   code: string,
@@ -36,14 +53,15 @@ function validateImslpJobOptions(
 
   if (
     requestedSourceEntityKind != null &&
-    requestedSourceEntityKind !== IMSLP_SOURCE_ENTITY_KIND_PERSON
+    requestedSourceEntityKind !== IMSLP_SOURCE_ENTITY_KIND_PERSON &&
+    requestedSourceEntityKind !== IMSLP_SOURCE_ENTITY_KIND_WORK
   ) {
     return {
       ok: false,
       issues: [
         issue(
           "imslp_unsupported_source_entity_kind",
-          "The first IMSLP adapter slice only supports person rows.",
+          "The IMSLP adapter only supports person or work source entity kinds.",
           "error",
           { sourceEntityKind: requestedSourceEntityKind },
         ),
@@ -54,7 +72,10 @@ function validateImslpJobOptions(
   return {
     ok: true,
     options: {
-      sourceEntityKind: IMSLP_SOURCE_ENTITY_KIND_PERSON,
+      sourceEntityKind:
+        requestedSourceEntityKind === IMSLP_SOURCE_ENTITY_KIND_WORK
+          ? IMSLP_SOURCE_ENTITY_KIND_WORK
+          : IMSLP_SOURCE_ENTITY_KIND_PERSON,
     },
     issues: [],
   };
@@ -80,6 +101,27 @@ function normalizeRowIssues(
   }
 
   return issues;
+}
+
+function normalizeWorkRowIssues(
+  rowIssues: IngestIssue[],
+  listId: string,
+): IngestIssue[] {
+  return rowIssues.map((item) => {
+    if (item.severity !== "error") {
+      return item;
+    }
+
+    return {
+      ...item,
+      severity: "warning",
+      metadata: {
+        ...(item.metadata ?? {}),
+        listId,
+        downgradedFrom: item.severity,
+      },
+    };
+  });
 }
 
 async function parseImslpComposerBatch(
@@ -122,29 +164,100 @@ async function parseImslpComposerBatch(
   };
 }
 
-export const imslpComposerAdapter: SourceIngestAdapter<
+async function parseImslpWorkBatch(
+  items: ImslpListRecord[],
+): Promise<ParseBatchResult> {
+  const candidates: WorkCandidate[] = [];
+  const issues: IngestIssue[] = [];
+  const parsedRows = items
+    .map((item) => parseImslpType2Row(item))
+    .filter((row): row is NonNullable<typeof row> => row !== null);
+
+  for (
+    let startIndex = 0;
+    startIndex < parsedRows.length;
+    startIndex += IMSLP_WORK_PAGE_FETCH_CONCURRENCY
+  ) {
+    const batch = parsedRows.slice(
+      startIndex,
+      startIndex + IMSLP_WORK_PAGE_FETCH_CONCURRENCY,
+    );
+    const mappedBatch = await Promise.all(
+      batch.map(async (row) => {
+        const page = await fetchImslpWorkPage({ title: row.listId });
+        const fields = extractImslpWorkFields(page.wikitext, row.canonicalTitle);
+        const mapped = mapImslpWorkCandidate({
+          row,
+          page,
+          fields,
+        });
+
+        return {
+          ...mapped,
+          issues: normalizeWorkRowIssues(mapped.issues, row.listId),
+        };
+      }),
+    );
+
+    for (const mapped of mappedBatch) {
+      issues.push(...mapped.issues);
+      if (mapped.candidate) {
+        candidates.push(mapped.candidate);
+      }
+    }
+  }
+
+  const skippedCount = items.length - parsedRows.length;
+  if (skippedCount > 0) {
+    issues.push(
+      issue(
+        "imslp_type2_invalid_rows_skipped",
+        "Some IMSLP type=2 rows could not be parsed and were skipped.",
+        "warning",
+        { skippedCount, itemCount: items.length },
+      ),
+    );
+  }
+
+  return {
+    candidates,
+    issues,
+  };
+}
+
+export const imslpAdapter: SourceIngestAdapter<
   ImslpJobOptions,
   ImslpListRecord
 > = {
   source: "imslp",
   validateJobOptions: validateImslpJobOptions,
-  fetchBatch: fetchImslpType1Batch,
-  async parseBatch(args) {
-    if (args.entityKind !== "composer") {
-      return {
-        candidates: [],
-        issues: [
-          issue(
-            "imslp_unsupported_entity_kind",
-            "The first IMSLP adapter slice only supports composer ingestion jobs.",
-            "error",
-            { entityKind: args.entityKind },
-          ),
-        ],
-      };
+  async fetchBatch(args) {
+    if (args.entityKind === "composer") {
+      return fetchImslpType1Batch(args);
     }
 
-    return parseImslpComposerBatch(args.items);
+    return fetchImslpType2Batch(args);
+  },
+  async parseBatch(args) {
+    if (args.entityKind === "composer") {
+      return parseImslpComposerBatch(args.items);
+    }
+
+    if (args.entityKind === "work") {
+      return parseImslpWorkBatch(args.items);
+    }
+
+    return {
+      candidates: [],
+      issues: [
+        issue(
+          "imslp_unsupported_entity_kind",
+          "The IMSLP adapter only supports composer or work ingestion jobs.",
+          "error",
+          { entityKind: args.entityKind },
+        ),
+      ],
+    };
   },
 };
 
@@ -152,3 +265,5 @@ export * from "./constants";
 export * from "./client";
 export * from "./parser";
 export * from "./mapper";
+export * from "./page-client";
+export * from "./work-fields";

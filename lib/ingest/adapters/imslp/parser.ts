@@ -1,7 +1,7 @@
 import type { CandidateWarning } from "@/lib/ingest/candidates";
 import type { JsonObject, JsonValue } from "@/lib/ingest/domain";
 
-export type ImslpSourceEntityKind = "person";
+export type ImslpSourceEntityKind = "person" | "work";
 export type ImslpPersonClassification = "composer" | "person";
 
 export interface ImslpType1ApiRow {
@@ -33,6 +33,30 @@ export interface ImslpType1ParsedRow {
   classification: ImslpPersonClassification;
   classificationReason: string;
   warnings: CandidateWarning[];
+  rawPayload: JsonObject;
+}
+
+export interface ImslpType2ApiRow {
+  id?: unknown;
+  type?: unknown;
+  parent?: unknown;
+  intvals?: unknown;
+  permlink?: unknown;
+}
+
+export interface ImslpType2ParsedRow {
+  source: "imslp";
+  sourceEntityKind: ImslpSourceEntityKind;
+  listType: 2;
+  listId: string;
+  canonicalTitle: string;
+  canonicalUrl: string;
+  parentCategory: string | null;
+  composerName: string | null;
+  workTitle: string | null;
+  catalogNumber: string | null;
+  pageId: string | null;
+  intvals: JsonObject;
   rawPayload: JsonObject;
 }
 
@@ -130,6 +154,22 @@ function sanitizeJsonValue(value: unknown): JsonValue | undefined {
   }
 
   return undefined;
+}
+
+function parseIntvalsObject(value: unknown): JsonObject {
+  if (!isPlainObject(value)) {
+    return {};
+  }
+
+  const result: JsonObject = {};
+  for (const [key, item] of Object.entries(value)) {
+    const sanitized = sanitizeJsonValue(item);
+    if (sanitized !== undefined) {
+      result[key] = sanitized;
+    }
+  }
+
+  return result;
 }
 
 function parseIntvals(value: unknown): JsonValue[] {
@@ -366,4 +406,103 @@ export function parseImslpType1Batch(
   return entries
     .map(([, item]) => parseImslpType1Row(item))
     .filter((item): item is ImslpType1ParsedRow => item !== null);
+}
+
+export function parseImslpType2Row(
+  value: unknown,
+): ImslpType2ParsedRow | null {
+  if (!isPlainObject(value)) {
+    return null;
+  }
+
+  const type = toTrimmedString(value.type);
+  if (type !== "2") {
+    return null;
+  }
+
+  const rawId = toTrimmedString(value.id);
+  const rawPermlink = toTrimmedString(value.permlink);
+  if (!rawId || !rawPermlink) {
+    return null;
+  }
+
+  const rawParentCategory = toTrimmedString(value.parent);
+  const listId = normalizeWhitespace(stripCategoryPrefix(rawId));
+  const canonicalUrl = normalizeImslpUrl(rawPermlink);
+  const intvals = parseIntvalsObject(value.intvals);
+  const composerName = toTrimmedString(intvals.composer);
+  const workTitle = toTrimmedString(intvals.worktitle);
+  const catalogNumber = toTrimmedString(intvals.icatno);
+  const pageId = toTrimmedString(intvals.pageid);
+  const canonicalTitle = workTitle ?? listId;
+  const parentCategory = rawParentCategory
+    ? normalizeWhitespace(stripCategoryPrefix(rawParentCategory))
+    : null;
+
+  const rawPayload: JsonObject = {
+    source: "imslp",
+    source_entity_kind: "work",
+    list_type: 2,
+    list_id: listId,
+    canonical_title: canonicalTitle,
+    canonical_url: canonicalUrl,
+    parent_category: parentCategory,
+    composer_name: composerName,
+    work_title: workTitle,
+    catalog_number: catalogNumber,
+    page_id: pageId,
+    intvals,
+    raw: {
+      id: rawId,
+      type: 2,
+      parent: rawParentCategory,
+      intvals,
+      permlink: rawPermlink,
+    },
+  };
+
+  return {
+    source: "imslp",
+    sourceEntityKind: "work",
+    listType: 2,
+    listId,
+    canonicalTitle,
+    canonicalUrl,
+    parentCategory,
+    composerName,
+    workTitle,
+    catalogNumber,
+    pageId,
+    intvals,
+    rawPayload,
+  };
+}
+
+export function parseImslpType2Batch(
+  value: unknown,
+): ImslpType2ParsedRow[] {
+  if (Array.isArray(value)) {
+    return value
+      .map((item) => parseImslpType2Row(item))
+      .filter((item): item is ImslpType2ParsedRow => item !== null);
+  }
+
+  if (!isPlainObject(value)) {
+    return [];
+  }
+
+  const entries = Object.entries(value).sort(([left], [right]) => {
+    const leftIndex = Number(left);
+    const rightIndex = Number(right);
+
+    if (Number.isFinite(leftIndex) && Number.isFinite(rightIndex)) {
+      return leftIndex - rightIndex;
+    }
+
+    return left.localeCompare(right);
+  });
+
+  return entries
+    .map(([, item]) => parseImslpType2Row(item))
+    .filter((item): item is ImslpType2ParsedRow => item !== null);
 }

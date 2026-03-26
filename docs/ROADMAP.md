@@ -13,10 +13,13 @@ This file is the current priority view for OpusGraph. Keep it short, current, an
   - use source identity in `external_ids` and raw payloads in `extra_metadata`
   - route ambiguous matches into `review_flag` instead of auto-merging
 - Immediate task slice:
-  - review and merge the first IMSLP composer adapter slice on `feat/imslp-composer-adapter`
-  - review the successful linked-cloud dry-run results from the real `imslp` adapter
-  - tighten composer classification further only if the current warning mix is still too noisy
-  - extend from composer-only IMSLP support into the next parsing or work-ingestion slice after the dry-run path is stable
+  - review and merge the first IMSLP work adapter slice on `feat/imslp-work-adapter`
+  - confirm the new `type=2` work path stays stable through linked-cloud dry-run verification
+  - decide whether exact-name composer fallback is sufficient for early work dry-runs or whether work jobs should wait for a seeded IMSLP composer pass first
+  - move next into the remaining work-ingestion quality tasks:
+    - richer opus/catalog parsing
+    - movement parsing
+    - composer-resolution policy
   - future linked-cloud migrations still require a fresh manual backup while on the phone/mobile network until the home-network IPv6 issue is fixed
 - Primary spec: `docs/specs/imslp-reference-ingestion.md`
 

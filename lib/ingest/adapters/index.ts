@@ -1,9 +1,9 @@
 import type { IngestAdapterRegistry } from "@/lib/ingest/jobs";
 
-import { imslpComposerAdapter } from "./imslp";
+import { imslpAdapter } from "./imslp";
 
 export const ingestAdapterRegistry: IngestAdapterRegistry = {
-  imslp: imslpComposerAdapter,
+  imslp: imslpAdapter,
 };
 
 export * from "./types";
