@@ -4,7 +4,7 @@ This is the canonical handoff file for the next session. Rewrite freely as prior
 
 ## Current Objective
 
-Continue the generic source-ingestion foundation by taking a fresh manual backup and deciding the first small write-mode IMSLP work ingest now that the first 100-row work slice is green in dry-run mode.
+Continue the generic source-ingestion foundation by deciding whether to scale the first successful write-mode IMSLP work ingest beyond the initial 25-row batch.
 
 ## Current Branch
 
@@ -369,10 +369,26 @@ Continue the generic source-ingestion foundation by taking a fresh manual backup
     - `100` processed
     - `100` dry-run `created`
     - `0` failed
+  - a fresh manual backup was then taken successfully from the phone/mobile network:
+    - `/Users/felixtorres/backups/opusgraph-20260326-012515.dump`
+  - first write-mode IMSLP work ingest is now complete for a conservative 25-row batch:
+    - `source_ingest_job.id = 0c0b886a-f74b-44ad-998b-5da61abc66a6`
+    - `25` processed
+    - `25` created
+    - `0` failed
+    - warnings only:
+      - `imslp_work_page_redirected`
+      - `imslp_work_unparsed_movements`
+      - `imslp_work_ambiguous_composition_year`
+  - post-write DB spot-check confirms:
+    - `25` `work` rows created
+    - `25` `revision` rows with action `create`
+    - `25` `work_source` rows
+    - `0` `work_recording` rows in this first slice
   - conclusion:
     - targeted work-derived composer seeding scales well enough to materially improve larger work batches
-    - the first 100 IMSLP work rows are now green in dry-run mode
-    - the next practical move is a fresh backup and a small write-mode IMSLP work ingest
+    - the first write-mode IMSLP work batch succeeded cleanly
+    - the next practical move is to choose the next scale-up step rather than continue proving the same path at batch size `25`
 - Current backup/recovery constraint:
   - Supabase-managed backups/PITR are not enabled for the OpusGraph project right now
   - manual logical backup is the current safety path before linked-cloud schema changes
@@ -383,9 +399,9 @@ Continue the generic source-ingestion foundation by taking a fresh manual backup
 
 ## Next 3 Steps
 
-1. Take a fresh manual logical backup from the phone/mobile network before any linked-cloud write-mode run.
-2. Run a first small write-mode IMSLP work ingest with a conservative limit.
-3. Inspect the written rows, revisions, and any residual warning mix before scaling past that first controlled batch.
+1. Decide the next write-mode scale-up, likely `batchSize = 100`, since the matching dry-run slice is already green.
+2. Take another fresh manual backup from the phone/mobile network immediately before that larger write-mode run.
+3. Inspect warning mix and row quality after the larger write batch before scaling further.
 
 ## Known Blockers
 

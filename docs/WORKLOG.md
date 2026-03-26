@@ -805,3 +805,30 @@ Append-only log for implementation, investigation, and planning sessions. Keep e
 - Conclusion:
   - the first 100 IMSLP work rows are now green in dry-run mode
   - the next practical move is a fresh backup followed by a first small write-mode IMSLP work ingest
+
+### First write-mode IMSLP work ingest succeeds for the initial 25-row batch
+- Continued work on branch `feat/imslp-work-composer-resolution`.
+- Took a fresh verified backup from the phone/mobile network before the write-mode run:
+  - `/Users/felixtorres/backups/opusgraph-20260326-012515.dump`
+- Ran the first linked-cloud write-mode IMSLP work ingest with a conservative batch size:
+  - `source_ingest_job.id = 0c0b886a-f74b-44ad-998b-5da61abc66a6`
+  - source `imslp`
+  - entity kind `work`
+  - `dryRun = false`
+  - `batchSize = 25`
+- Job results:
+  - `25` created
+  - `0` failed
+  - warnings only:
+    - `imslp_work_page_redirected`
+    - `imslp_work_unparsed_movements`
+    - `imslp_work_ambiguous_composition_year`
+- Post-write DB spot-check:
+  - `25` `work` rows exist for the created entity ids
+  - `25` `revision` rows exist with action `create`
+  - `25` `work_source` rows exist
+  - `0` `work_recording` rows were created in this first batch
+  - sample persisted rows show expected source identity and duration values where available
+- Conclusion:
+  - the first write-mode IMSLP work batch succeeded cleanly
+  - the next decision is how far to scale the next write-mode batch, not whether the path works at all
