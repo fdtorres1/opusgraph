@@ -13,11 +13,13 @@ This file is the current priority view for OpusGraph. Keep it short, current, an
   - use source identity in `external_ids` and raw payloads in `extra_metadata`
   - route ambiguous matches into `review_flag` instead of auto-merging
 - Immediate task slice:
-  - validate the first 100-row write-mode IMSLP work batch now that it has completed cleanly through the linked cloud
-  - continue the paused live work job from offset `100` instead of replaying offset `0`
+  - handle the resumed live work-job failure mix at offset `100` to `199`
+  - seed the newly missing IMSLP composers exposed by that slice
+  - run a targeted backfill for the failed `100`-to-`199` work range because the live job has already advanced to offset `200`
   - inspect the remaining warning mix at real write scale:
     - movement parsing
     - redirected IMSLP pages
+    - missing wikitext pages
     - ambiguous composition years
   - keep targeted composer seeding available as an operational tool if later work slices expose new coverage gaps
   - Supabase-managed daily physical backups are now available after the plan upgrade, but PITR is still off and phone-network manual dumps remain useful when a downloadable artifact is needed

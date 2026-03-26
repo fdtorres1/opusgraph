@@ -893,3 +893,27 @@ Append-only log for implementation, investigation, and planning sessions. Keep e
 - Operational implication:
   - the repo should stop describing managed backups as unavailable
   - manual phone-network logical dumps are still useful when a downloadable backup artifact is required, but they are no longer the only recovery path
+
+### Resuming the paused live IMSLP work job exposed the next composer-coverage gap
+- Resumed paused job `95e5fd1e-765b-4c8d-89f2-df25ba364a04` from offset `100`.
+- Result after the resumed 100-row slice:
+  - cumulative totals:
+    - `200` processed
+    - `118` created
+    - `25` updated
+    - `57` failed
+  - resumed-slice totals:
+    - `43` created
+    - `0` updated
+    - `57` failed
+  - cursor advanced and is now paused at offset `200`
+- Error summary for the resumed slice:
+  - `missing_resolved_composer_id` (`57`)
+- Warning summary for the resumed slice:
+  - `imslp_work_page_redirected` (`10`)
+  - `imslp_work_unparsed_movements` (`154`)
+  - `imslp_work_page_missing_wikitext` (`2`)
+- Interpretation:
+  - the resumed slice did not reveal a new parser or write-path defect
+  - the dominant blocker is composer coverage again beyond the first `100` works
+  - because the live job already advanced to offset `200`, recovering the `57` failed works will require a targeted backfill or replay of the `100`-to-`199` range after seeding the missing composers

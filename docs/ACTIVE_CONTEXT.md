@@ -4,7 +4,7 @@ This is the canonical handoff file for the next session. Rewrite freely as prior
 
 ## Current Objective
 
-Continue the generic source-ingestion foundation by validating and scaling the first successful 100-row write-mode IMSLP work ingest.
+Continue the generic source-ingestion foundation by addressing the new composer-coverage failures exposed by resuming the first 100-row write-mode IMSLP work job.
 
 ## Current Branch
 
@@ -26,7 +26,7 @@ Continue the generic source-ingestion foundation by validating and scaling the f
 - Agent: current Codex session
   - Worktree: current checkout at `/Volumes/Felix-SSD-1/Cursor Projects/opusgraph`
   - Branch: `feat/imslp-work-composer-resolution`
-  - Scope: validate the first larger write-mode IMSLP work batch, capture the exact linked-cloud outcome, and define the next safe scale-up step
+  - Scope: capture the resumed live-job outcome, isolate the new failure mix, and define the next targeted composer-seeding or backfill step
   - File ownership:
     - `docs/ACTIVE_CONTEXT.md`
     - `app/api/admin/ingest/_shared.ts`
@@ -418,6 +418,28 @@ Continue the generic source-ingestion foundation by validating and scaling the f
     - updated overlap rows like `'4-4-8' Claves Quartet` and `'A cafona` preserved stable source identity and duration values while reusing the existing rows
     - redirected-page examples like `12 Short Pieces for the Organ (Wesley, Samuel)` resolved to the expected canonical page title
     - the dominant `imslp_work_unparsed_movements` warnings are mostly single-count or descriptive movement text such as `1`, `1 movement`, or `13 pieces actually, and a voluntary`, which is acceptable to preserve as raw metadata for now
+  - paused live job `95e5fd1e-765b-4c8d-89f2-df25ba364a04` was then resumed from offset `100`
+  - resumed batch result:
+    - cumulative totals:
+      - `200` processed
+      - `118` created
+      - `25` updated
+      - `57` failed
+    - this resumed 100-row slice contributed:
+      - `43` created
+      - `0` updated
+      - `57` failed
+    - cursor is now paused at offset `200`
+    - error summary for the resumed slice:
+      - `missing_resolved_composer_id` (`57`)
+    - warning summary for the resumed slice:
+      - `imslp_work_page_redirected` (`10`)
+      - `imslp_work_unparsed_movements` (`154`)
+      - `imslp_work_page_missing_wikitext` (`2`)
+  - conclusion:
+    - the resumed slice did not expose a new parser or writer defect
+    - the dominant blocker past offset `100` is composer coverage again
+    - because the job cursor has already advanced to `200`, recovering the `57` failed works will require a targeted backfill or replay of the `100`-to-`199` slice after seeding the missing composers
 - Current backup/recovery constraint:
   - Supabase-managed daily physical backups are now present for the OpusGraph project after the March 26, 2026 plan upgrade
   - latest managed physical backup reported by `supabase backups list`:
@@ -431,9 +453,9 @@ Continue the generic source-ingestion foundation by validating and scaling the f
 
 ## Next 3 Steps
 
-1. Take another fresh manual backup from the phone/mobile network before resuming the paused live job, so the current 100-row write state is covered.
-2. Resume paused job `95e5fd1e-765b-4c8d-89f2-df25ba364a04` from offset `100` instead of creating another offset-`0` run.
-3. Decide whether `imslp_work_unparsed_movements` should be hardened before the next major scale-up or simply tracked as a known warning class.
+1. Derive the missing composer names from the failed `100`-to-`199` work slice and seed them with IMSLP provenance.
+2. Run a targeted backfill for the failed `100`-to-`199` work range after composer seeding, since job `95e5fd1e-765b-4c8d-89f2-df25ba364a04` has already advanced to offset `200`.
+3. Decide whether to continue the paused live job past offset `200` immediately or wait until the backfill recovers the `57` failed works.
 
 ## Known Blockers
 
