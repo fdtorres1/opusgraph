@@ -1094,3 +1094,20 @@ Append-only log for implementation, investigation, and planning sessions. Keep e
   - composer coverage and duration parsing are no longer blocking this range
   - the slice is fully write-recovered except for the one intentional duplicate-review path
   - the next clean operational move is a fresh live IMSLP work job from offset `400`
+
+### Persisted spot-check on the recovered `300` slice looks acceptable
+- Spot-checked persisted write results instead of relying only on dry-run output:
+  - created row:
+    - `10 Charakteristische Tonstücke, Op.86 (Karg-Elert, Sigfrid)`
+    - persisted with `duration_seconds = 3000`, `instrumentation_text = organ`, IMSLP provenance in `external_ids.imslp`, and normalized IMSLP duration metadata preserved in `extra_metadata.imslp`
+  - updated rows:
+    - `'k Hou van stilte`
+    - `'mos de hablar cholito`
+    - `'n Avond Blomkens`
+    - latest `revision.snapshot` values show coherent title, composer linkage, year, instrumentation, and IMSLP provenance after the recovery writes
+- The heavy warning class in this slice is still `imslp_work_unparsed_movements`, but the raw movement text is being preserved under `extra_metadata.imslp.extracted_fields` rather than written as obviously bad structured movement data
+- The only non-green row left in the `300` slice remains the expected duplicate-review case:
+  - work `'t Was in de blijde mei`
+  - composer `Tinel, Jef`
+- Conclusion:
+  - the recovered `300` slice is good enough to continue live ingestion from offset `400`

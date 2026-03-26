@@ -59,6 +59,19 @@ Continue the generic source-ingestion foundation by accepting the single duplica
     - `1` flagged duplicate
     - paused at offset `400`
   - current IMSLP work coverage is `396`
+- A persisted quality spot-check on the recovered `300` slice looks acceptable:
+  - created row `10 Charakteristische Tonstücke, Op.86 (Karg-Elert, Sigfrid)` now persists with:
+    - `duration_seconds = 3000`
+    - `instrumentation_text = organ`
+    - IMSLP provenance in `external_ids.imslp`
+    - normalized `Average Duration` preserved in `extra_metadata.imslp.extracted_fields.duration_text = 50 minutes`
+  - updated sample rows like:
+    - `'k Hou van stilte`
+    - `'mos de hablar cholito`
+    - `'n Avond Blomkens`
+    retained coherent title/composer/year/instrumentation state in their latest `revision.snapshot`
+  - warning-heavy rows are still preserving movement text as raw IMSLP metadata instead of writing obviously bad movement structures
+  - the only remaining non-green row in the `300` slice is the expected duplicate-review case for `'t Was in de blijde mei`
 - An ad hoc inspection replay of the `300` slice was accidentally run once with `dryRun: false` before being corrected to `dryRun: true`:
   - that caused extra source-match update churn on already-ingested work rows
   - no new parser or composer-resolution defects surfaced from it
