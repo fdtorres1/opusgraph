@@ -413,6 +413,11 @@ Continue the generic source-ingestion foundation by validating and scaling the f
     - the larger write-mode IMSLP work path is stable through `100` processed rows
     - the `25` updates are expected because the first `25` source ids were already written by the earlier pilot batch
     - the next move should use the paused job cursor at offset `100` rather than replaying offset `0` again
+  - representative row-quality spot-checks after the larger write batch look acceptable:
+    - newly created rows like `'A spicajola da festa` and `'A spatella` have coherent title, instrumentation, duration, and catalog metadata
+    - updated overlap rows like `'4-4-8' Claves Quartet` and `'A cafona` preserved stable source identity and duration values while reusing the existing rows
+    - redirected-page examples like `12 Short Pieces for the Organ (Wesley, Samuel)` resolved to the expected canonical page title
+    - the dominant `imslp_work_unparsed_movements` warnings are mostly single-count or descriptive movement text such as `1`, `1 movement`, or `13 pieces actually, and a voluntary`, which is acceptable to preserve as raw metadata for now
 - Current backup/recovery constraint:
   - Supabase-managed backups/PITR are not enabled for the OpusGraph project right now
   - manual logical backup is the current safety path before linked-cloud schema changes
@@ -423,9 +428,9 @@ Continue the generic source-ingestion foundation by validating and scaling the f
 
 ## Next 3 Steps
 
-1. Spot-check a representative sample of the `75` newly created works and the `25` updated works from job `95e5fd1e-765b-4c8d-89f2-df25ba364a04`, focusing on movement parsing and redirected IMSLP pages.
-2. Resume the paused live job from offset `100` for the next batch instead of creating another offset-`0` job.
-3. Decide whether `imslp_work_unparsed_movements` should be hardened before the next major scale-up or just tracked as a known warning class.
+1. Take another fresh manual backup from the phone/mobile network before resuming the paused live job, so the current 100-row write state is covered.
+2. Resume paused job `95e5fd1e-765b-4c8d-89f2-df25ba364a04` from offset `100` instead of creating another offset-`0` run.
+3. Decide whether `imslp_work_unparsed_movements` should be hardened before the next major scale-up or simply tracked as a known warning class.
 
 ## Known Blockers
 

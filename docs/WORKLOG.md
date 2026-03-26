@@ -866,3 +866,17 @@ Append-only log for implementation, investigation, and planning sessions. Keep e
   - the `25` updates are expected because the earlier pilot write job had already written the first `25` source ids
   - the live write path now looks stable through `100` processed work rows
   - the next scale-up should resume the paused job from offset `100` instead of replaying offset `0`
+
+### Spot-check of the 100-row live IMSLP work batch looks acceptable
+- Performed a representative post-write quality review on the same branch:
+  - sampled newly created rows from the 100-row batch window
+  - sampled updated overlap rows from the earlier 25-row pilot
+  - sampled redirected-page cases and movement-warning-heavy rows
+- Findings:
+  - newly created rows like `'A spicajola da festa` and `'A spatella` have coherent title, instrumentation, duration, and catalog metadata
+  - updated overlap rows like `'4-4-8' Claves Quartet` and `'A cafona` retained stable source identity and duration values while correctly reusing the existing entity rows
+  - redirected-page examples like `12 Short Pieces for the Organ (Wesley, Samuel)` resolved to the expected canonical page title and still produced sensible persisted metadata
+  - the dominant `imslp_work_unparsed_movements` warning class is mostly coming from single-count or descriptive movement text like `1`, `1 movement`, `13 movements`, or `13 pieces actually, and a voluntary`
+- Conclusion:
+  - the current warning mix looks acceptable for continuing the live job
+  - the next safe operational step is another phone-network backup, then resuming paused job `95e5fd1e-765b-4c8d-89f2-df25ba364a04` from offset `100`
