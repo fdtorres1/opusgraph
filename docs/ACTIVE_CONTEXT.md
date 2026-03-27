@@ -4,7 +4,7 @@ This is the canonical handoff file for the next session. Rewrite freely as prior
 
 ## Current Objective
 
-Continue live IMSLP work ingestion from offset `1300` using the new unified recovery script for mixed error slices and targeted composer seeding.
+Continue live IMSLP work ingestion from offset `1400` using the targeted recovery workflow, with follow-up attention on the delayed-settle behavior of the live operator scripts.
 
 ## Current Branch
 
@@ -50,6 +50,33 @@ Continue live IMSLP work ingestion from offset `1300` using the new unified reco
   - the helper now tolerates mixed failure slices instead of requiring a pure missing-composer failure mix
   - it summarizes run output instead of dumping full candidate payloads on failure
   - `scripts/run-ingest-job.ts`, `scripts/seed-imslp-work-composers.ts`, and `scripts/inspect-imslp-work-slice.ts` are now import-safe and export their core helpers for reuse
+- The targeted offset-`1300` recovery path is now also proven:
+  - initial dry-run job `027c96da-cac4-485f-bfe3-4803486612ed` showed:
+    - `37` created
+    - `1` flagged duplicate
+    - `62` failed
+  - all `62` failures were `missing_resolved_composer_id`
+  - targeted composer seeding increased IMSLP composer coverage from `2021` to `2074`
+  - dry-run replay job `538bb2c3-7837-49a7-b39e-694d22502365` is green:
+    - `99` created
+    - `1` flagged duplicate
+    - `0` failed
+    - paused at offset `1400`
+  - matching live job `442533fb-ba3e-4be3-869f-570d1b971c83` is also green:
+    - `100` processed
+    - `93` created
+    - `0` updated
+    - `7` flagged duplicates
+    - `0` failed
+    - paused at offset `1400`
+  - current observed IMSLP coverage is:
+    - `2074` composers
+    - `1331` works
+  - operator note:
+    - the live CLI wrappers can appear hung while writes are still landing
+    - a duplicate live attempt created stale zero-counter job `0c3163e8-e62c-4013-b834-354adb8541bc`, which was canceled after the real live batch settled
+  - next clean move:
+    - run the offset-`1400` recovery flow
 - The targeted offset-`1200` recovery path is now also proven:
   - first dry-run attempts showed a mixed failure slice:
     - `68` `missing_resolved_composer_id`
@@ -72,10 +99,10 @@ Continue live IMSLP work ingestion from offset `1300` using the new unified reco
   - warning mix stayed bounded:
     - `imslp_work_page_redirected` (`4`)
     - `imslp_work_unparsed_movements` (`188`)
-  - current observed IMSLP coverage is:
+  - current observed IMSLP coverage at the time of completion was:
     - `2021` composers
     - `1238` works
-  - next clean move:
+  - next clean move after that slice was:
     - run `scripts/recover-imslp-work-slice.ts --offset 1300 --batch-size 100 --run-live true`
 - The targeted offset-`1100` recovery path is now also proven:
   - first dry-run `09ca985d-5e1c-4632-a0c0-d60fb67f9ad2` showed:

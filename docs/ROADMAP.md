@@ -13,7 +13,13 @@ This file is the current priority view for OpusGraph. Keep it short, current, an
   - use source identity in `external_ids` and raw payloads in `extra_metadata`
   - route ambiguous matches into `review_flag` instead of auto-merging
 - Immediate task slice:
-  - run `scripts/recover-imslp-work-slice.ts --offset 1300 --batch-size 100 --run-live true`
+  - recover the next IMSLP work slice at offset `1400`
+  - preferred operator flow:
+    - run the initial dry-run
+    - use targeted composer seeding if `missing_resolved_composer_id` appears
+    - replay the dry-run
+    - run the live batch once the replay is green
+  - the unified script still reflects the right recovery logic, but the CLI wrappers can settle late enough to look hung, so operator verification against `source_ingest_job` and coverage counts is still the safer path during live runs
   - use the unified recovery script as the default operator path for new IMSLP work slices
   - the `200`, `300`, and `400` slices are now operationally recovered to:
     - `0` failed rows
@@ -71,12 +77,18 @@ This file is the current priority view for OpusGraph. Keep it short, current, an
     - the new unified recovery script then completed the slice end to end
     - final dry-run returned `100` creates and `0` failures
     - matching live batch returned `95` creates, `1` update, `4` duplicate flags, and `0` failures
+  - targeted offset-`1300` recovery now also works:
+    - initial dry-run returned `37` creates, `1` duplicate flag, and `62` composer-resolution failures
+    - targeted composer seeding expanded IMSLP composer coverage from `2021` to `2074`
+    - dry-run replay returned `99` creates, `1` duplicate flag, and `0` failures
+    - matching live batch returned `93` creates, `7` duplicate flags, and `0` failures
+    - a duplicate live attempt left one stale zero-counter job row, which was canceled after the real live batch settled
   - the fresh live offset-`400` job exposed `96` new composer-resolution misses; the follow-up composer-link pass resolved them by updating `86` existing composers with IMSLP source identity, and the backfill reduced the slice to:
     - `0` failed rows
     - `6` duplicate-review cases
   - current linked-cloud IMSLP coverage is:
-    - `2021` composers
-    - `1238` works
+    - `2074` composers
+    - `1331` works
   - inspect the remaining warning mix at real write scale:
     - movement parsing
     - redirected IMSLP pages
