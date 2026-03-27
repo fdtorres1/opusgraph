@@ -217,12 +217,38 @@ Continue IMSLP work ingestion under the corrected orchestral-only scope, using t
     - `100` flagged
     - `0` failed
     - cursor advanced to `2300`
-    - the live wrapper-owned row `77acbdbe-9ca2-4643-aea4-c36a7e0efbef` stayed stale at zero counters, but the database writes landed:
-      - `90` new IMSLP work rows created after the live run started
-      - `90` new open `orchestral_scope_review` flags created after the live run started
-      - the stale row was then explicitly canceled after the writes were verified
+    - the live wrapper-owned row `77acbdbe-9ca2-4643-aea4-c36a7e0efbef` eventually backfilled its real counters after lingering in `running`
+    - canonical live result:
+      - `100` processed
+      - `100` flagged
+      - `0` failed
+      - cursor advanced to `2300`
+  - offset `2300` is now recovered:
+    - initial dry-run job `2c490b42-3581-4ff5-a38f-76141db03e9d`
+    - `100` processed
+    - `2` created
+    - `42` flagged
+    - `56` failed, all `missing_resolved_composer_id`
+    - targeted composer seeding handled `52` unique missing composers as updates
+    - replay dry-run completed green on duplicate wrapper/manual rows:
+      - `0018b88c-7689-490d-98a7-7f2dd47146b5`
+      - `0db7f661-e3ab-4b96-81c6-e626ded0c6ef`
+    - effective replay result:
+      - `100` processed
+      - `5` created
+      - `95` flagged
+      - `0` failed
+      - cursor advanced to `2400`
+    - the live row `45e5fce8-84cc-4a97-a6e6-a9d6780c2463` stayed stale at zero counters, but DB writes landed:
+      - `57` new IMSLP work rows created after the live run started
+      - `57` new open `orchestral_scope_review` flags created after the live run started
+      - the stale live row was then explicitly canceled after verification
+    - current linked-cloud coverage:
+      - `2596` IMSLP composers
+      - `2217` IMSLP works
+      - `2163` open `orchestral_scope_review` flags
   - immediate next step:
-    - run the offset-`2300` recovery flow under the same DB-verified operator pattern
+    - run the offset-`2400` recovery flow under the same DB-verified operator pattern
   - operator note:
     - live operator scripts still settle late enough to look hung, so DB verification remains safer than trusting the CLI wrapper to exit promptly
     - one redundant manual replay dry-run (`a7f88c27-a8ce-4afb-995d-0bb6437a782d`) was launched while the canonical replay still looked stale; it paused green and can be ignored
@@ -236,7 +262,15 @@ Continue IMSLP work ingestion under the corrected orchestral-only scope, using t
       - duplicate initial dry-run row: `0cc69ede-8a61-4e9b-b0aa-5f56b53acc0a`
       - pre-fix replay rows with one remaining `invalid_duration_text`: `7df8d508-631d-44d9-bb11-95750aaf519f`, `c782f9a4-d050-41cd-9a80-add835444afd`
       - post-fix green replay row: `441a3a30-d44e-4b25-b7bd-4285f020d439`
-      - stale live row explicitly canceled after DB verification: `77acbdbe-9ca2-4643-aea4-c36a7e0efbef`
+      - wrapper-owned live row `77acbdbe-9ca2-4643-aea4-c36a7e0efbef` later backfilled the canonical live result after lingering in `running`
+    - offset `2300` also left stale wrapper-owned rows that had to be cleaned up:
+      - initial dry-run wrapper row: `2c490b42-3581-4ff5-a38f-76141db03e9d`
+      - replay duplicates:
+        - `0018b88c-7689-490d-98a7-7f2dd47146b5`
+        - `0db7f661-e3ab-4b96-81c6-e626ded0c6ef`
+        - `d9ed8c5d-2da5-4652-aac5-8e0696cb7163`
+      - stale live row explicitly canceled after DB verification:
+        - `45e5fce8-84cc-4a97-a6e6-a9d6780c2463`
     - QA protocol going forward:
       - after each live work slice, run `scripts/sample-imslp-audit.ts --seed <slice-id>`
       - inspect accepted orchestral work samples separately from quarantined flag samples before moving on
