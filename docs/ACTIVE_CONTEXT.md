@@ -178,9 +178,29 @@ Finish the composer catch-up phase cleanly enough to retry IMSLP work ingestion 
     - `imslp_work_page_redirected` (`6`)
   - likely next move:
     - stop broad composer catch-up for now
-    - derive the unique missing composers from the offset-`500` work slice directly
+    - derive the unique missing composers from the current work slice directly
     - seed or link that exact composer set
-    - then replay offset `500` again before any more live work ingest
+    - then replay the slice before any more live work ingest
+- The targeted offset-`500` recovery path is now proven:
+  - dry-run derivation job `fdc3f62f-c67d-4952-afef-acd678e1abac`
+    - `82` failed work rows collapsed to `72` unique missing composers
+  - targeted composer seeding created all `72` of those exact missing composers with no flags or write failures
+  - IMSLP composer coverage rose from `1495` to `1567`
+  - post-seed dry-run replay `a9cf6cd1-1cf2-4b4f-b252-28645381206f` is fully green:
+    - `100` created
+    - `0` failed
+    - paused at offset `600`
+  - matching live job `d0b6295a-a0aa-43a6-b4fd-c4b4a4e30e88` is also now green:
+    - `100` processed
+    - `93` created
+    - `2` updated
+    - `5` flagged duplicates
+    - `0` failed
+    - paused at offset `600`
+  - current observed IMSLP work coverage is `583`
+  - next clean move:
+    - replay work offset `600` in dry-run mode
+    - if it is still dominated by `missing_resolved_composer_id`, repeat the same targeted recovery pattern instead of broad composer catch-up
 - An ad hoc inspection replay of the `300` slice was accidentally run once with `dryRun: false` before being corrected to `dryRun: true`:
   - that caused extra source-match update churn on already-ingested work rows
   - no new parser or composer-resolution defects surfaced from it

@@ -1282,3 +1282,43 @@ Append-only log for implementation, investigation, and planning sessions. Keep e
 - Interpretation:
   - broader composer catch-up is no longer an efficient way to unblock offset `500`
   - the next efficient move is to derive the exact missing-composer set from this work slice and seed or link those composers directly before another replay
+
+### Targeted offset-`500` composer seeding recovered the work slice cleanly
+- Derived the exact unresolved set from work offset `500` using the real adapter + dry-run pipeline:
+  - derivation job `fdc3f62f-c67d-4952-afef-acd678e1abac`
+  - `82` failed work rows collapsed to `72` unique missing composers
+  - highest-frequency missing composers in the slice included:
+    - `Reger, Max` (`4` rows)
+    - `Willan, Healey` (`3` rows)
+    - `Czerny, Carl` (`2` rows)
+    - `D'Alquen, Johann` (`2` rows)
+    - `Reinecke, Carl` (`2` rows)
+- Seeded those exact `72` missing composers directly from the unresolved work slice:
+  - `72` created
+  - `0` flagged duplicates
+  - `0` failed
+  - IMSLP composer coverage rose from `1495` to `1567`
+- Replayed the same work slice in dry-run mode after targeted composer seeding:
+  - dry-run job `a9cf6cd1-1cf2-4b4f-b252-28645381206f`
+  - `100` processed
+  - `100` created
+  - `0` failed
+  - paused at offset `600`
+- Warning summary for the recovered dry-run stayed the same as before:
+  - `imslp_work_unparsed_movements` (`194`)
+  - `imslp_work_ambiguous_composition_year` (`8`)
+  - `imslp_work_page_redirected` (`6`)
+- Ran the matching live offset-`500` work batch:
+  - live job `d0b6295a-a0aa-43a6-b4fd-c4b4a4e30e88`
+  - `100` processed
+  - `93` created
+  - `2` updated
+  - `5` flagged duplicates
+  - `0` failed
+  - paused at offset `600`
+- Current linked-cloud IMSLP coverage after the live offset-`500` recovery:
+  - `1567` composers
+  - `583` works
+- Interpretation:
+  - targeted recovery from the exact unresolved work slice is the right operational pattern once broad composer catch-up stops buying enough
+  - the next clean move is to replay work offset `600` in dry-run mode and repeat the same pattern if it is still composer-thin
