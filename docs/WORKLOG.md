@@ -72,6 +72,37 @@ Append-only log for implementation, investigation, and planning sessions. Keep e
   - continue with the offset-`1500` work slice
   - keep using targeted composer seeding for composer-thin slices
 
+### Targeted offset-`1500` recovery completed cleanly
+- Replayed the IMSLP work slice at offset `1500`:
+  - initial dry-run job `e1d5d604-dcfa-4390-849c-46a347f86863`
+  - `100` processed
+  - `37` created
+  - `1` flagged duplicate
+  - `62` failed
+  - all `62` failures were `missing_resolved_composer_id`
+- Ran targeted composer seeding for the unresolved `1500` slice:
+  - IMSLP composer coverage increased from `2139` to `2193`
+- Replayed the dry-run after seeding:
+  - dry-run job `326cd944-7af5-4cc9-97fa-c0b87737abee`
+  - `99` created
+  - `1` flagged duplicate
+  - `0` failed
+  - paused at offset `1600`
+- Ran the matching live offset-`1500` batch:
+  - live job `56e25236-3c50-47b5-98a6-27a13006ad90`
+  - `100` processed
+  - `83` created
+  - `1` updated
+  - `16` flagged duplicates
+  - `0` failed
+  - paused at offset `1600`
+- Current linked-cloud coverage after the live offset-`1500` batch:
+  - `2193` IMSLP composers
+  - `1507` IMSLP works
+- Follow-up:
+  - continue with the offset-`1600` work slice
+  - keep using targeted composer seeding for composer-thin slices
+
 ## 2026-03-18
 
 ### Documentation workflow bootstrapped
