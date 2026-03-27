@@ -40,6 +40,38 @@ Append-only log for implementation, investigation, and planning sessions. Keep e
   - keep using targeted composer seeding for composer-thin slices
   - investigate the delayed-settle behavior in the live CLI wrappers before treating the unified script as fully hands-off for large live runs
 
+### Targeted offset-`1400` recovery completed cleanly
+- Replayed the IMSLP work slice at offset `1400`:
+  - initial dry-run job `f5b674dd-e7a3-4ab2-b51f-4ee4a11d67fc`
+  - `100` processed
+  - `30` created
+  - `1` flagged duplicate
+  - `69` failed
+  - all `69` failures were `missing_resolved_composer_id`
+- Ran targeted composer seeding for the unresolved `1400` slice:
+  - IMSLP composer coverage increased from `2074` to `2139`
+- Replayed the dry-run after seeding:
+  - dry-run job `8045d03c-16a1-4a48-a032-278937c5994d`
+  - `98` created
+  - `1` updated
+  - `1` flagged duplicate
+  - `0` failed
+  - paused at offset `1500`
+- Ran the matching live offset-`1400` batch:
+  - live job `edd034d9-b7e7-4477-9749-8d79f245c8e5`
+  - `100` processed
+  - `93` created
+  - `1` updated
+  - `6` flagged duplicates
+  - `0` failed
+  - paused at offset `1500`
+- Current linked-cloud coverage after the live offset-`1400` batch:
+  - `2139` IMSLP composers
+  - `1424` IMSLP works
+- Follow-up:
+  - continue with the offset-`1500` work slice
+  - keep using targeted composer seeding for composer-thin slices
+
 ## 2026-03-18
 
 ### Documentation workflow bootstrapped
