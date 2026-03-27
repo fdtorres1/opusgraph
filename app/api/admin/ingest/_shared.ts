@@ -5,11 +5,14 @@ import type { ComposerCandidate, WorkCandidate } from "@/lib/ingest/candidates";
 import type { CandidateProcessorArgs } from "@/lib/ingest/jobs/types";
 import { parseDuration } from "@/lib/duration";
 import type { CandidatePersistResult } from "@/lib/ingest/results";
+import { assessImslpWorkOrchestralScope } from "@/lib/ingest/adapters/imslp/work-fields";
+import { ORCHESTRAL_SCOPE_REVIEW_REASON } from "@/lib/ingest/quarantine";
 import {
   assessCandidateDuplicates,
   persistComposerCandidate,
   persistWorkCandidate,
 } from "@/lib/ingest/persist";
+import { quarantineWorkEntity } from "@/lib/ingest/persist/support";
 import { parseImslpCanonicalName } from "@/lib/ingest/adapters/imslp/parser";
 import { findSourceIdentityMatch } from "@/lib/ingest/persist/source-identity";
 import { createServerSupabase } from "@/lib/supabase/server";
@@ -123,26 +126,114 @@ async function resolveWorkComposerId(
     return null;
   }
 
-  let query = args.supabase
+  let exactQuery = args.supabase
     .from("composer")
     .select("id")
     .eq("last_name", lastName)
     .limit(2);
 
-  query = firstName
-    ? query.eq("first_name", firstName)
-    : query.eq("first_name", "");
+  exactQuery = firstName
+    ? exactQuery.eq("first_name", firstName)
+    : exactQuery.eq("first_name", "");
 
-  const { data, error } = await query;
-  if (error || !data || data.length !== 1) {
+  const { data: exactData, error: exactError } = await exactQuery;
+  if (!exactError && exactData?.length === 1) {
+    return exactData[0]?.id ?? null;
+  }
+
+  const { data: fuzzyData, error: fuzzyError } = await args.supabase.rpc(
+    "find_duplicate_composers",
+    {
+      in_first: firstName,
+      in_last: lastName,
+      in_birth_year: null,
+    },
+  );
+
+  if (
+    fuzzyError ||
+    !Array.isArray(fuzzyData) ||
+    fuzzyData.length !== 1 ||
+    typeof fuzzyData[0] !== "string"
+  ) {
     return null;
   }
 
-  return data[0]?.id ?? null;
+  return fuzzyData[0];
 }
 
 function dryRunEntityId(candidate: ComposerCandidate | WorkCandidate): string {
   return `dry-run:${candidate.entityKind}:${candidate.sourceIdentity.source}:${candidate.sourceIdentity.sourceId}`;
+}
+
+function buildWorkQuarantineDetails(candidate: WorkCandidate) {
+  const orchestralScope = assessImslpWorkOrchestralScope(
+    candidate.instrumentationText,
+  );
+
+  return {
+    source: candidate.sourceIdentity.source,
+    source_entity_kind: candidate.sourceIdentity.sourceEntityKind,
+    source_id: candidate.sourceIdentity.sourceId,
+    source_url: candidate.sourceIdentity.sourceUrl ?? null,
+    canonical_title: candidate.sourceIdentity.canonicalTitle ?? null,
+    title: candidate.title,
+    composer_display_name: candidate.composerDisplayName ?? null,
+    instrumentation_text: candidate.instrumentationText ?? null,
+    classification: orchestralScope.classification,
+    classification_reason: orchestralScope.reason,
+    matched_signals: orchestralScope.matchedSignals,
+    normalized_instrumentation_text:
+      orchestralScope.normalizedInstrumentationText,
+  };
+}
+
+function shouldQuarantineWorkCandidate(candidate: WorkCandidate): boolean {
+  const scope = assessImslpWorkOrchestralScope(candidate.instrumentationText);
+  return scope.classification !== "orchestral";
+}
+
+async function quarantinePersistedWork(
+  args: CandidateProcessorArgs,
+  result: CandidatePersistResult,
+): Promise<CandidatePersistResult> {
+  if (
+    result.outcome !== "created" &&
+    result.outcome !== "updated" &&
+    result.outcome !== "skipped_existing_source_match"
+  ) {
+    return result;
+  }
+
+  const candidate = args.candidate as WorkCandidate;
+  const details = buildWorkQuarantineDetails(candidate);
+  const quarantined = await quarantineWorkEntity(
+    args.supabase,
+    result.entityId,
+    args.actorUserId,
+    ORCHESTRAL_SCOPE_REVIEW_REASON,
+    details,
+  );
+
+  return {
+    outcome: "quarantined",
+    entityKind: "work",
+    entityId: result.entityId,
+    sourceIdentity: candidate.sourceIdentity,
+    candidate,
+    reviewFlagId: quarantined.reviewFlagId ?? undefined,
+    quarantineReason: ORCHESTRAL_SCOPE_REVIEW_REASON,
+    issues: [
+      ...result.issues,
+      {
+        code: "work_quarantined_for_orchestral_scope_review",
+        message:
+          "This IMSLP work was quarantined because it is not positively classified as orchestral.",
+        severity: "warning",
+        metadata: details,
+      },
+    ],
+  };
 }
 
 async function simulateComposerDryRun(
@@ -300,6 +391,30 @@ async function simulateWorkDryRun(
     };
   }
 
+  if (shouldQuarantineWorkCandidate(candidate)) {
+    const entityId = sourceMatch?.entityId ?? dryRunEntityId(candidate);
+    const details = buildWorkQuarantineDetails(candidate);
+
+    return {
+      outcome: "quarantined",
+      entityKind: "work",
+      entityId,
+      sourceIdentity: candidate.sourceIdentity,
+      candidate,
+      quarantineReason: ORCHESTRAL_SCOPE_REVIEW_REASON,
+      issues: [
+        ...duplicateAssessment.issues,
+        {
+          code: "work_would_be_quarantined_for_orchestral_scope_review",
+          message:
+            "This IMSLP work would be quarantined because it is not positively classified as orchestral.",
+          severity: "warning",
+          metadata: details,
+        },
+      ],
+    };
+  }
+
   if (sourceMatch) {
     return {
       outcome: "updated",
@@ -343,7 +458,7 @@ export async function processIngestCandidate(args: CandidateProcessorArgs) {
     });
   }
 
-  return persistWorkCandidate({
+  const persistedWork = await persistWorkCandidate({
     supabase: args.supabase,
     candidate: args.candidate,
     options: {
@@ -354,4 +469,10 @@ export async function processIngestCandidate(args: CandidateProcessorArgs) {
       resolveComposerId: (candidate) => resolveWorkComposerId(candidate, args),
     },
   });
+
+  if (!shouldQuarantineWorkCandidate(args.candidate as WorkCandidate)) {
+    return persistedWork;
+  }
+
+  return quarantinePersistedWork(args, persistedWork);
 }

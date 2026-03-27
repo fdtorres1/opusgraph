@@ -2,6 +2,19 @@
 
 Record durable product and architecture decisions here. Keep entries brief and biased toward rationale and consequences.
 
+## 2026-03-27: IMSLP work ingest is orchestral-only, and out-of-scope works are quarantined instead of discarded
+
+- Decision: Treat IMSLP work ingestion as orchestral-only. Any IMSLP work that is not positively classified as orchestral during ingest should be quarantined via `review_flag.reason = "orchestral_scope_review"` and kept in `draft`, rather than flowing through the normal reference-work ingest path.
+- Context: The live IMSLP work ingest had already brought in a broad mixed corpus of songs, piano works, chamber works, organ works, and other non-orchestral material. The user clarified that the IMSLP work stream was always intended to seed orchestral repertoire only.
+- Why:
+  - aligns the ingest pipeline with the actual product scope
+  - preserves out-of-scope works for later review instead of deleting or losing provenance
+  - gives the team a reusable quarantine mechanism for cases discovered after the fact
+- Consequences:
+  - the IMSLP work adapter now classifies orchestral scope from instrumentation text and quarantines non-orchestral or unconfirmed rows
+  - already imported IMSLP works require backfill quarantine, not continued offset expansion
+  - review operations must treat `orchestral_scope_review` as a normal open review-flag reason alongside duplicate review
+
 ## 2026-03-24: Use manual logical backups instead of managed timed backups for now
 
 - Decision: Do not enable paid managed/timed Supabase backups yet for OpusGraph. Until that changes, create manual logical backups before linked-cloud migration work.

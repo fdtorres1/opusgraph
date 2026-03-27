@@ -2,6 +2,166 @@
 
 Append-only log for implementation, investigation, and planning sessions. Keep entries short and resume-oriented.
 
+## 2026-03-27
+
+### IMSLP work ingest corrected to orchestral-only scope; imported mixed corpus quarantined
+- The user clarified that IMSLP work ingest was always intended to be orchestral-only, so the prior mixed-corpus work ingestion path was treated as a scope bug rather than continued as-is.
+- Added an orchestral-scope classifier to the IMSLP work path:
+  - explicit `orchestra` / `orchestral` language is treated as positive
+  - clearly broad multi-family orchestral scoring is treated as positive
+  - all other IMSLP work rows are treated as out of scope and quarantined
+- Added a quarantine result path for IMSLP works:
+  - dry-run work ingest now returns `quarantined` for out-of-scope rows
+  - live work ingest persists/updates the work row, keeps it in `draft`, and opens `review_flag.reason = "orchestral_scope_review"`
+- Added `scripts/quarantine-imslp-work-scope.ts` to backfill quarantine across already imported IMSLP works.
+- Verified the new gate through the real job runner on offset `0`, `batchSize = 25`:
+  - `25` processed
+  - `5` updated
+  - `20` quarantined
+  - `0` failed
+- Ran the live backfill quarantine pass across the already imported IMSLP work corpus:
+  - `1602` IMSLP works processed
+  - `1561` quarantined
+  - classification summary:
+    - `1555` `non_orchestral`
+    - `6` `unknown`
+    - `41` positively `orchestral`
+  - verified `1561` open `review_flag` rows with `reason = "orchestral_scope_review"`
+- Follow-up:
+  - pause further live IMSLP work-slice expansion beyond offset `1600`
+  - merge the orchestral-only correction
+  - review the quarantine queue before resuming new IMSLP work ingestion
+
+### Targeted offset-`1300` recovery completed; one duplicate live runner was cleaned up
+- Replayed the next IMSLP work slice at offset `1300`:
+  - initial dry-run job `027c96da-cac4-485f-bfe3-4803486612ed`
+  - `100` processed
+  - `37` created
+  - `1` flagged duplicate
+  - `62` failed
+  - all `62` failures were `missing_resolved_composer_id`
+- Ran targeted composer seeding for the unresolved `1300` slice:
+  - IMSLP composer coverage increased from `2021` to `2074`
+- Replayed the dry-run after seeding:
+  - dry-run job `538bb2c3-7837-49a7-b39e-694d22502365`
+  - `99` created
+  - `1` flagged duplicate
+  - `0` failed
+  - paused at offset `1400`
+- Ran the matching live offset-`1300` batch:
+  - canonical live job `442533fb-ba3e-4be3-869f-570d1b971c83`
+  - `100` processed
+  - `93` created
+  - `0` updated
+  - `7` flagged duplicates
+  - `0` failed
+  - paused at offset `1400`
+- Operator note:
+  - the CLI wrappers for the recovery/run scripts can appear hung while the job is still working
+  - one duplicate live attempt created stale zero-counter job `0c3163e8-e62c-4013-b834-354adb8541bc`
+  - that duplicate row was canceled after the canonical live job settled
+- Current linked-cloud coverage after the offset-`1300` live batch:
+  - `2074` IMSLP composers
+  - `1331` IMSLP works
+- Follow-up:
+  - continue with the offset-`1400` work slice
+  - keep using targeted composer seeding for composer-thin slices
+  - investigate the delayed-settle behavior in the live CLI wrappers before treating the unified script as fully hands-off for large live runs
+
+### Targeted offset-`1400` recovery completed cleanly
+- Replayed the IMSLP work slice at offset `1400`:
+  - initial dry-run job `f5b674dd-e7a3-4ab2-b51f-4ee4a11d67fc`
+  - `100` processed
+  - `30` created
+  - `1` flagged duplicate
+  - `69` failed
+  - all `69` failures were `missing_resolved_composer_id`
+- Ran targeted composer seeding for the unresolved `1400` slice:
+  - IMSLP composer coverage increased from `2074` to `2139`
+- Replayed the dry-run after seeding:
+  - dry-run job `8045d03c-16a1-4a48-a032-278937c5994d`
+  - `98` created
+  - `1` updated
+  - `1` flagged duplicate
+  - `0` failed
+  - paused at offset `1500`
+- Ran the matching live offset-`1400` batch:
+  - live job `edd034d9-b7e7-4477-9749-8d79f245c8e5`
+  - `100` processed
+  - `93` created
+  - `1` updated
+  - `6` flagged duplicates
+  - `0` failed
+  - paused at offset `1500`
+- Current linked-cloud coverage after the live offset-`1400` batch:
+  - `2139` IMSLP composers
+  - `1424` IMSLP works
+- Follow-up:
+  - continue with the offset-`1500` work slice
+  - keep using targeted composer seeding for composer-thin slices
+
+### Targeted offset-`1500` recovery completed cleanly
+- Replayed the IMSLP work slice at offset `1500`:
+  - initial dry-run job `e1d5d604-dcfa-4390-849c-46a347f86863`
+  - `100` processed
+  - `37` created
+  - `1` flagged duplicate
+  - `62` failed
+  - all `62` failures were `missing_resolved_composer_id`
+- Ran targeted composer seeding for the unresolved `1500` slice:
+  - IMSLP composer coverage increased from `2139` to `2193`
+- Replayed the dry-run after seeding:
+  - dry-run job `326cd944-7af5-4cc9-97fa-c0b87737abee`
+  - `99` created
+  - `1` flagged duplicate
+  - `0` failed
+  - paused at offset `1600`
+- Ran the matching live offset-`1500` batch:
+  - live job `56e25236-3c50-47b5-98a6-27a13006ad90`
+  - `100` processed
+  - `83` created
+  - `1` updated
+  - `16` flagged duplicates
+  - `0` failed
+  - paused at offset `1600`
+- Current linked-cloud coverage after the live offset-`1500` batch:
+  - `2193` IMSLP composers
+  - `1507` IMSLP works
+- Follow-up:
+  - continue with the offset-`1600` work slice
+  - keep using targeted composer seeding for composer-thin slices
+
+### Targeted offset-`1600` recovery completed cleanly
+- Replayed the IMSLP work slice at offset `1600`:
+  - initial dry-run job `3a80a9f6-c48f-480f-9ab3-d7d28b88c19d`
+  - `100` processed
+  - `43` created
+  - `1` flagged duplicate
+  - `56` failed
+  - all `56` failures were `missing_resolved_composer_id`
+- Ran targeted composer seeding for the unresolved `1600` slice:
+  - IMSLP composer coverage increased from `2193` to `2246`
+- Replayed the dry-run after seeding:
+  - dry-run job `b0923569-1682-4873-8acb-da5303e8684a`
+  - `99` created
+  - `1` flagged duplicate
+  - `0` failed
+  - paused at offset `1700`
+- Ran the matching live offset-`1600` batch:
+  - live job `61de1d2d-f892-4eb5-9760-491a9d2bb3c7`
+  - `100` processed
+  - `95` created
+  - `1` updated
+  - `4` flagged duplicates
+  - `0` failed
+  - paused at offset `1700`
+- Current linked-cloud coverage after the live offset-`1600` batch:
+  - `2246` IMSLP composers
+  - `1602` IMSLP works
+- Follow-up:
+  - continue with the offset-`1700` work slice
+  - keep using targeted composer seeding for composer-thin slices
+
 ## 2026-03-18
 
 ### Documentation workflow bootstrapped
@@ -238,7 +398,230 @@ Append-only log for implementation, investigation, and planning sessions. Keep e
   - downstream org access rules redirect the new outsider user to their personal library
   - final destination was `/library/my-library-...`, which is the correct result for a newly confirmed non-member
 - Remaining auth verification gap:
-  - positive `/admin/review` login-return path for a platform-admin account
+
+## 2026-03-26
+
+### Targeted offset `700` recovery succeeded, and the recovery loop is now scripted
+- Added reusable operational helpers:
+  - `scripts/run-ingest-job.ts`
+  - `scripts/seed-imslp-work-composers.ts`
+  - `scripts/inspect-imslp-work-slice.ts`
+- Ran the first offset-`700` IMSLP work dry-run:
+  - job `10fa0452-f621-4355-8cd9-390a69afe6a1`
+  - `25` created
+  - `1` updated
+  - `74` failed
+  - all `74` failures were `missing_resolved_composer_id`
+- Derived and seeded the exact missing composer set for that slice:
+  - `74` failed work rows collapsed to `70` unique missing composers
+  - targeted seeding created `69` and flagged `1` duplicate
+  - composer coverage rose to `1701`
+- Replayed offset `700` after targeted seeding:
+  - dry-run job `c8839802-c68b-4bcc-a914-30d75defa0cf`
+  - `97` created
+  - `1` updated
+  - `2` failed
+  - both failures were `invalid_duration_text`
+- Added two duration-parser improvements in `lib/duration.ts`:
+  - `x to y minutes` range phrasing now parses
+  - apostrophe-minute notation like `6'` now parses
+- Verified direct parser cases:
+  - `1 to 2 minutes each` → `90`
+  - `6'` → `360`
+- `npm run build` passes after the parser and script changes.
+- Final offset-`700` dry-run replay:
+  - job `d568cd67-bb82-4fca-86c9-b03d048e71e6`
+  - `99` created
+  - `1` updated
+  - `0` failed
+- Matching live offset-`700` work batch:
+  - job `cbcce02a-d7b7-4547-a46c-7800da4238ae`
+  - `100` processed
+  - `96` created
+  - `2` updated
+  - `2` flagged duplicates
+  - `0` failed
+  - paused at offset `800`
+- Warning mix for the recovered slice stayed bounded:
+  - `imslp_work_unparsed_movements`: `186`
+  - `imslp_work_ambiguous_composition_year`: `4`
+  - `imslp_work_page_redirected`: `2`
+- Current linked-cloud coverage after the live `700` slice:
+  - `1701` IMSLP composers
+  - `773` IMSLP works
+- Next clean move:
+  - replay work offset `800` in dry-run mode
+  - if it is still composer-thin, repeat the same targeted missing-composer recovery pattern before any live write
+
+### Targeted offset `800` recovery also succeeded
+- Ran the first offset-`800` IMSLP work dry-run:
+  - job `87013916-601c-4f16-9faf-825e6e468df5`
+  - `25` created
+  - `75` failed
+  - all `75` failures were `missing_resolved_composer_id`
+- Derived and seeded the exact missing composer set for that slice:
+  - `75` failed rows collapsed to `68` unique missing composers
+  - targeted seeding created all `68`
+  - composer coverage rose to `1769`
+- Replayed offset `800` after targeted seeding:
+  - dry-run job `de5be60e-d558-494f-b555-6b6935a1b42c`
+  - `100` created
+  - `0` failed
+- Matching live offset-`800` work batch:
+  - job `a8c76450-337d-49d7-89ab-fc95a76db4d2`
+  - `100` processed
+  - `91` created
+  - `5` updated
+  - `4` flagged duplicates
+  - `0` failed
+  - paused at offset `900`
+- Warning mix for the recovered slice stayed bounded:
+  - `imslp_work_unparsed_movements`: `166`
+  - `imslp_work_page_redirected`: `10`
+  - `imslp_work_ambiguous_composition_year`: `6`
+- Current linked-cloud coverage after the live `800` slice:
+  - `1769` IMSLP composers
+  - `864` IMSLP works
+- Next clean move:
+  - replay work offset `900` in dry-run mode
+  - if it is still composer-thin, repeat the same targeted missing-composer recovery pattern before any live write
+
+### Targeted offset `900` recovery also succeeded
+- Ran the first offset-`900` IMSLP work dry-run:
+  - job `a713a7f7-a7f0-4a12-97f8-9eeef8e1d1b8`
+  - `27` created
+  - `1` flagged duplicate
+  - `72` failed
+  - all `72` failures were `missing_resolved_composer_id`
+- Derived and seeded the exact missing composer set for that slice:
+  - `72` failed rows collapsed to `65` unique missing composers
+  - targeted seeding created all `65`
+  - composer coverage rose to `1834`
+- Replayed offset `900` after targeted seeding:
+  - dry-run job `49a2c49b-acf0-4a7b-9861-da2551cebd04`
+  - `99` created
+  - `1` flagged duplicate
+  - `0` failed
+- Matching live offset-`900` work batch:
+  - job `25f07d16-b049-4c9c-b553-e6494711ce4e`
+  - `100` processed
+  - `90` created
+  - `4` updated
+  - `6` flagged duplicates
+  - `0` failed
+  - paused at offset `1000`
+- Warning mix for the recovered slice stayed bounded:
+  - `imslp_work_unparsed_movements`: `176`
+  - `imslp_work_page_redirected`: `10`
+- Current linked-cloud coverage after the live `900` slice:
+  - `1834` IMSLP composers
+  - `954` IMSLP works
+- Next clean move:
+  - replay work offset `1000` in dry-run mode
+  - if it is still composer-thin, repeat the same targeted missing-composer recovery pattern before any live write
+
+### Targeted offset `1000` recovery also succeeded
+- Ran the first offset-`1000` IMSLP work dry-run:
+  - job `b68060c6-fab5-41b6-ba6e-87a7a06cd55c`
+  - `29` created
+  - `4` flagged duplicates
+  - `67` failed
+  - all `67` failures were `missing_resolved_composer_id`
+- Derived and seeded the exact missing composer set for that slice:
+  - `67` failed rows collapsed to `63` unique missing composers
+  - targeted seeding created all `63`
+  - composer coverage rose to `1897`
+- Replayed offset `1000` after targeted seeding:
+  - dry-run job `65847e19-a4c1-4511-9dc5-d2e95fc97fb0`
+  - `96` created
+  - `4` flagged duplicates
+  - `0` failed
+- Matching live offset-`1000` work batch:
+  - job `2dc94083-4d11-4506-9a47-af9a955438d4`
+  - `100` processed
+  - `93` created
+  - `1` updated
+  - `6` flagged duplicates
+  - `0` failed
+  - paused at offset `1100`
+- Warning mix for the recovered slice stayed bounded:
+  - `imslp_work_unparsed_movements`: `166`
+  - `imslp_work_page_redirected`: `2`
+  - `imslp_work_ambiguous_composition_year`: `4`
+- Current linked-cloud coverage after the live `1000` slice:
+  - `1897` IMSLP composers
+  - `1047` IMSLP works
+- Next clean move:
+  - replay work offset `1100` in dry-run mode
+  - if it is still composer-thin, repeat the same targeted missing-composer recovery pattern before any live write
+
+### Targeted offset `1100` recovery also succeeded
+- Ran the first offset-`1100` IMSLP work dry-run:
+  - job `09ca985d-5e1c-4632-a0c0-d60fb67f9ad2`
+  - `33` created
+  - `67` failed
+  - all `67` failures were `missing_resolved_composer_id`
+- Derived and seeded the exact missing composer set for that slice:
+  - `67` failed rows collapsed to `58` unique missing composers
+  - targeted seeding created all `58`
+  - composer coverage rose to `1955`
+- Replayed offset `1100` after targeted seeding:
+  - dry-run job `bc369def-69b2-4784-b903-b2c49b640ab7`
+  - `100` created
+  - `0` failed
+- Matching live offset-`1100` work batch:
+  - job `f41b3361-71ce-4531-acdc-052919eb9364`
+  - `100` processed
+  - `96` created
+  - `1` updated
+  - `3` flagged duplicates
+  - `0` failed
+  - paused at offset `1200`
+- Warning mix for the recovered slice stayed bounded:
+  - `imslp_work_unparsed_movements`: `180`
+  - `imslp_work_ambiguous_composition_year`: `6`
+  - `imslp_work_page_redirected`: `2`
+- Current linked-cloud coverage after the live `1100` slice:
+  - `1955` IMSLP composers
+  - `1143` IMSLP works
+- Next clean move:
+  - replay work offset `1200` in dry-run mode
+  - if it is still composer-thin, repeat the same targeted missing-composer recovery pattern before any live write
+
+### Unified recovery script added, and offset `1200` recovery succeeded
+- Added `scripts/recover-imslp-work-slice.ts` as the new one-command operator path for IMSLP work slices.
+- Refactored the existing helper scripts so they can be imported safely:
+  - `scripts/run-ingest-job.ts`
+  - `scripts/seed-imslp-work-composers.ts`
+  - `scripts/inspect-imslp-work-slice.ts`
+- The unified recovery flow now does:
+  - initial dry-run
+  - targeted composer seeding when `missing_resolved_composer_id` appears
+  - dry-run replay
+  - live run if the replay is green
+- Offset `1200` exposed the first mixed slice:
+  - initial failures were `68` unresolved composers plus `1` `invalid_duration_text`
+  - the remaining non-composer failure came from IMSLP leaking `'dedicate alle Dame'` into `Average Duration`
+- `lib/ingest/adapters/imslp/work-fields.ts` now drops non-numeric IMSLP `Average Duration` strings instead of passing them into duration parsing.
+- With that fix in place, the unified recovery script completed offset `1200` end to end:
+  - final dry-run summary:
+    - `100` created
+    - `0` failed
+  - final live summary:
+    - `100` processed
+    - `95` created
+    - `1` updated
+    - `4` flagged duplicates
+    - `0` failed
+    - paused at offset `1300`
+- Warning mix for the recovered slice stayed bounded:
+  - `imslp_work_page_redirected`: `4`
+  - `imslp_work_unparsed_movements`: `188`
+- Current linked-cloud coverage after the live `1200` slice:
+  - `2021` IMSLP composers
+  - `1238` IMSLP works
+- Next clean move:
+  - run `scripts/recover-imslp-work-slice.ts --offset 1300 --batch-size 100 --run-live true`
 
 ## 2026-03-22
 
@@ -334,6 +717,46 @@ Append-only log for implementation, investigation, and planning sessions. Keep e
 - decide whether the next slice should:
   - improve composer resolution for work jobs
   - or seed enough IMSLP composers in write mode first so work dry-runs can resolve composers by source identity
+
+### IMSLP work composer-resolution follow-up
+- Opened branch `feat/imslp-work-composer-resolution`.
+- Improved `app/api/admin/ingest/_shared.ts` work composer resolution to try:
+  - IMSLP source-identity match first
+  - exact canonical-name match second
+  - unambiguous fuzzy duplicate fallback via `find_duplicate_composers(...)` third
+- Verification:
+  - `npm run build` passes
+  - initial linked-cloud dry-run for a 5-row IMSLP work batch still returned:
+    - job `5d730166-2bb7-4fd3-806f-b830077d073c`
+    - `5` `missing_resolved_composer_id` failures
+  - direct DB inspection of the first five IMSLP work-row composer names showed:
+    - `0` exact composer matches
+    - `0` fuzzy duplicate matches
+- Targeted linked-cloud composer seeding completed for the first missing work composers:
+  - `Stankovych, Tatiana`
+  - `Ladd, Gertrude I.`
+  - `Esnaola, Juan Pedro`
+  - `Eisenbrey, Keith`
+  - `West, Alfred H.`
+  - all 5 composer writes succeeded with IMSLP source identity stored on the created rows
+- Post-seed verification:
+  - intermediate rerun improved immediately after seeding, and the current-truth rerun is now fully green for the same first 5 work candidates:
+    - work job `1598b23b-55e1-44e6-8d31-99033ab1f8c3`
+    - `5` processed
+    - `5` `created`
+    - `0` failed
+    - result rows:
+      - `Four hands 'Amicizia' (Stankovych, Tatiana)`
+      - `"In Memoriam" A. Lincoln (Ladd, Gertrude I.)`
+      - `Los ojos tiernos (Esnaola, Juan Pedro)`
+      - `"Mrs. Ramsay rose. Lily rose." (Eisenbrey, Keith)`
+      - `"My Old Dutch" Waltz (West, Alfred H.)`
+    - remaining warnings are batch-level parse warnings only:
+      - `imslp_work_page_redirected`
+      - `imslp_work_unparsed_movements`
+- Conclusion:
+  - targeted composer seeding was enough to fully unblock the first IMSLP work batch
+  - the next scaling question is no longer the first-batch parser; it is how broadly to seed composers before attempting larger work batches or the first write-mode work ingest
 
 ## 2026-03-24
 
@@ -614,3 +1037,712 @@ Append-only log for implementation, investigation, and planning sessions. Keep e
 - Follow-up:
   - review how noisy the current `type=1` composer classifier still is on live IMSLP data
   - then branch into the next IMSLP parsing/work-support slice
+
+### Broader IMSLP composer seeding materially improved early work-batch coverage
+- Continued work on branch `feat/imslp-work-composer-resolution`.
+- Measured linked-cloud IMSLP composer coverage before broader seeding:
+  - `5` composers with `external_ids.imslp`
+- Ran a broader linked-cloud composer seed batch through the real job services:
+  - `source_ingest_job.id = 0f10634b-9c97-4120-b0f1-710ff469b301`
+  - source `imslp`
+  - entity kind `composer`
+  - write mode (`dryRun = false`)
+  - batch size `100`
+  - results:
+    - `79` created
+    - `0` failed
+    - `21` warnings
+    - next cursor offset `100`
+- Reran a linked-cloud 25-row IMSLP work dry-run after that broader batch:
+  - composer coverage rose to `84`
+  - `source_ingest_job.id = 08f624a9-3aac-45c5-b086-c92c7108fa80`
+  - results:
+    - `5` created
+    - `20` failed
+    - all remaining failures were still `missing_resolved_composer_id`
+- Parsed the first 25 IMSLP work candidates directly and extracted the still-missing composer identities from that slice.
+- Seeded `20` additional IMSLP composers directly from that unresolved first-25 work slice with IMSLP provenance and work-context metadata:
+  - `Hakobjanyan, Anna`
+  - `Galuza, Artiom`
+  - `Gonzaga, Thales`
+  - `Hamilton, Jesse J.`
+  - `Salbert, Dieter`
+  - `Mahler, Gustav`
+  - `Feng, Thomas`
+  - `Ochs, Siegfried`
+  - `Paër, Ferdinando`
+  - `Bohn, James`
+  - `Wesley, Samuel`
+  - `Shannon, William R.`
+  - `Nutile, Emmanuele`
+  - `Caccavale, Giuseppe`
+  - `Costa, Pasquale Mario`
+  - `Di Chiara, Vincenzo`
+  - `Taranto, Guido`
+  - `Albertin`
+  - `Segrè, Raffaele`
+  - `Fragna, Luigi`
+- Measured linked-cloud IMSLP composer coverage after broader seeding:
+  - `104` composers with `external_ids.imslp`
+- Reran the linked-cloud 25-row IMSLP work dry-run:
+  - `source_ingest_job.id = 7d4efb7b-2a71-4b62-8a53-6c7e9cf1481e`
+  - results:
+    - `21` created
+    - `4` failed
+    - remaining failure code is now only `invalid_duration_text`
+  - remaining failed works:
+    - `The Girl from the Bus Station (Gonzaga, Thales)`
+    - `Symphony No.2, GMW 30 (Mahler, Gustav)`
+    - `"of being a self in a song" (Feng, Thomas)`
+    - `'4-4-8' Claves Quartet (Shannon, William R.)`
+- Conclusion:
+  - composer resolution is no longer the main blocker for the first 25 IMSLP work rows
+  - the next concrete defect is duration-text normalization
+
+### IMSLP duration normalization now clears the first 25-row work dry-run
+- Continued work on branch `feat/imslp-work-composer-resolution`.
+- Confirmed the remaining four duration failures all came from human-readable duration text that was not a simple single integer-unit form:
+  - `5 minutes ; 6 minutes (New Edition)`
+  - `80-90 minutes`
+  - `2-3 minutes`
+  - `2.5 minutes`
+- Broadened `lib/duration.ts` so `parseDuration(...)` now handles:
+  - semicolon-separated alternative durations by taking the first parseable variant
+  - numeric duration ranges by taking the midpoint
+  - decimal unit values
+  - parenthetical edition/qualifier text stripping before unit parsing
+- Direct verification:
+  - `5 minutes ; 6 minutes (New Edition)` → `300`
+  - `80-90 minutes` → `5100`
+  - `2-3 minutes` → `150`
+  - `2.5 minutes` → `150`
+- Verification:
+  - `npm run build` passes
+  - linked-cloud 25-row IMSLP work dry-run `dcdd2a72-c249-4be6-956c-f1162948a5d0` now returns:
+    - `25` created
+    - `0` failed
+    - warnings only:
+      - `imslp_work_page_redirected`
+      - `imslp_work_unparsed_movements`
+      - `imslp_work_ambiguous_composition_year`
+- Conclusion:
+  - the first 25 IMSLP work rows are now green in dry-run mode
+  - the next decision is whether to broaden composer coverage for larger batches or begin a small write-mode IMSLP work ingest
+
+### Targeted composer seeding lifts the first 100-row IMSLP work dry-run to 99/100
+- Continued work on branch `feat/imslp-work-composer-resolution`.
+- Ran a linked-cloud 100-row IMSLP work dry-run before any further seeding:
+  - `source_ingest_job.id = c973dbc8-8ff4-4107-b719-0948c45dab6e`
+  - results:
+    - `34` created
+    - `66` failed
+  - failure mix:
+    - `65` `missing_resolved_composer_id`
+    - `1` `invalid_duration_text`
+- Conclusion from that run:
+  - another write-mode work ingest would still be premature
+  - composer coverage, not parsing quality, was still the dominant blocker at `batchSize = 100`
+- Derived the unresolved composer names directly from the failed 100-row work slice and seeded them with IMSLP provenance plus work-context metadata.
+- Targeted work-derived seeding results:
+  - `50` composers created
+  - linked-cloud IMSLP composer coverage increased from `104` to `154`
+  - sample targeted seeds:
+    - `Von Calged, Kosta`
+    - `Valente, Vincenzo`
+    - `Cangiullo, Francesco`
+    - `D'Arienzo, Nicola`
+    - `Liucci, Giacinto`
+    - `Criscuolo, Luigi`
+    - `Sava, Raffaele`
+    - `De Curtis, Giambattista`
+    - `Berruti, Giuseppe`
+    - `Musella, Roberto`
+- Reran the linked-cloud 100-row IMSLP work dry-run after targeted seeding:
+  - `source_ingest_job.id = 2db2dd64-15e5-4353-9a73-8b3652a25c46`
+  - results:
+    - `99` created
+    - `1` failed
+  - remaining failed work:
+    - `'A cagnacavalle (Albertin)`
+    - issue: `invalid_duration_text`
+    - extracted IMSLP `Average Duration` is the bare numeral `2`
+- Conclusion:
+  - targeted work-derived composer seeding is effective enough to keep using
+  - the first 100-row IMSLP work slice is now blocked by one narrow duration edge case, not by composer resolution
+
+### IMSLP-specific bare-duration normalization clears the first 100-row work dry-run
+- Continued work on branch `feat/imslp-work-composer-resolution`.
+- Kept the last duration fix source-specific rather than widening global parsing rules:
+  - updated `lib/ingest/adapters/imslp/work-fields.ts`
+  - IMSLP bare `Average Duration` numerals like `2` are now normalized to `2 minutes` during IMSLP work-field extraction
+  - raw IMSLP field text remains preserved in `extra_metadata.imslp.extracted_fields.raw_fields`
+- Verification:
+  - `npm run build` passes
+  - linked-cloud 100-row IMSLP work dry-run `c74b7c8b-d5ae-404e-8c32-30ea094233d1` now returns:
+    - `100` created
+    - `0` failed
+    - warnings only:
+      - `imslp_work_page_redirected`
+      - `imslp_work_unparsed_movements`
+      - `imslp_work_ambiguous_composition_year`
+- Conclusion:
+  - the first 100 IMSLP work rows are now green in dry-run mode
+  - the next practical move is a fresh backup followed by a first small write-mode IMSLP work ingest
+
+### First write-mode IMSLP work ingest succeeds for the initial 25-row batch
+- Continued work on branch `feat/imslp-work-composer-resolution`.
+- Took a fresh verified backup from the phone/mobile network before the write-mode run:
+  - `/Users/felixtorres/backups/opusgraph-20260326-012515.dump`
+- Ran the first linked-cloud write-mode IMSLP work ingest with a conservative batch size:
+  - `source_ingest_job.id = 0c0b886a-f74b-44ad-998b-5da61abc66a6`
+  - source `imslp`
+  - entity kind `work`
+  - `dryRun = false`
+  - `batchSize = 25`
+- Job results:
+  - `25` created
+  - `0` failed
+  - warnings only:
+    - `imslp_work_page_redirected`
+    - `imslp_work_unparsed_movements`
+    - `imslp_work_ambiguous_composition_year`
+- Post-write DB spot-check:
+  - `25` `work` rows exist for the created entity ids
+  - `25` `revision` rows exist with action `create`
+  - `25` `work_source` rows exist
+  - `0` `work_recording` rows were created in this first batch
+  - sample persisted rows show expected source identity and duration values where available
+- Conclusion:
+  - the first write-mode IMSLP work batch succeeded cleanly
+  - the next decision is how far to scale the next write-mode batch, not whether the path works at all
+
+### First larger write-mode IMSLP work ingest succeeds through 100 processed rows
+- Continued work on branch `feat/imslp-work-composer-resolution`.
+- Took another fresh verified backup from the phone/mobile network before the larger write-mode run:
+  - `/Users/felixtorres/backups/opusgraph-20260326-022553.dump`
+  - `pg_restore --list` succeeds
+  - `677` TOC entries
+- Ran the first larger linked-cloud write-mode IMSLP work ingest:
+  - `source_ingest_job.id = 95e5fd1e-765b-4c8d-89f2-df25ba364a04`
+  - source `imslp`
+  - entity kind `work`
+  - `dryRun = false`
+  - `batchSize = 100`
+- Job results:
+  - `100` processed
+  - `75` created
+  - `25` updated
+  - `0` failed
+  - paused at offset `100`
+  - warnings only:
+    - `imslp_work_page_redirected` (`18`)
+    - `imslp_work_unparsed_movements` (`182`)
+    - `imslp_work_ambiguous_composition_year` (`4`)
+- Post-write DB spot-check:
+  - `75` new `work` rows were created in the batch window
+  - `100` `revision` rows were created in the batch window:
+    - `75` `create`
+    - `25` `update`
+  - `75` `work_source` rows exist for the newly created works in the batch window
+  - `0` `work_recording` rows exist for the newly created works in the batch window
+- Interpretation:
+  - the `25` updates are expected because the earlier pilot write job had already written the first `25` source ids
+  - the live write path now looks stable through `100` processed work rows
+  - the next scale-up should resume the paused job from offset `100` instead of replaying offset `0`
+
+### Spot-check of the 100-row live IMSLP work batch looks acceptable
+- Performed a representative post-write quality review on the same branch:
+  - sampled newly created rows from the 100-row batch window
+  - sampled updated overlap rows from the earlier 25-row pilot
+  - sampled redirected-page cases and movement-warning-heavy rows
+- Findings:
+  - newly created rows like `'A spicajola da festa` and `'A spatella` have coherent title, instrumentation, duration, and catalog metadata
+  - updated overlap rows like `'4-4-8' Claves Quartet` and `'A cafona` retained stable source identity and duration values while correctly reusing the existing entity rows
+  - redirected-page examples like `12 Short Pieces for the Organ (Wesley, Samuel)` resolved to the expected canonical page title and still produced sensible persisted metadata
+  - the dominant `imslp_work_unparsed_movements` warning class is mostly coming from single-count or descriptive movement text like `1`, `1 movement`, `13 movements`, or `13 pieces actually, and a voluntary`
+- Conclusion:
+  - the current warning mix looks acceptable for continuing the live job
+  - the next safe operational step is another phone-network backup, then resuming paused job `95e5fd1e-765b-4c8d-89f2-df25ba364a04` from offset `100`
+
+### Supabase-managed physical backups are now online after the plan upgrade
+- Checked the live project backup inventory with:
+  - `supabase backups list --project-ref vszoxfmjkasnjpzieyyd -o json`
+- Current reported state:
+  - daily physical backups are present and `COMPLETED`
+  - latest backup timestamp:
+    - `2026-03-26T11:45:07.356Z`
+  - older completed physical backups are visible back through `2026-03-19`
+  - `pitr_enabled` is still `false`
+- Operational implication:
+  - the repo should stop describing managed backups as unavailable
+  - manual phone-network logical dumps are still useful when a downloadable backup artifact is required, but they are no longer the only recovery path
+
+### Resuming the paused live IMSLP work job exposed the next composer-coverage gap
+- Resumed paused job `95e5fd1e-765b-4c8d-89f2-df25ba364a04` from offset `100`.
+- Result after the resumed 100-row slice:
+  - cumulative totals:
+    - `200` processed
+    - `118` created
+    - `25` updated
+    - `57` failed
+  - resumed-slice totals:
+    - `43` created
+    - `0` updated
+    - `57` failed
+  - cursor advanced and is now paused at offset `200`
+- Error summary for the resumed slice:
+  - `missing_resolved_composer_id` (`57`)
+- Warning summary for the resumed slice:
+  - `imslp_work_page_redirected` (`10`)
+  - `imslp_work_unparsed_movements` (`154`)
+  - `imslp_work_page_missing_wikitext` (`2`)
+- Interpretation:
+  - the resumed slice did not reveal a new parser or write-path defect
+  - the dominant blocker is composer coverage again beyond the first `100` works
+  - because the live job already advanced to offset `200`, recovering the `57` failed works will require a targeted backfill or replay of the `100`-to-`199` range after seeding the missing composers
+
+### Targeted composer seeding and backfill recovered the failed `100`-to-`199` work slice
+- Replayed the failed `100`-to-`199` work range in dry-run mode after the failed live resume:
+  - dry-run job `8ffbf943-f1c4-48d7-86ca-10f39a0e2696`
+  - confirmed `57` unresolved work rows in that slice
+  - those `57` failures collapsed to `49` unique missing composer identities
+- Seeded those missing composers directly with IMSLP source identity and work-slice metadata:
+  - `49` new IMSLP composer rows created
+  - `23` already-seeded IMSLP composers refreshed on rerun
+  - IMSLP composer coverage with `external_ids.imslp` is now `203`
+- Ran a targeted live backfill for the failed work range:
+  - backfill job `6c3fbca8-3634-4e62-9e43-c449fae3683e`
+  - cursor offset `100`
+  - `batchSize = 100`
+- Backfill results:
+  - `100` processed
+  - `57` created
+  - `43` updated
+  - `0` failed
+  - paused at offset `200`
+  - warnings only:
+    - `imslp_work_page_redirected` (`10`)
+    - `imslp_work_unparsed_movements` (`154`)
+    - `imslp_work_page_missing_wikitext` (`2`)
+- Interpretation:
+  - the failed `100`-to-`199` work slice has now been recovered successfully
+  - the earlier failures were caused by missing composer coverage, not by a new IMSLP parser/persistence bug
+  - the next clean move is a fresh live job starting at offset `200`
+
+### Fresh live offset-`200` run exposed the next composer-coverage gap, then targeted recovery nearly cleared it
+- Started a fresh live IMSLP work job from offset `200` instead of resuming the older cumulative job:
+  - live job `d9b19914-4e5b-428b-8f07-0bfaed491fde`
+  - `100` processed
+  - `29` created
+  - `1` updated
+  - `70` failed
+  - paused at offset `300`
+- Error summary for that fresh offset-`200` run:
+  - `missing_resolved_composer_id` (`70`)
+  - `imslp_work_page_invalid_payload` (`1`)
+- Warning summary for that fresh offset-`200` run:
+  - `imslp_work_page_redirected` (`4`)
+  - `imslp_work_unparsed_movements` (`124`)
+  - `imslp_work_page_invalid_payload` (`1`)
+- Replayed the same `200`-to-`299` range directly through the IMSLP adapter and composer-resolution logic:
+  - confirmed `70` unresolved work rows in that slice
+  - those failures collapsed to `62` unique missing composer identities
+- Seeded those `62` missing composers directly with IMSLP source identity and work-slice metadata:
+  - `62` new IMSLP composer rows created
+  - IMSLP composer coverage with `external_ids.imslp` is now `265`
+- Ran a targeted live backfill for the failed `200`-to-`299` work range:
+  - backfill job `c89bf4ee-7b04-41f0-ab25-e759dc2aaf38`
+  - `100` processed
+  - `67` created
+  - `31` updated
+  - `1` failed
+  - `1` flagged duplicate
+  - paused at offset `300`
+- Error summary for the backfill:
+  - `invalid_duration_text` (`1`)
+  - `imslp_work_page_invalid_payload` (`1`)
+- Warning summary for the backfill:
+  - `imslp_work_page_redirected` (`4`)
+  - `imslp_work_unparsed_movements` (`124`)
+  - `imslp_work_page_invalid_payload` (`1`)
+- Interpretation:
+  - composer coverage was again the dominant blocker, and the targeted seeding loop fixed it for this slice
+  - the `200`-to-`299` range is now reduced to one real failed row plus one duplicate-review case
+  - the next choice is whether to isolate those residual cases first or accept them and continue a fresh live job from offset `300`
+- Post-seed dry-run replay of the same `200`-to-`299` range identified the exact residual rows:
+  - dry-run job `ee26e1c7-8099-41e6-9b58-45678e1a8834`
+  - duplicate-review case:
+    - work `'Tis but a little faded Flower`
+    - composer `Thomas, John Rogers`
+    - duplicate target `977a660f-ed50-43d1-825f-846ce681d71b`
+  - failed-parse case:
+    - work `'Tis to Waft, Op.26 (Armstrong, Peter McKenzie)`
+    - duration text `2 minutes each`
+- Fixed the remaining duration parse edge case in `lib/ingest/adapters/imslp/work-fields.ts`:
+  - IMSLP-specific `Average Duration` text like `2 minutes each` now normalizes to `2 minutes` before the generic duration parser runs
+- Verified the parser fix:
+  - `npm run build` passes
+  - post-fix dry-run job `9195e31d-bd3c-407b-97e1-a5b3c783e93e`
+  - outcomes:
+    - `1` created
+    - `98` updated
+    - `1` flagged duplicate
+    - `0` failed
+  - remaining non-green row is only the duplicate-review case:
+    - work `'Tis but a little faded Flower`
+    - composer `Thomas, John Rogers`
+    - duplicate target `977a660f-ed50-43d1-825f-846ce681d71b`
+- Ran a final live backfill for the same `200`-to-`299` range after the duration fix:
+  - backfill job `313d8c35-6f13-4bcc-8de8-5b935fe77bda`
+  - `100` processed
+  - `1` created
+  - `98` updated
+  - `0` failed
+  - `1` flagged duplicate
+  - paused at offset `300`
+  - error summary now contains only `imslp_work_page_invalid_payload` (`1`)
+- Final interpretation for the offset-`200` slice:
+  - composer coverage and duration parsing are no longer blocking this range
+  - the slice is fully write-recovered except for the one intentional duplicate-review path
+  - the next clean operational move is a fresh live IMSLP work job from offset `300` if that duplicate-review case is acceptable
+
+### Offset-`300` recovery followed the same pattern and is now green except for one duplicate-review case
+- Ran a fresh live IMSLP work job from offset `300`:
+  - live job `578240e6-5a0d-4779-a187-eb79a7057366`
+  - `100` processed
+  - `6` created
+  - `0` updated
+  - `94` failed
+  - paused at offset `400`
+- Error summary for that fresh offset-`300` run:
+  - `missing_resolved_composer_id` (`94`)
+- Warning summary for that fresh offset-`300` run:
+  - `imslp_work_page_redirected` (`2`)
+  - `imslp_work_unparsed_movements` (`118`)
+  - `imslp_work_ambiguous_composition_year` (`4`)
+- Replayed the same `300`-to-`399` range against the IMSLP adapter and composer-resolution logic:
+  - confirmed `94` unresolved work rows in that slice
+  - those failures collapsed to `87` unique missing composer identities
+- Seeded those `87` missing composers directly with IMSLP source identity and work-slice metadata:
+  - `87` new IMSLP composer rows created
+  - IMSLP composer coverage with `external_ids.imslp` is now `352`
+- Ran a first targeted live backfill for the failed `300`-to-`399` work range:
+  - backfill job `69eefa78-ace9-4089-b7b6-af4df5caa7a4`
+  - `100` processed
+  - `92` created
+  - `6` updated
+  - `1` failed
+  - `1` flagged duplicate
+  - paused at offset `400`
+- Error summary for that first backfill:
+  - `invalid_duration_text` (`1`)
+- Warning summary for that first backfill:
+  - `imslp_work_page_redirected` (`2`)
+  - `imslp_work_unparsed_movements` (`118`)
+  - `imslp_work_ambiguous_composition_year` (`4`)
+- Identified the exact residual rows in the `300` slice:
+  - duplicate-review case:
+    - work `'t Was in de blijde mei`
+    - composer `Tinel, Jef`
+  - failed-parse case:
+    - work `10 Charakteristische Tonstücke`
+    - composer `Karg-Elert, Sigfrid`
+    - duration text `50 minutes ca. when played as a set of 10`
+- Fixed the remaining IMSLP duration edge case in `lib/ingest/adapters/imslp/work-fields.ts`:
+  - IMSLP-specific duration normalization now accepts leading approximate values and trailing explanatory qualifiers like `50 minutes ca. when played as a set of 10`
+- Verified the parser fix:
+  - `npm run build` passes
+  - post-fix dry-run replay of the same `300`-to-`399` range leaves only the duplicate-review case:
+    - work `'t Was in de blijde mei`
+    - composer `Tinel, Jef`
+- Ran a final live backfill for the same `300`-to-`399` range after the duration fix:
+  - backfill job `68146221-a682-4da3-af52-c8948a71c5f7`
+  - `100` processed
+  - `1` created
+  - `98` updated
+  - `0` failed
+  - `1` flagged duplicate
+  - paused at offset `400`
+- Warning summary for the final backfill:
+  - `imslp_work_page_redirected` (`2`)
+  - `imslp_work_unparsed_movements` (`118`)
+  - `imslp_work_ambiguous_composition_year` (`4`)
+- Current linked-cloud IMSLP coverage is now:
+  - `352` composers
+  - `396` works
+- One ad hoc inspection replay of the `300` slice was accidentally executed with `dryRun: false` before being corrected:
+  - that caused extra source-match update churn on already-ingested rows in the same slice
+  - it did not surface any new parser or composer-resolution failures
+- Final interpretation for the offset-`300` slice:
+  - composer coverage and duration parsing are no longer blocking this range
+  - the slice is fully write-recovered except for the one intentional duplicate-review path
+  - the next clean operational move is a fresh live IMSLP work job from offset `400`
+
+### Persisted spot-check on the recovered `300` slice looks acceptable
+- Spot-checked persisted write results instead of relying only on dry-run output:
+  - created row:
+    - `10 Charakteristische Tonstücke, Op.86 (Karg-Elert, Sigfrid)`
+    - persisted with `duration_seconds = 3000`, `instrumentation_text = organ`, IMSLP provenance in `external_ids.imslp`, and normalized IMSLP duration metadata preserved in `extra_metadata.imslp`
+  - updated rows:
+    - `'k Hou van stilte`
+    - `'mos de hablar cholito`
+    - `'n Avond Blomkens`
+    - latest `revision.snapshot` values show coherent title, composer linkage, year, instrumentation, and IMSLP provenance after the recovery writes
+- The heavy warning class in this slice is still `imslp_work_unparsed_movements`, but the raw movement text is being preserved under `extra_metadata.imslp.extracted_fields` rather than written as obviously bad structured movement data
+- The only non-green row left in the `300` slice remains the expected duplicate-review case:
+  - work `'t Was in de blijde mei`
+  - composer `Tinel, Jef`
+- Conclusion:
+  - the recovered `300` slice is good enough to continue live ingestion from offset `400`
+
+### Offset-`400` recovery needed composer-link updates, not a new parser fix
+- Ran a fresh live IMSLP work job from offset `400`:
+  - live job `9174f798-e96d-40f0-b894-be9a6252614e`
+  - `100` processed
+  - `4` created
+  - `0` updated
+  - `96` failed
+  - paused at offset `500`
+- Error summary for that fresh offset-`400` run:
+  - `missing_resolved_composer_id` (`96`)
+- Warning summary for that fresh offset-`400` run:
+  - `imslp_work_unparsed_movements` (`186`)
+  - `imslp_work_ambiguous_composition_year` (`6`)
+- Replayed the same `400`-to-`499` range in dry-run mode:
+  - confirmed `96` unresolved work rows in that slice
+  - those failures collapsed to `86` unique missing composers
+- Ran a targeted composer-link recovery pass for those `86` missing composers:
+  - `0` brand-new composer rows created
+  - `86` existing composer rows updated with IMSLP source identity and seeded metadata
+  - IMSLP composer coverage with `external_ids.imslp` is now `438`
+- Ran a targeted live backfill for the failed `400`-to-`499` work range:
+  - backfill job `c1677e57-9c5a-484e-8e21-f111947baee2`
+  - `100` processed
+  - `90` created
+  - `4` updated
+  - `0` failed
+  - `6` flagged duplicate
+  - paused at offset `500`
+- Warning summary for the backfill:
+  - `imslp_work_unparsed_movements` (`186`)
+  - `imslp_work_ambiguous_composition_year` (`6`)
+- Current linked-cloud IMSLP coverage is now:
+  - `438` composers
+  - `490` works
+- Final interpretation for the offset-`400` slice:
+  - composer resolution is no longer blocking this range
+  - no new parser defect appeared in this slice
+  - the slice is fully write-recovered except for the six intentional duplicate-review paths
+  - the next clean operational move is a fresh live IMSLP work job from offset `500`
+
+### First deliberate composer catch-up batch confirms the better scaling path
+- Ran a larger IMSLP composer dry-run from offset `0` with `batchSize = 250`:
+  - dry-run job `80fd31f3-8aed-44ec-85eb-5d06eebde358`
+  - `218` processed
+  - `137` created
+  - `80` updated
+  - `1` flagged duplicate
+  - `0` failed
+  - paused at offset `250`
+- Warning summary for that dry-run:
+  - `imslp_type1_non_composer_row` (`2`)
+  - `imslp_type1_invalid_name_parts` (`11`)
+  - `imslp_type1_unusual_name_format` (`19`)
+- Interpretation:
+  - the first larger composer batch is materially cleaner than the reactive work-slice recovery loop
+  - there is no parse-failure blocker in this composer slice
+  - the warning mix is limited to type=1 classifier noise and non-composer rows
+- Ran the matching live composer batch from the same offset:
+  - live job `581c0014-331b-4f9e-9b40-33da9efb6fe7`
+  - `218` processed
+  - `130` created
+  - `80` updated
+  - `8` flagged duplicates
+  - `0` failed
+  - paused at offset `250`
+- Warning summary for that live composer batch:
+  - `imslp_type1_non_composer_row` (`2`)
+  - `imslp_type1_invalid_name_parts` (`11`)
+  - `imslp_type1_unusual_name_format` (`19`)
+- Current linked-cloud IMSLP coverage is now:
+  - `568` composers
+  - `490` works
+- Conclusion:
+  - the composer-first catch-up phase is a better use of time than rescuing each work slice reactively
+  - the next decision is whether to run one more larger composer catch-up slice before retrying work offset `500`
+
+### Larger composer catch-up from offset `250` succeeded, but work offset `500` still needs more coverage
+- Ran a larger IMSLP composer dry-run from offset `250` with `batchSize = 500`:
+  - dry-run job `90a7f9cc-f7a3-4000-9543-8d044ebe059c`
+  - `475` processed
+  - `470` created
+  - `4` updated
+  - `1` flagged duplicate
+  - `0` failed
+  - paused at offset `750`
+- Ran the matching live composer batch:
+  - live job `3fb3d436-7faa-4920-ac7d-25ff1865b48d`
+  - `475` processed
+  - `462` created
+  - `4` updated
+  - `9` flagged duplicates
+  - `0` failed
+  - paused at offset `750`
+- Warning mix for the larger composer catch-up stayed bounded:
+  - `imslp_type1_invalid_name_parts`
+  - `imslp_type1_unusual_name_format`
+- IMSLP composer coverage reached `1030` after that pass.
+- Replayed the IMSLP work slice from offset `500` in dry-run mode to test whether composer-first catch-up had reduced the failure wave enough:
+  - dry-run job `3e6948b7-efe3-4761-9890-adfca59d1e35`
+  - `100` processed
+  - `17` created
+  - `83` failed
+  - `0` updated
+  - paused at offset `600`
+- Error summary for the offset-`500` dry-run:
+  - `missing_resolved_composer_id` (`83`)
+- Warning summary for the same dry-run:
+  - `imslp_work_unparsed_movements` (`194`)
+  - `imslp_work_ambiguous_composition_year` (`8`)
+  - `imslp_work_page_redirected` (`6`)
+- Interpretation:
+  - composer-first catch-up is helping, but `1030` linked IMSLP composers is still not enough to make work offset `500` operationally green
+  - the right move is more composer coverage, not another live work backfill yet
+
+### Offset-`750` composer catch-up is expanding coverage again, but live job state is flushing late
+- Ran another larger IMSLP composer dry-run from offset `750` with `batchSize = 500`:
+  - dry-run job `7578d1e5-6eeb-4b0e-bf54-2aee5e08762c`
+  - `475` processed
+  - `474` created
+  - `1` updated
+  - `0` failed
+  - paused at offset `1250`
+- Warning summary for that dry-run:
+  - `imslp_type1_invalid_name_parts` (`14`)
+  - `imslp_type1_unusual_name_format` (`11`)
+- A smaller overlapping dry-run at the same offset also completed after a manual-cancel race:
+  - dry-run job `01c5b36c-084b-4398-9e73-472fb9877c32`
+  - `240` processed
+  - `8` created
+  - `227` updated
+  - `5` flagged duplicates
+  - `0` failed
+  - paused at offset `1000`
+- The matching live composer batch is job `3928019e-652e-48ff-a789-f8c8e045efb8`.
+- Final live result for that offset-`750` composer batch:
+  - live job `3928019e-652e-48ff-a789-f8c8e045efb8`
+  - `475` processed
+  - `465` created
+  - `1` updated
+  - `9` flagged duplicates
+  - `0` failed
+  - paused at offset `1250`
+- Warning summary for the settled live batch:
+  - `imslp_type1_invalid_name_parts` (`14`)
+  - `imslp_type1_unusual_name_format` (`11`)
+- Latest observed coverage after the batch settled:
+  - `1495` IMSLP composers
+  - `490` IMSLP works
+- Interpretation:
+  - the composer catch-up itself is still the right scaling move
+  - the job-control-plane update pattern for very large composer batches can flush late, so direct coverage counts were more reliable than the in-flight job row while this batch ran
+  - the next clean move is to replay work offset `500` in dry-run mode against the now-expanded composer base
+
+### Replaying work offset `500` after `1495` composer links still left the slice mostly unresolved
+- Replayed the IMSLP work slice from offset `500` again in dry-run mode after composer coverage reached `1495`:
+  - dry-run job `b1f6088c-3af4-4d7f-9659-48b3f07d7244`
+  - `100` processed
+  - `18` created
+  - `0` updated
+  - `82` failed
+  - paused at offset `600`
+- Error summary for the replayed work slice:
+  - `missing_resolved_composer_id` (`82`)
+- Warning summary was essentially unchanged:
+  - `imslp_work_unparsed_movements` (`194`)
+  - `imslp_work_ambiguous_composition_year` (`8`)
+  - `imslp_work_page_redirected` (`6`)
+- Interpretation:
+  - broader composer catch-up is no longer an efficient way to unblock offset `500`
+  - the next efficient move is to derive the exact missing-composer set from this work slice and seed or link those composers directly before another replay
+
+### Targeted offset-`500` composer seeding recovered the work slice cleanly
+- Derived the exact unresolved set from work offset `500` using the real adapter + dry-run pipeline:
+  - derivation job `fdc3f62f-c67d-4952-afef-acd678e1abac`
+  - `82` failed work rows collapsed to `72` unique missing composers
+  - highest-frequency missing composers in the slice included:
+    - `Reger, Max` (`4` rows)
+    - `Willan, Healey` (`3` rows)
+    - `Czerny, Carl` (`2` rows)
+    - `D'Alquen, Johann` (`2` rows)
+    - `Reinecke, Carl` (`2` rows)
+- Seeded those exact `72` missing composers directly from the unresolved work slice:
+  - `72` created
+  - `0` flagged duplicates
+  - `0` failed
+  - IMSLP composer coverage rose from `1495` to `1567`
+- Replayed the same work slice in dry-run mode after targeted composer seeding:
+  - dry-run job `a9cf6cd1-1cf2-4b4f-b252-28645381206f`
+  - `100` processed
+  - `100` created
+  - `0` failed
+  - paused at offset `600`
+- Warning summary for the recovered dry-run stayed the same as before:
+  - `imslp_work_unparsed_movements` (`194`)
+  - `imslp_work_ambiguous_composition_year` (`8`)
+  - `imslp_work_page_redirected` (`6`)
+- Ran the matching live offset-`500` work batch:
+  - live job `d0b6295a-a0aa-43a6-b4fd-c4b4a4e30e88`
+  - `100` processed
+  - `93` created
+  - `2` updated
+  - `5` flagged duplicates
+  - `0` failed
+  - paused at offset `600`
+- Current linked-cloud IMSLP coverage after the live offset-`500` recovery:
+  - `1567` composers
+  - `583` works
+- Interpretation:
+  - targeted recovery from the exact unresolved work slice is the right operational pattern once broad composer catch-up stops buying enough
+  - the next clean move is to replay work offset `600` in dry-run mode and repeat the same pattern if it is still composer-thin
+
+### Targeted offset-`600` composer seeding also recovered cleanly
+- Replayed work offset `600` in dry-run mode:
+  - dry-run job `109ee6f9-8564-459d-ba87-db57b05283f8`
+  - `100` processed
+  - `27` created
+  - `4` flagged duplicates
+  - `69` failed
+  - all `69` failures were `missing_resolved_composer_id`
+- Derived the exact unresolved set from that slice and seeded it directly:
+  - derivation/seeding job `0f5fd8cc-d5bc-4086-a6dd-69692e0401a9`
+  - `69` failed work rows collapsed to `65` unique missing composers
+  - all `65` were created
+  - `0` flagged duplicates
+  - `0` failed writes
+  - IMSLP composer coverage rose from `1567` to `1632`
+- Replayed the same work slice after targeted seeding:
+  - dry-run job `e26d618b-9273-4f08-a16a-271adbf9331e`
+  - `100` processed
+  - `96` created
+  - `4` flagged duplicates
+  - `0` failed
+  - paused at offset `700`
+- Ran the matching live work batch:
+  - live job `f840e23c-8eb3-49fd-a83f-04ff5f13e9c8`
+  - `100` processed
+  - `94` created
+  - `0` updated
+  - `6` flagged duplicates
+  - `0` failed
+  - paused at offset `700`
+- Warning summary for the recovered `600` slice remained in the same quality band:
+  - `imslp_work_unparsed_movements` (`196`)
+  - `imslp_work_ambiguous_composition_year` (`6`)
+  - `imslp_work_page_redirected` (`2`)
+- Current linked-cloud IMSLP coverage after the live offset-`600` recovery:
+  - `1632` composers
+  - `677` works
+- Interpretation:
+  - the targeted recovery workflow is now proven on two consecutive work slices
+  - the next clean move is to replay work offset `700` in dry-run mode and repeat the same pattern if necessary

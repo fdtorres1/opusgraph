@@ -39,7 +39,10 @@ function getOutcomeCounts(result: CandidatePersistResult) {
     processedCount: 1,
     createdCount: result.outcome === "created" ? 1 : 0,
     updatedCount: result.outcome === "updated" ? 1 : 0,
-    flaggedCount: result.outcome === "flagged_duplicate" ? 1 : 0,
+    flaggedCount:
+      result.outcome === "flagged_duplicate" || result.outcome === "quarantined"
+        ? 1
+        : 0,
     failedCount:
       result.outcome === "failed_parse" || result.outcome === "failed_write" ? 1 : 0,
     skippedCount: result.outcome === "skipped_existing_source_match" ? 1 : 0,
@@ -95,6 +98,7 @@ function summarizeBatchResult(
         created: deltas.createdCount,
         updated: deltas.updatedCount,
         flagged: deltas.flaggedCount,
+        quarantined: itemResults.filter((item) => item.outcome === "quarantined").length,
         failed: deltas.failedCount,
         skipped: deltas.skippedCount,
       },

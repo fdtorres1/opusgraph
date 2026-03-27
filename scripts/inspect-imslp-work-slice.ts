@@ -1,0 +1,209 @@
+import { config } from "dotenv";
+import { resolve } from "path";
+import { pathToFileURL } from "url";
+
+import { createClient } from "@supabase/supabase-js";
+
+import type { WorkCandidate } from "@/lib/ingest/candidates";
+import type { CandidatePersistResult } from "@/lib/ingest/results";
+import type { IngestJobRecord } from "@/lib/ingest/jobs/types";
+import { ingestAdapterRegistry } from "@/lib/ingest/adapters";
+import { processIngestCandidate } from "@/app/api/admin/ingest/_shared";
+
+config({ path: resolve(process.cwd(), ".env.local") });
+
+const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
+const SUPABASE_SECRET_KEY = process.env.SUPABASE_SECRET_KEY ?? "";
+
+if (!SUPABASE_URL || !SUPABASE_SECRET_KEY) {
+  console.error("Missing NEXT_PUBLIC_SUPABASE_URL or SUPABASE_SECRET_KEY.");
+  process.exit(1);
+}
+
+export interface InspectImslpWorkSliceCliArgs {
+  offset: number;
+  batchSize: number;
+  createdBy: string;
+}
+
+function parseArgs(argv: string[]): InspectImslpWorkSliceCliArgs {
+  const defaults: InspectImslpWorkSliceCliArgs = {
+    offset: 0,
+    batchSize: 100,
+    createdBy: "f2ed501c-74ad-4c2e-bb66-c97f5a6aa0ba",
+  };
+
+  for (let index = 0; index < argv.length; index += 1) {
+    const token = argv[index];
+    const next = argv[index + 1];
+
+    switch (token) {
+      case "--offset":
+        defaults.offset = Number.parseInt(next ?? String(defaults.offset), 10);
+        index += 1;
+        break;
+      case "--batch-size":
+        defaults.batchSize = Number.parseInt(next ?? String(defaults.batchSize), 10);
+        index += 1;
+        break;
+      case "--created-by":
+        defaults.createdBy = next ?? defaults.createdBy;
+        index += 1;
+        break;
+      default:
+        break;
+    }
+  }
+
+  return defaults;
+}
+
+function buildSyntheticJob(args: InspectImslpWorkSliceCliArgs): IngestJobRecord {
+  const now = new Date().toISOString();
+
+  return {
+    id: `synthetic:inspect-imslp-work:${args.offset}`,
+    source: "imslp",
+    entityKind: "work",
+    status: "running",
+    mode: "manual",
+    priority: 100,
+    dryRun: true,
+    cursor: {
+      version: 1,
+      strategy: "offset",
+      offset: args.offset,
+      batchSize: args.batchSize,
+      sort: "id",
+      sourceEntityKind: "work",
+    },
+    options: {
+      sourceEntityKind: "work",
+    },
+    batchSize: args.batchSize,
+    limitCount: null,
+    processedCount: 0,
+    createdCount: 0,
+    updatedCount: 0,
+    flaggedCount: 0,
+    failedCount: 0,
+    skippedCount: 0,
+    warningCount: 0,
+    errorSummary: null,
+    warningSummary: null,
+    resultSummary: null,
+    attemptCount: 1,
+    lastErrorAt: null,
+    nextRetryAt: null,
+    claimedBy: "manual:inspect-imslp-work-slice",
+    claimedAt: now,
+    lastHeartbeatAt: now,
+    createdBy: args.createdBy,
+    startedAt: now,
+    finishedAt: null,
+    createdAt: now,
+    updatedAt: now,
+  };
+}
+
+export async function inspectImslpWorkSlice(
+  args: InspectImslpWorkSliceCliArgs,
+) {
+  const adapter = ingestAdapterRegistry.imslp;
+
+  if (!adapter) {
+    throw new Error("Missing IMSLP adapter.");
+  }
+
+  const supabase = createClient(SUPABASE_URL, SUPABASE_SECRET_KEY, {
+    auth: {
+      autoRefreshToken: false,
+      persistSession: false,
+    },
+  });
+
+  const fetched = await adapter.fetchBatch({
+    entityKind: "work",
+    cursor: {
+      version: 1,
+      strategy: "offset",
+      offset: args.offset,
+      batchSize: args.batchSize,
+      sort: "id",
+      sourceEntityKind: "work",
+    },
+    batchSize: args.batchSize,
+    options: {
+      sourceEntityKind: "work",
+    },
+  });
+
+  const parsed = await adapter.parseBatch({
+    entityKind: "work",
+    items: fetched.items,
+    options: {
+      sourceEntityKind: "work",
+    },
+  });
+
+  const job = buildSyntheticJob(args);
+  const failures: Array<{
+    title: string;
+    composerDisplayName?: string;
+    composerSourceId?: string;
+    durationText?: string | null;
+    sourceId: string;
+    issues: CandidatePersistResult["issues"];
+  }> = [];
+
+  for (const candidate of parsed.candidates) {
+    if (candidate.entityKind !== "work") {
+      continue;
+    }
+
+    const result = await processIngestCandidate({
+      supabase,
+      candidate,
+      job,
+      actorUserId: args.createdBy,
+      dryRun: true,
+    });
+
+    if (result.outcome === "failed_parse" || result.outcome === "failed_write") {
+      const workCandidate = candidate as WorkCandidate;
+      failures.push({
+        title: workCandidate.title,
+        composerDisplayName: workCandidate.composerDisplayName,
+        composerSourceId: workCandidate.composerSourceId,
+        durationText: workCandidate.durationText,
+        sourceId: workCandidate.sourceIdentity.sourceId,
+        issues: result.issues,
+      });
+    }
+  }
+
+  return {
+    offset: args.offset,
+    batchSize: args.batchSize,
+    failureCount: failures.length,
+    failures,
+  };
+}
+
+async function main() {
+  const args = parseArgs(process.argv.slice(2));
+  const result = await inspectImslpWorkSlice(args);
+  console.log(JSON.stringify(result, null, 2));
+}
+
+function isMainModule() {
+  const entry = process.argv[1];
+  return entry != null && import.meta.url === pathToFileURL(entry).href;
+}
+
+if (isMainModule()) {
+  main().catch((error) => {
+    console.error(error);
+    process.exit(1);
+  });
+}
