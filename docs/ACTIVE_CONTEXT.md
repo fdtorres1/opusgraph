@@ -164,8 +164,23 @@ Finish the composer catch-up phase cleanly enough to retry IMSLP work ingestion 
     - paused at offset `1250`
   - current observed IMSLP composer coverage is `1495`
   - current observed IMSLP work coverage remains `490`
+  - replaying work offset `500` after composer coverage reached `1495` only improved the slice marginally:
+    - dry-run job `b1f6088c-3af4-4d7f-9659-48b3f07d7244`
+    - `100` processed
+    - `18` created
+    - `82` failed
+    - `0` updated
+    - paused at offset `600`
+  - all `82` failures are still `missing_resolved_composer_id`
+  - warning mix is unchanged:
+    - `imslp_work_unparsed_movements` (`194`)
+    - `imslp_work_ambiguous_composition_year` (`8`)
+    - `imslp_work_page_redirected` (`6`)
   - likely next move:
-    - replay work offset `500` in dry-run mode again against the expanded composer base before any further live work ingest
+    - stop broad composer catch-up for now
+    - derive the unique missing composers from the offset-`500` work slice directly
+    - seed or link that exact composer set
+    - then replay offset `500` again before any more live work ingest
 - An ad hoc inspection replay of the `300` slice was accidentally run once with `dryRun: false` before being corrected to `dryRun: true`:
   - that caused extra source-match update churn on already-ingested work rows
   - no new parser or composer-resolution defects surfaced from it

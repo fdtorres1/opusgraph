@@ -13,7 +13,9 @@ This file is the current priority view for OpusGraph. Keep it short, current, an
   - use source identity in `external_ids` and raw payloads in `extra_metadata`
   - route ambiguous matches into `review_flag` instead of auto-merging
 - Immediate task slice:
-  - replay work offset `500` in dry-run mode against the expanded composer base before any more live work ingest
+  - stop broad composer catch-up for now and derive the exact missing-composer set from work offset `500`
+  - seed or link that targeted composer set
+  - then replay work offset `500` in dry-run mode before any more live work ingest
   - the `200`, `300`, and `400` slices are now operationally recovered to:
     - `0` failed rows
     - only duplicate-review cases remaining
@@ -27,6 +29,9 @@ This file is the current priority view for OpusGraph. Keep it short, current, an
     - dry-run returned `17` creates and `83` composer-resolution failures
   - the follow-up composer catch-up from offset `750` is materially expanding coverage again:
     - dry-run `475` usable rows with `474` creates and `0` failures
+  - but replaying work offset `500` even after composer coverage reached `1495` still returned:
+    - `18` creates
+    - `82` composer-resolution failures
   - the fresh live offset-`400` job exposed `96` new composer-resolution misses; the follow-up composer-link pass resolved them by updating `86` existing composers with IMSLP source identity, and the backfill reduced the slice to:
     - `0` failed rows
     - `6` duplicate-review cases

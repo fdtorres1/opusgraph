@@ -1264,3 +1264,21 @@ Append-only log for implementation, investigation, and planning sessions. Keep e
   - the composer catch-up itself is still the right scaling move
   - the job-control-plane update pattern for very large composer batches can flush late, so direct coverage counts were more reliable than the in-flight job row while this batch ran
   - the next clean move is to replay work offset `500` in dry-run mode against the now-expanded composer base
+
+### Replaying work offset `500` after `1495` composer links still left the slice mostly unresolved
+- Replayed the IMSLP work slice from offset `500` again in dry-run mode after composer coverage reached `1495`:
+  - dry-run job `b1f6088c-3af4-4d7f-9659-48b3f07d7244`
+  - `100` processed
+  - `18` created
+  - `0` updated
+  - `82` failed
+  - paused at offset `600`
+- Error summary for the replayed work slice:
+  - `missing_resolved_composer_id` (`82`)
+- Warning summary was essentially unchanged:
+  - `imslp_work_unparsed_movements` (`194`)
+  - `imslp_work_ambiguous_composition_year` (`8`)
+  - `imslp_work_page_redirected` (`6`)
+- Interpretation:
+  - broader composer catch-up is no longer an efficient way to unblock offset `500`
+  - the next efficient move is to derive the exact missing-composer set from this work slice and seed or link those composers directly before another replay
