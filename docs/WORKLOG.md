@@ -1246,13 +1246,21 @@ Append-only log for implementation, investigation, and planning sessions. Keep e
   - `0` failed
   - paused at offset `1000`
 - The matching live composer batch is job `3928019e-652e-48ff-a789-f8c8e045efb8`.
-- Operationally important detail:
-  - the live job row is still stuck at `status = running` with zero flushed counters and a stale initial heartbeat in `source_ingest_job`
-  - despite that stale job-state surface, linked-cloud IMSLP composer coverage continued to rise while the job was running
-- Latest observed coverage during that in-flight live pass:
-  - `1347` IMSLP composers
+- Final live result for that offset-`750` composer batch:
+  - live job `3928019e-652e-48ff-a789-f8c8e045efb8`
+  - `475` processed
+  - `465` created
+  - `1` updated
+  - `9` flagged duplicates
+  - `0` failed
+  - paused at offset `1250`
+- Warning summary for the settled live batch:
+  - `imslp_type1_invalid_name_parts` (`14`)
+  - `imslp_type1_unusual_name_format` (`11`)
+- Latest observed coverage after the batch settled:
+  - `1495` IMSLP composers
   - `490` IMSLP works
 - Interpretation:
   - the composer catch-up itself is still the right scaling move
-  - but the job-control-plane update pattern for very large composer batches is laggy enough that the operator should trust direct coverage counts more than the in-flight job row until the batch finishes
-  - before retrying work offset `500`, wait for `3928019e-652e-48ff-a789-f8c8e045efb8` to settle cleanly or explicitly clean up the stale job state if it never flushes
+  - the job-control-plane update pattern for very large composer batches can flush late, so direct coverage counts were more reliable than the in-flight job row while this batch ran
+  - the next clean move is to replay work offset `500` in dry-run mode against the now-expanded composer base

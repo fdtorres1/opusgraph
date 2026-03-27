@@ -155,12 +155,17 @@ Finish the composer catch-up phase cleanly enough to retry IMSLP work ingestion 
     - `5` flagged duplicates
     - `0` failed
     - paused at offset `1000`
-  - the matching live composer job `3928019e-652e-48ff-a789-f8c8e045efb8` is still showing `status = running` with stale counters in `source_ingest_job`, but linked-cloud composer coverage has continued to rise while it runs
-  - current observed IMSLP composer coverage is `1347`
+  - the matching live composer job `3928019e-652e-48ff-a789-f8c8e045efb8` has now settled cleanly:
+    - `475` processed
+    - `465` created
+    - `1` updated
+    - `9` flagged duplicates
+    - `0` failed
+    - paused at offset `1250`
+  - current observed IMSLP composer coverage is `1495`
   - current observed IMSLP work coverage remains `490`
   - likely next move:
-    - wait for `3928019e-652e-48ff-a789-f8c8e045efb8` to settle or explicitly clean up its stale job state
-    - then replay work offset `500` in dry-run mode again before any further live work ingest
+    - replay work offset `500` in dry-run mode again against the expanded composer base before any further live work ingest
 - An ad hoc inspection replay of the `300` slice was accidentally run once with `dryRun: false` before being corrected to `dryRun: true`:
   - that caused extra source-match update churn on already-ingested work rows
   - no new parser or composer-resolution defects surfaced from it
