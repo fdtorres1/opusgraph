@@ -30,13 +30,14 @@ type ComparisonData = {
 };
 
 const ORCHESTRAL_SCOPE_REASON = "orchestral_scope_review";
+const POSSIBLE_DUPLICATE_REASON = "possible_duplicate";
 
 function formatReason(reason: string) {
   return reason.replace(/_/g, " ").replace(/\b\w/g, (letter) => letter.toUpperCase());
 }
 
 function isDuplicateReason(reason: string) {
-  return reason.includes("duplicate");
+  return reason === POSSIBLE_DUPLICATE_REASON || reason.includes("duplicate");
 }
 
 function isOrchestralScopeReason(reason: string) {
@@ -117,13 +118,28 @@ export function ReviewQueue({ initialFlags }: { initialFlags: ReviewFlag[] }) {
     return true;
   });
 
-  const openFlags = flags.filter((flag) => flag.status === "open");
-  const openQuarantineCount = openFlags.filter((flag) =>
-    isOrchestralScopeReason(flag.reason),
-  ).length;
-  const openDuplicateCount = openFlags.filter((flag) =>
-    isDuplicateReason(flag.reason),
-  ).length;
+  const { openFlags, openQuarantineCount, openDuplicateCount } = flags.reduce(
+    (acc, flag) => {
+      if (flag.status !== "open") {
+        return acc;
+      }
+
+      acc.openFlags.push(flag);
+      if (isOrchestralScopeReason(flag.reason)) {
+        acc.openQuarantineCount += 1;
+      }
+      if (isDuplicateReason(flag.reason)) {
+        acc.openDuplicateCount += 1;
+      }
+
+      return acc;
+    },
+    {
+      openFlags: [] as ReviewFlag[],
+      openQuarantineCount: 0,
+      openDuplicateCount: 0,
+    },
+  );
 
   const handleResolve = async (flagId: string, action: "resolve" | "dismiss") => {
     setLoading(true);
@@ -261,7 +277,7 @@ export function ReviewQueue({ initialFlags }: { initialFlags: ReviewFlag[] }) {
               variant="link"
               className="h-auto p-0 text-sm"
               onClick={() => {
-                setReasonFilter("possible_duplicate");
+                setReasonFilter(POSSIBLE_DUPLICATE_REASON);
                 setStatusFilter("open");
               }}
             >
