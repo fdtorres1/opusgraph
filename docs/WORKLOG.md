@@ -136,6 +136,51 @@ Append-only log for implementation, investigation, and planning sessions. Keep e
   - smoke-test the sampler
   - use it before continuing with offset `2000`
 
+### First seeded IMSLP audit sample completed
+- Ran `scripts/sample-imslp-audit.ts --seed offset-1900-audit`.
+- The sample pulled:
+  - `5` IMSLP-linked works
+  - `3` IMSLP-linked composers
+  - `5` open `orchestral_scope_review` flags
+- Result:
+  - sampled quarantine flags looked coherent and correctly out of scope
+  - sampled work rows included both in-scope and quarantined records, which is expected because the audit script samples the full IMSLP-linked corpus rather than only accepted orchestral works
+- Follow-up:
+  - continue running a seeded audit sample before each new ingest slice
+
+### Offset `2000` recovered after seeded audit check
+- Initial dry-run job `c10efe46-9bef-4fbd-a961-57f7b045642f` settled as:
+  - `100` processed
+  - `1` created
+  - `36` quarantined
+  - `47` failed
+  - all failures were `missing_resolved_composer_id`
+- Targeted composer seeding completed:
+  - IMSLP composer coverage increased from `2410` to `2441`
+- Final replay dry-run job `f800f935-feca-4244-8823-b128cf071b6f` settled green:
+  - `100` processed
+  - `3` created
+  - `97` flagged
+  - `81` quarantined
+  - `0` failed
+- Final live job `2a819619-acbd-4887-9c34-e36ae2b06377` also settled green:
+  - `100` processed
+  - `1` created
+  - `2` updated
+  - `97` flagged
+  - `66` quarantined
+  - `0` failed
+  - paused at offset `2100`
+- Current observed linked-cloud coverage after the offset `2000` live batch:
+  - `2445` IMSLP composers
+  - `1944` IMSLP works
+  - `1893` open `orchestral_scope_review` flags
+- Operator note:
+  - the wrapper again looked stale after seeding, so the canonical replay/live rows were completed directly
+  - duplicate replay/live rows exist for the same slice and can be ignored in favor of `f800f935-feca-4244-8823-b128cf071b6f` and `2a819619-acbd-4887-9c34-e36ae2b06377`
+- Follow-up:
+  - continue with the offset-`2100` recovery flow
+
 ### Review queue now distinguishes orchestral-scope quarantine from duplicate review
 - Added a first-pass quarantine-focused review UI in `app/admin/review/review-queue.tsx`:
   - summary cards for open review flags, open quarantine flags, and open duplicate flags

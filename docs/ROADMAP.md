@@ -52,16 +52,24 @@ This file is the current priority view for OpusGraph. Keep it short, current, an
     - final live batch: `1` created, `95` quarantined, `0` failed
     - paused at offset `2000`
   - current observed coverage:
-    - `2410` IMSLP composers
-    - `1828` IMSLP works
-    - `1780` open `orchestral_scope_review` flags
+    - `2445` IMSLP composers
+    - `1944` IMSLP works
+    - `1893` open `orchestral_scope_review` flags
   - a seeded audit script now exists for random QA spot checks:
     - `scripts/sample-imslp-audit.ts`
     - sample `5` IMSLP works, `3` IMSLP composers, and `5` open `orchestral_scope_review` flags by default
     - use a stable `--seed` per slice so spot checks are repeatable
+  - the first seeded audit sample is complete:
+    - `offset-1900-audit`
+    - sampled composers, works, and quarantine flags looked coherent enough to keep going
+  - offset `2000` is now recovered:
+    - initial dry-run: `1` created, `36` quarantined, `47` composer-resolution failures
+    - targeted composer seeding increased IMSLP composer coverage from `2410` to `2441`
+    - final replay dry-run: `3` created, `81` quarantined, `0` failed
+    - final live batch: `1` created, `2` updated, `66` quarantined, `0` failed
+    - paused at offset `2100`
   - next operator step:
-    - run a seeded audit sample
-    - then run the offset-`2000` recovery flow
+    - run the offset-`2100` recovery flow
   - the CLI wrappers still settle late enough to look hung, so operator verification against `source_ingest_job`, `review_flag`, and coverage counts remains the safer path during live runs
   - the `200`, `300`, and `400` slices are now operationally recovered to:
     - `0` failed rows

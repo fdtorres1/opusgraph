@@ -128,9 +128,9 @@ Continue IMSLP work ingestion under the corrected orchestral-only scope, using t
     - `0` failed
     - paused at offset `2000`
   - current observed linked-cloud coverage is:
-    - `2410` IMSLP composers
-    - `1828` IMSLP works
-    - `1780` open `orchestral_scope_review` flags
+    - `2445` IMSLP composers
+    - `1944` IMSLP works
+    - `1893` open `orchestral_scope_review` flags
   - a seeded audit sampler now exists for reproducible QA spot checks:
     - `scripts/sample-imslp-audit.ts`
     - samples IMSLP composers, IMSLP works, and open `orchestral_scope_review` flags
@@ -139,13 +139,39 @@ Continue IMSLP work ingestion under the corrected orchestral-only scope, using t
       - `3` composers
       - `5` quarantine flags
     - supports `--seed` so repeated audits can be compared exactly
+  - a seeded audit run was executed with `offset-1900-audit`:
+    - sampled in-scope and quarantined IMSLP works
+    - sampled IMSLP-linked composers
+    - sampled open `orchestral_scope_review` flags
+    - sampled quarantine flags looked correct and support continuing ingest
+  - offset `2000` is now recovered:
+    - initial dry-run job `c10efe46-9bef-4fbd-a961-57f7b045642f`
+    - `100` processed
+    - `1` created
+    - `36` quarantined
+    - `47` failed, all `missing_resolved_composer_id`
+    - targeted composer seeding raised IMSLP composer coverage from `2410` to `2441`
+    - final replay dry-run job `f800f935-feca-4244-8823-b128cf071b6f`
+    - `100` processed
+    - `3` created
+    - `97` flagged
+    - `81` quarantined
+    - `0` failed
+    - final live job `2a819619-acbd-4887-9c34-e36ae2b06377`
+    - `100` processed
+    - `1` created
+    - `2` updated
+    - `97` flagged
+    - `66` quarantined
+    - `0` failed
+    - paused at offset `2100`
   - immediate next step:
-    - run one seeded audit sample before continuing ingest
-    - then run the offset-`2000` recovery flow under the same DB-verified operator pattern
+    - run the offset-`2100` recovery flow under the same DB-verified operator pattern
   - operator note:
     - live operator scripts still settle late enough to look hung, so DB verification remains safer than trusting the CLI wrapper to exit promptly
     - one redundant manual replay dry-run (`a7f88c27-a8ce-4afb-995d-0bb6437a782d`) was launched while the canonical replay still looked stale; it paused green and can be ignored
     - two stale pre-fix replay rows remain in history for offset `1900` (`5ce868c9-d6a9-4d1d-9825-645da5ce9d5b`, `f6d7e276-4203-46c9-9f72-58e365b3955c`); both are paused and can be ignored
+    - duplicate replay/live rows also exist for offset `2000` (`5637c43a-37a8-402c-8d95-144758a0546f`, `c5320eb3-a564-41c1-9658-3c9e8bf656ee`) because the wrapper again looked stale mid-run; the canonical successful rows are `f800f935-feca-4244-8823-b128cf071b6f` and `2a819619-acbd-4887-9c34-e36ae2b06377`
     - QA protocol going forward:
       - after each live work slice, run `scripts/sample-imslp-audit.ts --seed <slice-id>`
       - inspect the sampled created/quarantined works plus sampled composers and quarantine flags before moving on
