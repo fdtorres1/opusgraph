@@ -26,7 +26,11 @@ This file is the current priority view for OpusGraph. Keep it short, current, an
       - `6` `unknown`
       - `41` positively `orchestral`
   - next operator step after merge:
-    - inspect the quarantine queue and decide whether new IMSLP work ingestion should resume immediately or wait for review tooling improvements
+    - inspect the quarantine queue and decide whether new IMSLP work ingestion should resume immediately or wait for deeper review tooling improvements
+  - the first review-ops follow-up is now local on `feat/review-queue-quarantine`:
+    - quarantine/open-flag summary cards
+    - direct filter shortcut into `orchestral_scope_review`
+    - structured quarantine details in the review queue instead of raw JSON only
   - the CLI wrappers still settle late enough to look hung, so operator verification against `source_ingest_job`, `review_flag`, and coverage counts remains the safer path during live runs
   - the `200`, `300`, and `400` slices are now operationally recovered to:
     - `0` failed rows

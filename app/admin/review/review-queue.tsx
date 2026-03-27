@@ -1,7 +1,6 @@
 "use client";
 
-import * as React from "react";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -10,7 +9,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Separator } from "@/components/ui/separator";
 import Link from "next/link";
 import { format } from "date-fns";
-import { AlertTriangle, CheckCircle2, XCircle, GitMerge, Eye } from "lucide-react";
+import { CheckCircle2, XCircle, Eye, GitMerge } from "lucide-react";
 
 type ReviewFlag = {
   id: string;
@@ -30,6 +29,73 @@ type ComparisonData = {
   entity_type: "composer" | "work";
 };
 
+const ORCHESTRAL_SCOPE_REASON = "orchestral_scope_review";
+
+function formatReason(reason: string) {
+  return reason.replace(/_/g, " ").replace(/\b\w/g, (letter) => letter.toUpperCase());
+}
+
+function isDuplicateReason(reason: string) {
+  return reason.includes("duplicate");
+}
+
+function isOrchestralScopeReason(reason: string) {
+  return reason === ORCHESTRAL_SCOPE_REASON;
+}
+
+function getReasonBadgeVariant(reason: string) {
+  if (isDuplicateReason(reason)) return "destructive";
+  if (isOrchestralScopeReason(reason)) return "outline";
+  if (reason.includes("incomplete")) return "default";
+  return "secondary";
+}
+
+function renderStructuredDetails(flag: ReviewFlag) {
+  if (!flag.details || typeof flag.details !== "object") {
+    return null;
+  }
+
+  if (isOrchestralScopeReason(flag.reason)) {
+    const details = flag.details as Record<string, unknown>;
+    const sourceUrl = typeof details.source_url === "string" ? details.source_url : null;
+
+    return (
+      <div className="space-y-2 rounded-md border border-zinc-200 bg-zinc-50 p-3 text-sm">
+        <p>
+          <strong>Scope:</strong> {String(details.classification ?? "unknown")}
+        </p>
+        <p>
+          <strong>Classifier:</strong> {String(details.classification_reason ?? "unknown")}
+        </p>
+        <p>
+          <strong>Instrumentation:</strong> {String(details.instrumentation_text ?? "N/A")}
+        </p>
+        <p>
+          <strong>Matched Signals:</strong>{" "}
+          {Array.isArray(details.matched_signals) && details.matched_signals.length > 0
+            ? details.matched_signals.join(", ")
+            : "none"}
+        </p>
+        {sourceUrl ? (
+          <p>
+            <strong>IMSLP:</strong>{" "}
+            <a
+              href={sourceUrl}
+              target="_blank"
+              rel="noreferrer"
+              className="text-blue-700 underline underline-offset-2"
+            >
+              Source page
+            </a>
+          </p>
+        ) : null}
+      </div>
+    );
+  }
+
+  return null;
+}
+
 export function ReviewQueue({ initialFlags }: { initialFlags: ReviewFlag[] }) {
   const [flags, setFlags] = useState<ReviewFlag[]>(initialFlags);
   const [reasonFilter, setReasonFilter] = useState<string>("all");
@@ -39,13 +105,25 @@ export function ReviewQueue({ initialFlags }: { initialFlags: ReviewFlag[] }) {
   const [loading, setLoading] = useState(false);
   const [showComparison, setShowComparison] = useState(false);
 
-  const reasons = Array.from(new Set(flags.map(f => f.reason)));
+  const reasons = Array.from(new Set(flags.map((f) => f.reason))).sort((a, b) => {
+    if (a === ORCHESTRAL_SCOPE_REASON) return -1;
+    if (b === ORCHESTRAL_SCOPE_REASON) return 1;
+    return a.localeCompare(b);
+  });
 
   const filteredFlags = flags.filter(flag => {
     if (reasonFilter !== "all" && flag.reason !== reasonFilter) return false;
     if (statusFilter !== "all" && flag.status !== statusFilter) return false;
     return true;
   });
+
+  const openFlags = flags.filter((flag) => flag.status === "open");
+  const openQuarantineCount = openFlags.filter((flag) =>
+    isOrchestralScopeReason(flag.reason),
+  ).length;
+  const openDuplicateCount = openFlags.filter((flag) =>
+    isDuplicateReason(flag.reason),
+  ).length;
 
   const handleResolve = async (flagId: string, action: "resolve" | "dismiss") => {
     setLoading(true);
@@ -120,12 +198,6 @@ export function ReviewQueue({ initialFlags }: { initialFlags: ReviewFlag[] }) {
     }
   };
 
-  const getReasonBadgeVariant = (reason: string) => {
-    if (reason.includes("duplicate")) return "destructive";
-    if (reason.includes("incomplete")) return "default";
-    return "secondary";
-  };
-
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
@@ -139,7 +211,7 @@ export function ReviewQueue({ initialFlags }: { initialFlags: ReviewFlag[] }) {
               <SelectItem value="all">All Reasons</SelectItem>
               {reasons.map(reason => (
                 <SelectItem key={reason} value={reason}>
-                  {reason.replace(/_/g, " ").replace(/\b\w/g, l => l.toUpperCase())}
+                  {formatReason(reason)}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -156,6 +228,47 @@ export function ReviewQueue({ initialFlags }: { initialFlags: ReviewFlag[] }) {
             </SelectContent>
           </Select>
         </div>
+      </div>
+
+      <div className="mb-6 grid gap-3 md:grid-cols-3">
+        <Card>
+          <CardContent className="p-4">
+            <p className="text-sm text-zinc-500">Open Review Flags</p>
+            <p className="text-2xl font-semibold">{openFlags.length}</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-4">
+            <p className="text-sm text-zinc-500">Open Quarantine Flags</p>
+            <p className="text-2xl font-semibold">{openQuarantineCount}</p>
+            <Button
+              variant="link"
+              className="h-auto p-0 text-sm"
+              onClick={() => {
+                setReasonFilter(ORCHESTRAL_SCOPE_REASON);
+                setStatusFilter("open");
+              }}
+            >
+              Show quarantined works
+            </Button>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-4">
+            <p className="text-sm text-zinc-500">Open Duplicate Flags</p>
+            <p className="text-2xl font-semibold">{openDuplicateCount}</p>
+            <Button
+              variant="link"
+              className="h-auto p-0 text-sm"
+              onClick={() => {
+                setReasonFilter("possible_duplicate");
+                setStatusFilter("open");
+              }}
+            >
+              Show duplicate review
+            </Button>
+          </CardContent>
+        </Card>
       </div>
 
       {filteredFlags.length > 0 ? (
@@ -183,7 +296,7 @@ export function ReviewQueue({ initialFlags }: { initialFlags: ReviewFlag[] }) {
                       )}
                     </CardTitle>
                     <Badge variant={getReasonBadgeVariant(flag.reason)}>
-                      {flag.reason.replace(/_/g, " ")}
+                      {formatReason(flag.reason)}
                     </Badge>
                     <Badge variant={flag.status === "open" ? "destructive" : "secondary"}>
                       {flag.status}
@@ -231,12 +344,17 @@ export function ReviewQueue({ initialFlags }: { initialFlags: ReviewFlag[] }) {
                   <p className="text-zinc-600">
                     <strong>Created:</strong> {format(new Date(flag.created_at), "PPP p")}
                   </p>
+                  {renderStructuredDetails(flag)}
                   {flag.details && typeof flag.details === "object" && (
                     <div className="text-zinc-600">
-                      <strong>Details:</strong>{" "}
-                      <pre className="inline-block text-xs bg-zinc-100 p-1 rounded">
-                        {JSON.stringify(flag.details, null, 2)}
-                      </pre>
+                      <details>
+                        <summary className="cursor-pointer text-sm font-medium">
+                          Raw Details
+                        </summary>
+                        <pre className="mt-2 overflow-x-auto rounded bg-zinc-100 p-2 text-xs">
+                          {JSON.stringify(flag.details, null, 2)}
+                        </pre>
+                      </details>
                     </div>
                   )}
                 </div>
@@ -355,4 +473,3 @@ export function ReviewQueue({ initialFlags }: { initialFlags: ReviewFlag[] }) {
     </div>
   );
 }
-

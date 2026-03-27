@@ -68,8 +68,14 @@ Correct IMSLP work ingestion to enforce orchestral-only scope, quarantine alread
       - `6` `unknown`
       - `41` positively `orchestral`
     - `1561` open `review_flag` rows now exist with `reason = "orchestral_scope_review"`
+  - the admin review queue now has a first quarantine-focused pass:
+    - open flag summary cards
+    - one-click filtering into `orchestral_scope_review`
+    - structured quarantine details for instrumentation, classifier reason, and IMSLP link
+    - raw JSON still available behind a details disclosure
   - immediate next step:
-    - review the quarantined corpus and decide whether to resume new IMSLP work ingestion only after this branch is merged
+    - push and PR the review-queue follow-up on `feat/review-queue-quarantine`
+    - then decide whether the current review workflow is sufficient to resume new IMSLP work ingestion
   - operator note:
     - live operator scripts still settle late enough to look hung, so DB verification remains safer than trusting the CLI wrapper to exit promptly
 
