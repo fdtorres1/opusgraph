@@ -2112,15 +2112,36 @@ Append-only log for implementation, investigation, and planning sessions. Keep e
   - the next clean step is offset `2500`
   - the wrapper rows are still noisy, but they are no longer blocking safe forward motion
 
-### Offset-`2500` started, but the initial dry-run row has not backfilled yet
-- The wrapper-owned initial dry-run row for offset `2500` is:
+### Offset-`2500` recovered after the heaviest composer-seed step so far
+- The initial dry-run row for offset `2500` was:
   - `1254f9ee-5bcd-48e6-8f51-69f18a491217`
-- At handoff time it is still stuck in the zero-counter `running` state:
-  - `processed_count = 0`
-  - `flagged_count = 0`
-  - `failed_count = 0`
-- No canonical backfilled result exists yet for the slice.
-- Next safe move:
-  - cancel `1254f9ee-5bcd-48e6-8f51-69f18a491217` if it still has zero counters
-  - rerun the initial dry-run manually
-  - then continue the usual targeted seeding / replay / live flow if needed
+  - `100` processed
+  - `37` flagged
+  - `63` failed
+  - all failures were `missing_resolved_composer_id`
+  - cursor advanced to `2600`
+- The replay wrapper row `40585e80-e99c-42aa-9f1c-3f985ae4e913` was manually canceled when it still looked stale, but later backfilled the canonical green replay result anyway.
+- The wrapper eventually returned the full recovery summary for the slice:
+  - seed step:
+    - `63` failed work rows
+    - `53` unique missing composers
+    - `53` created
+    - `0` updated
+    - `0` flagged
+    - `0` failed
+  - replay dry-run on `40585e80-e99c-42aa-9f1c-3f985ae4e913`:
+    - `100` processed
+    - `1` created
+    - `99` flagged
+    - `0` failed
+    - cursor advanced to `2600`
+  - live batch on `398b597c-faf5-4566-8f6b-31a37ba6a04c`:
+    - `100` processed
+    - `1` created
+    - `99` flagged
+    - `0` failed
+    - cursor advanced to `2600`
+- Interpretation:
+  - the slice is operationally recovered
+  - the next clean step is offset `2600`
+  - this was the heaviest composer-gap slice yet, but the targeted recovery pattern still held
