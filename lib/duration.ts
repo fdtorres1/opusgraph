@@ -21,6 +21,7 @@ function normalizeDurationText(text: string): string {
     .trim()
     .toLowerCase()
     .replace(/\b(?:ca\.?|circa|approx\.?|approximately|about)\b/g, "")
+    .replace(/\beach\b/g, "")
     .replace(/\([^)]*\)/g, " ")
     .replace(/,/g, " ")
     .replace(/\s+/g, " ")
@@ -50,7 +51,7 @@ function parseRangeDuration(text: string): number | null {
   if (!normalized) return null;
 
   const match = normalized.match(
-    /^(\d+(?:\.\d+)?)\s*[-–]\s*(\d+(?:\.\d+)?)\s*(hours?|hrs?|hr|h|minutes?|mins?|min|m|seconds?|secs?|sec|s)\b$/,
+    /^(\d+(?:\.\d+)?)\s*(?:[-–]|to)\s*(\d+(?:\.\d+)?)\s*(hours?|hrs?|hr|h|minutes?|mins?|min|m|seconds?|secs?|sec|s)\b$/,
   );
   if (!match) return null;
 
@@ -65,6 +66,34 @@ function parseRangeDuration(text: string): number | null {
   const midpoint = (lower + upper) / 2;
   const seconds = durationUnitToSeconds(unit, midpoint);
   return seconds == null ? null : Math.round(seconds);
+}
+
+function parseTickDuration(text: string): number | null {
+  const normalized = normalizeDurationText(text);
+  if (!normalized) return null;
+
+  const minuteSecondMatch = normalized.match(/^(\d+(?:\.\d+)?)'\s*(\d+(?:\.\d+)?)"?$/);
+  if (minuteSecondMatch) {
+    const minutes = Number(minuteSecondMatch[1]);
+    const seconds = Number(minuteSecondMatch[2]);
+    if (!Number.isFinite(minutes) || !Number.isFinite(seconds)) {
+      return null;
+    }
+
+    return Math.round(minutes * 60 + seconds);
+  }
+
+  const minuteMatch = normalized.match(/^(\d+(?:\.\d+)?)'$/);
+  if (minuteMatch) {
+    const minutes = Number(minuteMatch[1]);
+    if (!Number.isFinite(minutes)) {
+      return null;
+    }
+
+    return Math.round(minutes * 60);
+  }
+
+  return null;
 }
 
 function parseUnitDuration(text: string): number | null {
@@ -125,6 +154,7 @@ export const parseDuration = (text: string): number | null => {
   if (!text) return null;
   return (
     parseColonDuration(text) ??
+    parseTickDuration(text) ??
     parseAlternativeDuration(text) ??
     parseRangeDuration(text) ??
     parseUnitDuration(text)

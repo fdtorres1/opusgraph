@@ -238,7 +238,60 @@ Append-only log for implementation, investigation, and planning sessions. Keep e
   - downstream org access rules redirect the new outsider user to their personal library
   - final destination was `/library/my-library-...`, which is the correct result for a newly confirmed non-member
 - Remaining auth verification gap:
-  - positive `/admin/review` login-return path for a platform-admin account
+
+## 2026-03-26
+
+### Targeted offset `700` recovery succeeded, and the recovery loop is now scripted
+- Added reusable operational helpers:
+  - `scripts/run-ingest-job.ts`
+  - `scripts/seed-imslp-work-composers.ts`
+  - `scripts/inspect-imslp-work-slice.ts`
+- Ran the first offset-`700` IMSLP work dry-run:
+  - job `10fa0452-f621-4355-8cd9-390a69afe6a1`
+  - `25` created
+  - `1` updated
+  - `74` failed
+  - all `74` failures were `missing_resolved_composer_id`
+- Derived and seeded the exact missing composer set for that slice:
+  - `74` failed work rows collapsed to `70` unique missing composers
+  - targeted seeding created `69` and flagged `1` duplicate
+  - composer coverage rose to `1701`
+- Replayed offset `700` after targeted seeding:
+  - dry-run job `c8839802-c68b-4bcc-a914-30d75defa0cf`
+  - `97` created
+  - `1` updated
+  - `2` failed
+  - both failures were `invalid_duration_text`
+- Added two duration-parser improvements in `lib/duration.ts`:
+  - `x to y minutes` range phrasing now parses
+  - apostrophe-minute notation like `6'` now parses
+- Verified direct parser cases:
+  - `1 to 2 minutes each` → `90`
+  - `6'` → `360`
+- `npm run build` passes after the parser and script changes.
+- Final offset-`700` dry-run replay:
+  - job `d568cd67-bb82-4fca-86c9-b03d048e71e6`
+  - `99` created
+  - `1` updated
+  - `0` failed
+- Matching live offset-`700` work batch:
+  - job `cbcce02a-d7b7-4547-a46c-7800da4238ae`
+  - `100` processed
+  - `96` created
+  - `2` updated
+  - `2` flagged duplicates
+  - `0` failed
+  - paused at offset `800`
+- Warning mix for the recovered slice stayed bounded:
+  - `imslp_work_unparsed_movements`: `186`
+  - `imslp_work_ambiguous_composition_year`: `4`
+  - `imslp_work_page_redirected`: `2`
+- Current linked-cloud coverage after the live `700` slice:
+  - `1701` IMSLP composers
+  - `773` IMSLP works
+- Next clean move:
+  - replay work offset `800` in dry-run mode
+  - if it is still composer-thin, repeat the same targeted missing-composer recovery pattern before any live write
 
 ## 2026-03-22
 

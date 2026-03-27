@@ -4,7 +4,7 @@ This is the canonical handoff file for the next session. Rewrite freely as prior
 
 ## Current Objective
 
-Finish the composer catch-up phase cleanly enough to retry IMSLP work ingestion from offset `500` without another large `missing_resolved_composer_id` failure wave.
+Continue live IMSLP work ingestion from offset `800` using the now-proven targeted missing-composer recovery loop instead of broad composer catch-up.
 
 ## Current Branch
 
@@ -26,9 +26,13 @@ Finish the composer catch-up phase cleanly enough to retry IMSLP work ingestion 
 - Agent: current Codex session
   - Worktree: current checkout at `/Volumes/Felix-SSD-1/Cursor Projects/opusgraph`
   - Branch: `feat/imslp-work-composer-resolution`
-  - Scope: record the larger composer catch-up batches, measure coverage growth, and define the cleanest way to resume work ingestion from offset `500`
+  - Scope: keep live IMSLP work ingestion moving through offset-based slices, recover composer-thin slices with exact targeted seeding, and document the operational pattern cleanly
   - File ownership:
     - `docs/ACTIVE_CONTEXT.md`
+    - `lib/duration.ts`
+    - `scripts/run-ingest-job.ts`
+    - `scripts/seed-imslp-work-composers.ts`
+    - `scripts/inspect-imslp-work-slice.ts`
     - `lib/ingest/adapters/imslp/work-fields.ts`
     - `docs/WORKLOG.md`
   - Status: active
@@ -36,6 +40,49 @@ Finish the composer catch-up phase cleanly enough to retry IMSLP work ingestion 
 
 ## In Progress
 
+- The targeted offset-`700` recovery path is now also proven:
+  - first dry-run `10fa0452-f621-4355-8cd9-390a69afe6a1` showed:
+    - `25` created
+    - `1` updated
+    - `74` failed
+  - all `74` failures were `missing_resolved_composer_id`
+  - targeted derivation/seeding via `scripts/seed-imslp-work-composers.ts` showed:
+    - `74` failed rows collapsed to `70` unique missing composers
+    - `69` created
+    - `1` flagged duplicate
+    - `0` failed writes
+  - current IMSLP composer coverage is now `1701`
+  - post-seed dry-run replay `c8839802-c68b-4bcc-a914-30d75defa0cf` narrowed the slice to two duration parse failures:
+    - `10 Plainsong Alleluia` with `1 to 2 minutes each`
+    - `Settings of English folk verses` with `6'`
+  - `lib/duration.ts` now handles:
+    - `x to y minutes` range phrasing
+    - apostrophe-minute notation like `6'`
+    - the existing IMSLP-specific bare-number handling in `lib/ingest/adapters/imslp/work-fields.ts` remains intact
+  - final dry-run replay `d568cd67-bb82-4fca-86c9-b03d048e71e6` is green:
+    - `99` created
+    - `1` updated
+    - `0` failed
+    - paused at offset `800`
+  - matching live job `cbcce02a-d7b7-4547-a46c-7800da4238ae` is also green:
+    - `100` processed
+    - `96` created
+    - `2` updated
+    - `2` flagged duplicates
+    - `0` failed
+    - paused at offset `800`
+  - warning mix stayed bounded:
+    - `imslp_work_unparsed_movements` (`186`)
+    - `imslp_work_ambiguous_composition_year` (`4`)
+    - `imslp_work_page_redirected` (`2`)
+  - current observed IMSLP work coverage is `773`
+  - reusable operator scripts now exist:
+    - `scripts/run-ingest-job.ts`
+    - `scripts/seed-imslp-work-composers.ts`
+    - `scripts/inspect-imslp-work-slice.ts`
+  - next clean move:
+    - replay work offset `800` in dry-run mode
+    - if composer-thin, repeat the same targeted recovery pattern before any live write
 - IMSLP live work ingestion has now advanced through the `300` slice with targeted recovery:
   - fresh live offset-`300` job `578240e6-5a0d-4779-a187-eb79a7057366` exposed `94` composer-resolution misses
   - targeted seeding created `87` additional IMSLP composers from that slice
