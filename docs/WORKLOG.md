@@ -122,7 +122,7 @@ Append-only log for implementation, investigation, and planning sessions. Keep e
 ### Seeded IMSLP audit sampling added for ongoing spot checks
 - Added `scripts/sample-imslp-audit.ts` for reproducible spot checks against the linked cloud.
 - The script samples three pools:
-  - IMSLP-linked works
+  - accepted orchestral IMSLP-linked works
   - IMSLP-linked composers
   - open `review_flag.reason = "orchestral_scope_review"` rows
 - The script uses a stable `--seed` and fixed default sample sizes:
@@ -139,12 +139,13 @@ Append-only log for implementation, investigation, and planning sessions. Keep e
 ### First seeded IMSLP audit sample completed
 - Ran `scripts/sample-imslp-audit.ts --seed offset-1900-audit`.
 - The sample pulled:
-  - `5` IMSLP-linked works
+  - `5` accepted orchestral IMSLP-linked works
   - `3` IMSLP-linked composers
   - `5` open `orchestral_scope_review` flags
 - Result:
   - sampled quarantine flags looked coherent and correctly out of scope
-  - sampled work rows included both in-scope and quarantined records, which is expected because the audit script samples the full IMSLP-linked corpus rather than only accepted orchestral works
+  - the first version exposed that the work sample was too broad because it mixed quarantined records into the general work pool
+  - the sampler was then tightened so the work sample only includes positively classified orchestral IMSLP works
 - Follow-up:
   - continue running a seeded audit sample before each new ingest slice
 

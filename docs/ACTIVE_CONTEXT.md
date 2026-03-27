@@ -133,7 +133,7 @@ Continue IMSLP work ingestion under the corrected orchestral-only scope, using t
     - `1893` open `orchestral_scope_review` flags
   - a seeded audit sampler now exists for reproducible QA spot checks:
     - `scripts/sample-imslp-audit.ts`
-    - samples IMSLP composers, IMSLP works, and open `orchestral_scope_review` flags
+    - samples accepted orchestral IMSLP works, IMSLP composers, and open `orchestral_scope_review` flags
     - defaults:
       - `5` works
       - `3` composers
@@ -174,7 +174,7 @@ Continue IMSLP work ingestion under the corrected orchestral-only scope, using t
     - duplicate replay/live rows also exist for offset `2000` (`5637c43a-37a8-402c-8d95-144758a0546f`, `c5320eb3-a564-41c1-9658-3c9e8bf656ee`) because the wrapper again looked stale mid-run; the canonical successful rows are `f800f935-feca-4244-8823-b128cf071b6f` and `2a819619-acbd-4887-9c34-e36ae2b06377`
     - QA protocol going forward:
       - after each live work slice, run `scripts/sample-imslp-audit.ts --seed <slice-id>`
-      - inspect the sampled created/quarantined works plus sampled composers and quarantine flags before moving on
+      - inspect accepted orchestral work samples separately from quarantined flag samples before moving on
 
 - The work-slice recovery flow is now automated end to end:
   - `scripts/recover-imslp-work-slice.ts` now runs:

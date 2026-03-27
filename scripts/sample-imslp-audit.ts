@@ -40,6 +40,7 @@ interface WorkAuditRow {
   composition_year: number | null;
   status: string;
   external_ids: Record<string, unknown> | null;
+  extra_metadata: Record<string, unknown> | null;
 }
 
 interface ReviewFlagAuditRow {
@@ -157,8 +158,18 @@ async function main() {
     },
   });
 
-  const [workCount, composerCount, flagCount] = await Promise.all([
-    supabase.from("work").select("*", { count: "exact", head: true }).contains("external_ids", { imslp: {} }),
+  const [acceptedWorkCount, composerCount, flagCount] = await Promise.all([
+    supabase
+      .from("work")
+      .select("*", { count: "exact", head: true })
+      .contains("external_ids", { imslp: {} })
+      .contains("extra_metadata", {
+        imslp: {
+          orchestral_scope: {
+            classification: "orchestral",
+          },
+        },
+      }),
     supabase.from("composer").select("*", { count: "exact", head: true }).contains("external_ids", { imslp: {} }),
     supabase
       .from("review_flag")
@@ -167,7 +178,11 @@ async function main() {
       .eq("reason", "orchestral_scope_review"),
   ]);
 
-  const workOffsets = sampleOffsets(workCount.count ?? 0, args.works, `${args.seed}:works`);
+  const workOffsets = sampleOffsets(
+    acceptedWorkCount.count ?? 0,
+    args.works,
+    `${args.seed}:works`,
+  );
   const composerOffsets = sampleOffsets(
     composerCount.count ?? 0,
     args.composers,
@@ -179,8 +194,15 @@ async function main() {
     fetchRowsAtOffsets<WorkAuditRow>(async (offset) => {
       const { data, error } = await supabase
         .from("work")
-        .select("id, work_name, composer_id, instrumentation_text, duration_seconds, composition_year, status, external_ids")
+        .select("id, work_name, composer_id, instrumentation_text, duration_seconds, composition_year, status, external_ids, extra_metadata")
         .contains("external_ids", { imslp: {} })
+        .contains("extra_metadata", {
+          imslp: {
+            orchestral_scope: {
+              classification: "orchestral",
+            },
+          },
+        })
         .order("id", { ascending: true })
         .range(offset, offset)
         .maybeSingle();
@@ -265,7 +287,7 @@ async function main() {
           flags: args.flags,
         },
         counts: {
-          imslpWorks: workCount.count ?? 0,
+          acceptedImslpWorks: acceptedWorkCount.count ?? 0,
           imslpComposers: composerCount.count ?? 0,
           openOrchestralScopeFlags: flagCount.count ?? 0,
         },
@@ -282,6 +304,21 @@ async function main() {
           instrumentationText: row.instrumentation_text,
           durationSeconds: row.duration_seconds,
           status: row.status,
+          classification: "orchestral",
+          classificationReason:
+            typeof (
+              (
+                row.extra_metadata?.imslp as
+                  | { orchestral_scope?: { reason?: unknown } }
+                  | undefined
+              )?.orchestral_scope?.reason
+            ) === "string"
+              ? (
+                  row.extra_metadata?.imslp as
+                    | { orchestral_scope?: { reason?: string } }
+                    | undefined
+                )?.orchestral_scope?.reason ?? null
+              : null,
           imslp: imslpExternalId(row.external_ids),
         })),
         composers: composers.map((row) => ({

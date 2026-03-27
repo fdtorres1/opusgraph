@@ -57,7 +57,7 @@ This file is the current priority view for OpusGraph. Keep it short, current, an
     - `1893` open `orchestral_scope_review` flags
   - a seeded audit script now exists for random QA spot checks:
     - `scripts/sample-imslp-audit.ts`
-    - sample `5` IMSLP works, `3` IMSLP composers, and `5` open `orchestral_scope_review` flags by default
+    - sample `5` accepted orchestral IMSLP works, `3` IMSLP composers, and `5` open `orchestral_scope_review` flags by default
     - use a stable `--seed` per slice so spot checks are repeatable
   - the first seeded audit sample is complete:
     - `offset-1900-audit`
