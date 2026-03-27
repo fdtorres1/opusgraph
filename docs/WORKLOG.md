@@ -2145,3 +2145,17 @@ Append-only log for implementation, investigation, and planning sessions. Keep e
   - the slice is operationally recovered
   - the next clean step is offset `2600`
   - this was the heaviest composer-gap slice yet, but the targeted recovery pattern still held
+
+### Offset-`2600` started, but has not produced a canonical initial result yet
+- The wrapper-owned initial dry-run row was:
+  - `9a331794-5120-43c2-ac60-b8dd8444aea2`
+  - it never backfilled counters
+  - it was explicitly canceled
+- A clean manual dry-run rerun was launched:
+  - `b4312fc9-b9d8-42a3-a117-66b408c64b4a`
+  - at handoff time it is still a zero-counter `running` row
+- No canonical initial result exists yet for offset `2600`.
+- Next safe move:
+  - if `b4312fc9-b9d8-42a3-a117-66b408c64b4a` is still zero-counter, cancel it
+  - rerun the initial dry-run again
+  - only proceed to seeding once a real initial result has backfilled
