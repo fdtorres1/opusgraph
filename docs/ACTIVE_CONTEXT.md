@@ -180,13 +180,36 @@ Continue IMSLP work ingestion under the corrected orchestral-only scope, using t
     - `66` quarantined
     - `0` failed
     - paused at offset `2100`
+  - offset `2100` is now recovered:
+    - initial dry-run job `bbe2fe3b-a1a2-4e68-a9d0-fe3a51eceed2`
+    - `100` processed
+    - `1` created
+    - `40` flagged
+    - `59` failed, all `missing_resolved_composer_id`
+    - targeted composer seeding raised IMSLP composer coverage from `2445` to `2496`
+    - replay dry-run completed green on job `6b7c07e0-0792-4ed4-aa31-497b2f0d3387`
+    - `100` processed
+    - `1` created
+    - `99` flagged
+    - `0` failed
+    - cursor advanced to `2200`
+    - live writes landed on job `3cb2f7d1-448b-484b-a790-0fc571cd4bf7`
+    - `100` processed
+    - `1` created
+    - `99` flagged
+    - `0` failed
+    - cursor advanced to `2200`
   - immediate next step:
-    - run the offset-`2100` recovery flow under the same DB-verified operator pattern
+    - run the offset-`2200` recovery flow under the same DB-verified operator pattern
   - operator note:
     - live operator scripts still settle late enough to look hung, so DB verification remains safer than trusting the CLI wrapper to exit promptly
     - one redundant manual replay dry-run (`a7f88c27-a8ce-4afb-995d-0bb6437a782d`) was launched while the canonical replay still looked stale; it paused green and can be ignored
     - two stale pre-fix replay rows remain in history for offset `1900` (`5ce868c9-d6a9-4d1d-9825-645da5ce9d5b`, `f6d7e276-4203-46c9-9f72-58e365b3955c`); both are paused and can be ignored
     - duplicate replay/live rows also exist for offset `2000` (`5637c43a-37a8-402c-8d95-144758a0546f`, `c5320eb3-a564-41c1-9658-3c9e8bf656ee`) because the wrapper again looked stale mid-run; the canonical successful rows are `f800f935-feca-4244-8823-b128cf071b6f` and `2a819619-acbd-4887-9c34-e36ae2b06377`
+    - offset `2100` also left stale wrapper-owned rows that were explicitly canceled after their writes landed:
+      - replay duplicates: `5dc3d1ae-817a-4f1e-890f-e4f03c554f81`, `ecb3210b-8194-4cce-9883-f3acab68e16c`
+      - live duplicate: `c8a4c25d-051e-420f-90cd-f98de5fdafd4`
+      - the effective live writes for the slice are recorded on `3cb2f7d1-448b-484b-a790-0fc571cd4bf7`
     - QA protocol going forward:
       - after each live work slice, run `scripts/sample-imslp-audit.ts --seed <slice-id>`
       - inspect accepted orchestral work samples separately from quarantined flag samples before moving on

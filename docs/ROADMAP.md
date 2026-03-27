@@ -73,8 +73,14 @@ This file is the current priority view for OpusGraph. Keep it short, current, an
     - final replay dry-run: `3` created, `81` quarantined, `0` failed
     - final live batch: `1` created, `2` updated, `66` quarantined, `0` failed
     - paused at offset `2100`
+  - offset `2100` is now recovered:
+    - initial dry-run: `1` created, `40` flagged, `59` composer-resolution failures
+    - targeted composer seeding increased IMSLP composer coverage from `2445` to `2496`
+    - final replay dry-run: `1` created, `99` flagged, `0` failed
+    - effective live batch: `1` created, `99` flagged, `0` failed
+    - cursor advanced to `2200`
   - next operator step:
-    - run the offset-`2100` recovery flow
+    - run the offset-`2200` recovery flow
   - the CLI wrappers still settle late enough to look hung, so operator verification against `source_ingest_job`, `review_flag`, and coverage counts remains the safer path during live runs
   - the `200`, `300`, and `400` slices are now operationally recovered to:
     - `0` failed rows

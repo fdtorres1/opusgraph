@@ -1964,3 +1964,38 @@ Append-only log for implementation, investigation, and planning sessions. Keep e
 - Interpretation:
   - the QA sample is now a useful gate for continuing ingest
   - next clean operator step remains the offset-`2100` recovery flow
+
+### Offset-`2100` recovery completed, with the usual stale-wrapper cleanup
+- Initial dry-run for offset `2100`:
+  - job `bbe2fe3b-a1a2-4e68-a9d0-fe3a51eceed2`
+  - `100` processed
+  - `1` created
+  - `40` flagged
+  - `59` failed
+  - all failures were `missing_resolved_composer_id`
+- Targeted composer seeding for the slice raised IMSLP composer coverage from `2445` to `2496`.
+- The recovery wrapper then exhibited the same stale-runner pattern as earlier:
+  - replay rows were created and left at `running` with zero counters
+  - those stale rows were canceled once it was clear they were not the authoritative result
+- The effective replay dry-run did complete successfully:
+  - job `6b7c07e0-0792-4ed4-aa31-497b2f0d3387`
+  - `100` processed
+  - `1` created
+  - `99` flagged
+  - `0` failed
+  - cursor advanced to `2200`
+- The wrapper-owned live row also wrote successfully before it was cleaned up:
+  - job `3cb2f7d1-448b-484b-a790-0fc571cd4bf7`
+  - `100` processed
+  - `1` created
+  - `99` flagged
+  - `0` failed
+  - cursor advanced to `2200`
+- Final linked-cloud coverage after offset `2100`:
+  - `2496` IMSLP composers
+  - `2035` IMSLP works
+  - `1986` open `orchestral_scope_review` flags
+- Interpretation:
+  - the slice is operationally recovered
+  - the next clean step is offset `2200`
+  - DB state remains more trustworthy than wrapper process output for these live recovery commands
