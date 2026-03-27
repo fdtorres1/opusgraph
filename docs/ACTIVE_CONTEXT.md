@@ -4,7 +4,7 @@ This is the canonical handoff file for the next session. Rewrite freely as prior
 
 ## Current Objective
 
-Continue live IMSLP work ingestion from offset `1100` using the scripted targeted missing-composer recovery loop instead of broad composer catch-up.
+Continue live IMSLP work ingestion from offset `1200` using the scripted targeted missing-composer recovery loop instead of broad composer catch-up.
 
 ## Current Branch
 
@@ -40,6 +40,34 @@ Continue live IMSLP work ingestion from offset `1100` using the scripted targete
 
 ## In Progress
 
+- The targeted offset-`1100` recovery path is now also proven:
+  - first dry-run `09ca985d-5e1c-4632-a0c0-d60fb67f9ad2` showed:
+    - `33` created
+    - `67` failed
+  - all `67` failures were `missing_resolved_composer_id`
+  - targeted derivation/seeding via `scripts/seed-imslp-work-composers.ts` showed:
+    - `67` failed rows collapsed to `58` unique missing composers
+    - all `58` were created cleanly
+  - current IMSLP composer coverage is now `1955`
+  - post-seed dry-run replay `bc369def-69b2-4784-b903-b2c49b640ab7` is fully green:
+    - `100` created
+    - `0` failed
+    - paused at offset `1200`
+  - matching live job `f41b3361-71ce-4531-acdc-052919eb9364` is also green:
+    - `100` processed
+    - `96` created
+    - `1` updated
+    - `3` flagged duplicates
+    - `0` failed
+    - paused at offset `1200`
+  - warning mix stayed bounded:
+    - `imslp_work_unparsed_movements` (`180`)
+    - `imslp_work_ambiguous_composition_year` (`6`)
+    - `imslp_work_page_redirected` (`2`)
+  - current observed IMSLP work coverage is `1143`
+  - next clean move:
+    - replay work offset `1200` in dry-run mode
+    - if composer-thin, repeat the same targeted recovery pattern before any live write
 - The targeted offset-`1000` recovery path is now also proven:
   - first dry-run `b68060c6-fab5-41b6-ba6e-87a7a06cd55c` showed:
     - `29` created
