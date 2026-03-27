@@ -131,12 +131,24 @@ Continue IMSLP work ingestion under the corrected orchestral-only scope, using t
     - `2410` IMSLP composers
     - `1828` IMSLP works
     - `1780` open `orchestral_scope_review` flags
+  - a seeded audit sampler now exists for reproducible QA spot checks:
+    - `scripts/sample-imslp-audit.ts`
+    - samples IMSLP composers, IMSLP works, and open `orchestral_scope_review` flags
+    - defaults:
+      - `5` works
+      - `3` composers
+      - `5` quarantine flags
+    - supports `--seed` so repeated audits can be compared exactly
   - immediate next step:
-    - run the offset-`2000` recovery flow under the same DB-verified operator pattern
+    - run one seeded audit sample before continuing ingest
+    - then run the offset-`2000` recovery flow under the same DB-verified operator pattern
   - operator note:
     - live operator scripts still settle late enough to look hung, so DB verification remains safer than trusting the CLI wrapper to exit promptly
     - one redundant manual replay dry-run (`a7f88c27-a8ce-4afb-995d-0bb6437a782d`) was launched while the canonical replay still looked stale; it paused green and can be ignored
     - two stale pre-fix replay rows remain in history for offset `1900` (`5ce868c9-d6a9-4d1d-9825-645da5ce9d5b`, `f6d7e276-4203-46c9-9f72-58e365b3955c`); both are paused and can be ignored
+    - QA protocol going forward:
+      - after each live work slice, run `scripts/sample-imslp-audit.ts --seed <slice-id>`
+      - inspect the sampled created/quarantined works plus sampled composers and quarantine flags before moving on
 
 - The work-slice recovery flow is now automated end to end:
   - `scripts/recover-imslp-work-slice.ts` now runs:

@@ -119,6 +119,23 @@ Append-only log for implementation, investigation, and planning sessions. Keep e
 - Follow-up:
   - continue with the offset-`2000` recovery flow
 
+### Seeded IMSLP audit sampling added for ongoing spot checks
+- Added `scripts/sample-imslp-audit.ts` for reproducible spot checks against the linked cloud.
+- The script samples three pools:
+  - IMSLP-linked works
+  - IMSLP-linked composers
+  - open `review_flag.reason = "orchestral_scope_review"` rows
+- The script uses a stable `--seed` and fixed default sample sizes:
+  - `5` works
+  - `3` composers
+  - `5` quarantine flags
+- Intended operator use:
+  - run once after each live work slice
+  - inspect sampled orchestral works, sampled quarantined works, and sampled composer records before continuing ingest
+- Follow-up:
+  - smoke-test the sampler
+  - use it before continuing with offset `2000`
+
 ### Review queue now distinguishes orchestral-scope quarantine from duplicate review
 - Added a first-pass quarantine-focused review UI in `app/admin/review/review-queue.tsx`:
   - summary cards for open review flags, open quarantine flags, and open duplicate flags

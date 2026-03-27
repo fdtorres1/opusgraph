@@ -55,8 +55,13 @@ This file is the current priority view for OpusGraph. Keep it short, current, an
     - `2410` IMSLP composers
     - `1828` IMSLP works
     - `1780` open `orchestral_scope_review` flags
+  - a seeded audit script now exists for random QA spot checks:
+    - `scripts/sample-imslp-audit.ts`
+    - sample `5` IMSLP works, `3` IMSLP composers, and `5` open `orchestral_scope_review` flags by default
+    - use a stable `--seed` per slice so spot checks are repeatable
   - next operator step:
-    - run the offset-`2000` recovery flow
+    - run a seeded audit sample
+    - then run the offset-`2000` recovery flow
   - the CLI wrappers still settle late enough to look hung, so operator verification against `source_ingest_job`, `review_flag`, and coverage counts remains the safer path during live runs
   - the `200`, `300`, and `400` slices are now operationally recovered to:
     - `0` failed rows
