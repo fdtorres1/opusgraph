@@ -53,12 +53,43 @@ export async function createDuplicateReviewFlag(
   actorUserId: string,
   details: JsonObject,
 ): Promise<string | null> {
+  return createOrReuseReviewFlag(
+    supabase,
+    entityKind,
+    entityId,
+    "possible_duplicate",
+    actorUserId,
+    details,
+  );
+}
+
+export async function createOrReuseReviewFlag(
+  supabase: PersistSupabaseClient,
+  entityKind: IngestEntityKind,
+  entityId: string,
+  reason: string,
+  actorUserId: string,
+  details: JsonObject,
+): Promise<string | null> {
+  const { data: existing } = await supabase
+    .from("review_flag")
+    .select("id")
+    .eq("entity_type", entityKind)
+    .eq("entity_id", entityId)
+    .eq("reason", reason)
+    .eq("status", "open")
+    .maybeSingle();
+
+  if (existing?.id) {
+    return existing.id;
+  }
+
   const { data, error } = await supabase
     .from("review_flag")
     .insert({
       entity_type: entityKind,
       entity_id: entityId,
-      reason: "possible_duplicate",
+      reason,
       details,
       status: "open",
       created_by: actorUserId,
@@ -71,6 +102,49 @@ export async function createDuplicateReviewFlag(
   }
 
   return data?.id ?? null;
+}
+
+export async function quarantineWorkEntity(
+  supabase: PersistSupabaseClient,
+  entityId: string,
+  actorUserId: string,
+  reason: string,
+  details: JsonObject,
+): Promise<{ reviewFlagId: string | null; row: JsonObject | null }> {
+  const { data: currentRow } = await supabase
+    .from("work")
+    .select("*")
+    .eq("id", entityId)
+    .single();
+
+  let row = currentRow ?? null;
+  if (currentRow && currentRow.status !== "draft") {
+    const { data: drafted } = await supabase
+      .from("work")
+      .update({ status: "draft" })
+      .eq("id", entityId)
+      .select("*")
+      .single();
+
+    row = drafted ?? currentRow;
+    if (row) {
+      await insertRevision(supabase, "work", entityId, actorUserId, "update", row);
+    }
+  }
+
+  const reviewFlagId = await createOrReuseReviewFlag(
+    supabase,
+    "work",
+    entityId,
+    reason,
+    actorUserId,
+    details,
+  );
+
+  return {
+    reviewFlagId,
+    row,
+  };
 }
 
 export async function insertRevision(

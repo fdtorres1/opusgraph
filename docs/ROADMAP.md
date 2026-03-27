@@ -13,14 +13,21 @@ This file is the current priority view for OpusGraph. Keep it short, current, an
   - use source identity in `external_ids` and raw payloads in `extra_metadata`
   - route ambiguous matches into `review_flag` instead of auto-merging
 - Immediate task slice:
-  - recover the next IMSLP work slice at offset `1700`
-  - preferred operator flow:
-    - run the initial dry-run
-    - use targeted composer seeding if `missing_resolved_composer_id` appears
-    - replay the dry-run
-    - run the live batch once the replay is green
-  - the unified script still reflects the right recovery logic, but the CLI wrappers can settle late enough to look hung, so operator verification against `source_ingest_job` and coverage counts is still the safer path during live runs
-  - use the unified recovery script as the default operator path for new IMSLP work slices
+  - pause further live IMSLP work-slice expansion beyond offset `1600`
+  - merge the new orchestral-only correction before resuming work ingest:
+    - the IMSLP work adapter now classifies orchestral scope from instrumentation text
+    - non-orchestral or unconfirmed IMSLP work candidates are quarantined into `review_flag.reason = "orchestral_scope_review"` instead of flowing through normal work ingest
+    - live dry-run check on the first `25` rows now returns `20` quarantined and only `5` positively orchestral updates
+  - the already imported IMSLP work corpus has now been backfilled into quarantine:
+    - `1602` IMSLP works processed
+    - `1561` quarantined
+    - classification summary:
+      - `1555` `non_orchestral`
+      - `6` `unknown`
+      - `41` positively `orchestral`
+  - next operator step after merge:
+    - inspect the quarantine queue and decide whether new IMSLP work ingestion should resume immediately or wait for review tooling improvements
+  - the CLI wrappers still settle late enough to look hung, so operator verification against `source_ingest_job`, `review_flag`, and coverage counts remains the safer path during live runs
   - the `200`, `300`, and `400` slices are now operationally recovered to:
     - `0` failed rows
     - only duplicate-review cases remaining

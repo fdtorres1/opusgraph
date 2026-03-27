@@ -6,6 +6,7 @@ export type IngestPersistOutcome =
   | "updated"
   | "skipped_existing_source_match"
   | "flagged_duplicate"
+  | "quarantined"
   | "failed_parse"
   | "failed_write";
 
@@ -42,6 +43,13 @@ export interface FlaggedDuplicateResult extends BasePersistResult {
   reviewFlagId?: string;
 }
 
+export interface QuarantinedResult extends BasePersistResult {
+  outcome: "quarantined";
+  entityId: string;
+  reviewFlagId?: string;
+  quarantineReason: string;
+}
+
 export interface FailedParseResult extends BasePersistResult {
   outcome: "failed_parse";
 }
@@ -55,6 +63,7 @@ export type CandidatePersistResult =
   | UpdatedPersistResult
   | SkippedExistingSourceMatchResult
   | FlaggedDuplicateResult
+  | QuarantinedResult
   | FailedParseResult
   | FailedWriteResult;
 

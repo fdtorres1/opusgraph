@@ -5,11 +5,14 @@ import type { ComposerCandidate, WorkCandidate } from "@/lib/ingest/candidates";
 import type { CandidateProcessorArgs } from "@/lib/ingest/jobs/types";
 import { parseDuration } from "@/lib/duration";
 import type { CandidatePersistResult } from "@/lib/ingest/results";
+import { assessImslpWorkOrchestralScope } from "@/lib/ingest/adapters/imslp/work-fields";
+import { ORCHESTRAL_SCOPE_REVIEW_REASON } from "@/lib/ingest/quarantine";
 import {
   assessCandidateDuplicates,
   persistComposerCandidate,
   persistWorkCandidate,
 } from "@/lib/ingest/persist";
+import { quarantineWorkEntity } from "@/lib/ingest/persist/support";
 import { parseImslpCanonicalName } from "@/lib/ingest/adapters/imslp/parser";
 import { findSourceIdentityMatch } from "@/lib/ingest/persist/source-identity";
 import { createServerSupabase } from "@/lib/supabase/server";
@@ -161,6 +164,76 @@ async function resolveWorkComposerId(
 
 function dryRunEntityId(candidate: ComposerCandidate | WorkCandidate): string {
   return `dry-run:${candidate.entityKind}:${candidate.sourceIdentity.source}:${candidate.sourceIdentity.sourceId}`;
+}
+
+function buildWorkQuarantineDetails(candidate: WorkCandidate) {
+  const orchestralScope = assessImslpWorkOrchestralScope(
+    candidate.instrumentationText,
+  );
+
+  return {
+    source: candidate.sourceIdentity.source,
+    source_entity_kind: candidate.sourceIdentity.sourceEntityKind,
+    source_id: candidate.sourceIdentity.sourceId,
+    source_url: candidate.sourceIdentity.sourceUrl ?? null,
+    canonical_title: candidate.sourceIdentity.canonicalTitle ?? null,
+    title: candidate.title,
+    composer_display_name: candidate.composerDisplayName ?? null,
+    instrumentation_text: candidate.instrumentationText ?? null,
+    classification: orchestralScope.classification,
+    classification_reason: orchestralScope.reason,
+    matched_signals: orchestralScope.matchedSignals,
+    normalized_instrumentation_text:
+      orchestralScope.normalizedInstrumentationText,
+  };
+}
+
+function shouldQuarantineWorkCandidate(candidate: WorkCandidate): boolean {
+  const scope = assessImslpWorkOrchestralScope(candidate.instrumentationText);
+  return scope.classification !== "orchestral";
+}
+
+async function quarantinePersistedWork(
+  args: CandidateProcessorArgs,
+  result: CandidatePersistResult,
+): Promise<CandidatePersistResult> {
+  if (
+    result.outcome !== "created" &&
+    result.outcome !== "updated" &&
+    result.outcome !== "skipped_existing_source_match"
+  ) {
+    return result;
+  }
+
+  const candidate = args.candidate as WorkCandidate;
+  const details = buildWorkQuarantineDetails(candidate);
+  const quarantined = await quarantineWorkEntity(
+    args.supabase,
+    result.entityId,
+    args.actorUserId,
+    ORCHESTRAL_SCOPE_REVIEW_REASON,
+    details,
+  );
+
+  return {
+    outcome: "quarantined",
+    entityKind: "work",
+    entityId: result.entityId,
+    sourceIdentity: candidate.sourceIdentity,
+    candidate,
+    reviewFlagId: quarantined.reviewFlagId ?? undefined,
+    quarantineReason: ORCHESTRAL_SCOPE_REVIEW_REASON,
+    issues: [
+      ...result.issues,
+      {
+        code: "work_quarantined_for_orchestral_scope_review",
+        message:
+          "This IMSLP work was quarantined because it is not positively classified as orchestral.",
+        severity: "warning",
+        metadata: details,
+      },
+    ],
+  };
 }
 
 async function simulateComposerDryRun(
@@ -318,6 +391,30 @@ async function simulateWorkDryRun(
     };
   }
 
+  if (shouldQuarantineWorkCandidate(candidate)) {
+    const entityId = sourceMatch?.entityId ?? dryRunEntityId(candidate);
+    const details = buildWorkQuarantineDetails(candidate);
+
+    return {
+      outcome: "quarantined",
+      entityKind: "work",
+      entityId,
+      sourceIdentity: candidate.sourceIdentity,
+      candidate,
+      quarantineReason: ORCHESTRAL_SCOPE_REVIEW_REASON,
+      issues: [
+        ...duplicateAssessment.issues,
+        {
+          code: "work_would_be_quarantined_for_orchestral_scope_review",
+          message:
+            "This IMSLP work would be quarantined because it is not positively classified as orchestral.",
+          severity: "warning",
+          metadata: details,
+        },
+      ],
+    };
+  }
+
   if (sourceMatch) {
     return {
       outcome: "updated",
@@ -361,7 +458,7 @@ export async function processIngestCandidate(args: CandidateProcessorArgs) {
     });
   }
 
-  return persistWorkCandidate({
+  const persistedWork = await persistWorkCandidate({
     supabase: args.supabase,
     candidate: args.candidate,
     options: {
@@ -372,4 +469,10 @@ export async function processIngestCandidate(args: CandidateProcessorArgs) {
       resolveComposerId: (candidate) => resolveWorkComposerId(candidate, args),
     },
   });
+
+  if (!shouldQuarantineWorkCandidate(args.candidate as WorkCandidate)) {
+    return persistedWork;
+  }
+
+  return quarantinePersistedWork(args, persistedWork);
 }

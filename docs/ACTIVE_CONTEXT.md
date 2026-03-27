@@ -4,7 +4,7 @@ This is the canonical handoff file for the next session. Rewrite freely as prior
 
 ## Current Objective
 
-Continue live IMSLP work ingestion from offset `1700` using the targeted recovery workflow, with follow-up attention on the delayed-settle behavior of the live operator scripts.
+Correct IMSLP work ingestion to enforce orchestral-only scope, quarantine already imported non-orchestral works, and pause further live work-slice expansion until the scope gate is in place on `main`.
 
 ## Current Branch
 
@@ -26,20 +26,52 @@ Continue live IMSLP work ingestion from offset `1700` using the targeted recover
 - Agent: current Codex session
   - Worktree: current checkout at `/Volumes/Felix-SSD-1/Cursor Projects/opusgraph`
   - Branch: `feat/imslp-work-composer-resolution`
-  - Scope: keep live IMSLP work ingestion moving through offset-based slices, recover composer-thin slices with exact targeted seeding, and document the operational pattern cleanly
+  - Scope: correct the IMSLP work scope to orchestral-only, quarantine out-of-scope imported works, and document the policy shift and recovery state cleanly
   - File ownership:
     - `docs/ACTIVE_CONTEXT.md`
+    - `docs/DECISIONS.md`
     - `lib/duration.ts`
+    - `lib/ingest/quarantine.ts`
     - `lib/ingest/adapters/imslp/work-fields.ts`
+    - `lib/ingest/adapters/imslp/mapper.ts`
+    - `lib/ingest/results.ts`
+    - `lib/ingest/persist/support.ts`
+    - `lib/ingest/jobs/run.ts`
+    - `app/api/admin/ingest/_shared.ts`
     - `scripts/run-ingest-job.ts`
     - `scripts/seed-imslp-work-composers.ts`
     - `scripts/inspect-imslp-work-slice.ts`
     - `scripts/recover-imslp-work-slice.ts`
+    - `scripts/quarantine-imslp-work-scope.ts`
     - `docs/WORKLOG.md`
   - Status: active
-  - Notes: auth/RLS is already signed off; managed daily Supabase physical backups are now available; `0016` is applied in the linked cloud; `T4`, `T5`, the IMSLP composer adapter, and the IMSLP work adapter are merged on `main`; the current task slice is operational recovery and scaling for live IMSLP work ingestion
+  - Notes: auth/RLS is already signed off; managed daily Supabase physical backups are now available; `0016` is applied in the linked cloud; `T4`, `T5`, the IMSLP composer adapter, and the IMSLP work adapter are merged on `main`; the old offset-`1700` continuation plan is paused because the user clarified that IMSLP work ingest is supposed to be orchestral-only
 
 ## In Progress
+
+- IMSLP work ingest is now being corrected to orchestral-only scope:
+  - the work adapter now computes an orchestral-scope assessment from persisted/parsed instrumentation text
+  - non-orchestral or unconfirmed IMSLP work candidates now go down a quarantine path instead of normal work ingest:
+    - dry-run returns `quarantined`
+    - live runs persist/update the work row, keep it in `draft`, and open `review_flag.reason = "orchestral_scope_review"`
+  - the first real operator check on offset `0`, `batchSize = 25` now returns:
+    - `5` updated
+    - `20` quarantined
+    - `0` failed
+  - a corpus-wide backfill script now exists:
+    - `scripts/quarantine-imslp-work-scope.ts`
+  - live backfill completed against the already imported IMSLP corpus:
+    - `1602` IMSLP works processed
+    - `1561` works quarantined
+    - classification summary:
+      - `1555` `non_orchestral`
+      - `6` `unknown`
+      - `41` positively `orchestral`
+    - `1561` open `review_flag` rows now exist with `reason = "orchestral_scope_review"`
+  - immediate next step:
+    - review the quarantined corpus and decide whether to resume new IMSLP work ingestion only after this branch is merged
+  - operator note:
+    - live operator scripts still settle late enough to look hung, so DB verification remains safer than trusting the CLI wrapper to exit promptly
 
 - The work-slice recovery flow is now automated end to end:
   - `scripts/recover-imslp-work-slice.ts` now runs:

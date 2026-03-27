@@ -4,6 +4,34 @@ Append-only log for implementation, investigation, and planning sessions. Keep e
 
 ## 2026-03-27
 
+### IMSLP work ingest corrected to orchestral-only scope; imported mixed corpus quarantined
+- The user clarified that IMSLP work ingest was always intended to be orchestral-only, so the prior mixed-corpus work ingestion path was treated as a scope bug rather than continued as-is.
+- Added an orchestral-scope classifier to the IMSLP work path:
+  - explicit `orchestra` / `orchestral` language is treated as positive
+  - clearly broad multi-family orchestral scoring is treated as positive
+  - all other IMSLP work rows are treated as out of scope and quarantined
+- Added a quarantine result path for IMSLP works:
+  - dry-run work ingest now returns `quarantined` for out-of-scope rows
+  - live work ingest persists/updates the work row, keeps it in `draft`, and opens `review_flag.reason = "orchestral_scope_review"`
+- Added `scripts/quarantine-imslp-work-scope.ts` to backfill quarantine across already imported IMSLP works.
+- Verified the new gate through the real job runner on offset `0`, `batchSize = 25`:
+  - `25` processed
+  - `5` updated
+  - `20` quarantined
+  - `0` failed
+- Ran the live backfill quarantine pass across the already imported IMSLP work corpus:
+  - `1602` IMSLP works processed
+  - `1561` quarantined
+  - classification summary:
+    - `1555` `non_orchestral`
+    - `6` `unknown`
+    - `41` positively `orchestral`
+  - verified `1561` open `review_flag` rows with `reason = "orchestral_scope_review"`
+- Follow-up:
+  - pause further live IMSLP work-slice expansion beyond offset `1600`
+  - merge the orchestral-only correction
+  - review the quarantine queue before resuming new IMSLP work ingestion
+
 ### Targeted offset-`1300` recovery completed; one duplicate live runner was cleaned up
 - Replayed the next IMSLP work slice at offset `1300`:
   - initial dry-run job `027c96da-cac4-485f-bfe3-4803486612ed`

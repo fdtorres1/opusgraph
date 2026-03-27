@@ -11,6 +11,18 @@ export interface ImslpWorkFieldExtraction {
   rawFields: JsonObject;
 }
 
+export type ImslpOrchestralClassification =
+  | "orchestral"
+  | "non_orchestral"
+  | "unknown";
+
+export interface ImslpOrchestralAssessment {
+  classification: ImslpOrchestralClassification;
+  reason: string;
+  matchedSignals: string[];
+  normalizedInstrumentationText: string | null;
+}
+
 const WORK_INFO_START_MARKER = "*****WORK INFO*****";
 const WORK_INFO_END_MARKERS = ["*****COMMENTS*****", "*****END OF TEMPLATE*****"];
 
@@ -27,9 +39,159 @@ const MOVEMENT_KEYS = [
   "Movement(s)",
 ];
 const DURATION_KEYS = ["Average Duration"];
+const ORCHESTRA_PATTERNS: Array<[string, RegExp]> = [
+  ["orchestra", /\borchestra(?:l)?\b/i],
+];
+const STRING_PATTERNS: Array<[string, RegExp]> = [
+  ["strings", /\bstrings?\b/i],
+  ["violin", /\bviolins?\b/i],
+  ["viola", /\bviolas?\b/i],
+  ["cello", /\bcellos?\b/i],
+  ["double_bass", /\bdouble bass(?:es)?\b/i],
+  ["bass", /\bbass(?:es)?\b/i],
+  ["harp", /\bharp\b/i],
+];
+const WOODWIND_PATTERNS: Array<[string, RegExp]> = [
+  ["piccolo", /\bpiccolo\b/i],
+  ["flute", /\bflutes?\b/i],
+  ["oboe", /\boboes?\b/i],
+  ["english_horn", /\benglish horn\b/i],
+  ["clarinet", /\bclarinets?\b/i],
+  ["bass_clarinet", /\bbass clarinet\b/i],
+  ["bassoon", /\bbassoons?\b/i],
+  ["contrabassoon", /\bcontrabassoon\b/i],
+  ["saxophone", /\bsaxophones?\b/i],
+];
+const BRASS_PATTERNS: Array<[string, RegExp]> = [
+  ["horn", /\bhorns?\b/i],
+  ["trumpet", /\btrumpets?\b/i],
+  ["trombone", /\btrombones?\b/i],
+  ["tuba", /\btuba\b/i],
+  ["euphonium", /\beuphonium\b/i],
+  ["cornet", /\bcornets?\b/i],
+];
+const PERCUSSION_PATTERNS: Array<[string, RegExp]> = [
+  ["timpani", /\btimpani\b/i],
+  ["percussion", /\bpercussion\b/i],
+  ["cymbal", /\bcymbal(?:s)?\b/i],
+  ["snare_drum", /\bsnare drum\b/i],
+  ["bass_drum", /\bbass drum\b/i],
+  ["triangle", /\btriangle\b/i],
+  ["xylophone", /\bxylophone\b/i],
+  ["glockenspiel", /\bglockenspiel\b/i],
+  ["marimba", /\bmarimba\b/i],
+  ["tam_tam", /\btam-?tam\b/i],
+];
 
 function normalizeText(value: string): string {
   return value.replace(/\s+/g, " ").trim();
+}
+
+function normalizeInstrumentationText(value: string): string {
+  return normalizeText(
+    value
+      .replace(/<br\s*\/?>/gi, "; ")
+      .replace(/<[^>]+>/g, " ")
+      .replace(/&amp;/g, "&")
+      .replace(/\{\{[^}]+\}\}/g, " ")
+      .replace(/\[\[[^\]]+\]\]/g, " ")
+      .replace(/\|/g, " ")
+      .replace(/[“”]/g, '"')
+      .replace(/[‘’]/g, "'"),
+  );
+}
+
+function collectSignalNames(
+  value: string,
+  patterns: Array<[string, RegExp]>,
+): string[] {
+  return patterns
+    .filter(([, pattern]) => pattern.test(value))
+    .map(([name]) => name);
+}
+
+export function assessImslpWorkOrchestralScope(
+  instrumentationText: string | null | undefined,
+): ImslpOrchestralAssessment {
+  if (!instrumentationText?.trim()) {
+    return {
+      classification: "unknown",
+      reason: "missing_instrumentation_text",
+      matchedSignals: [],
+      normalizedInstrumentationText: null,
+    };
+  }
+
+  const normalized = normalizeInstrumentationText(instrumentationText);
+  if (!normalized) {
+    return {
+      classification: "unknown",
+      reason: "missing_instrumentation_text",
+      matchedSignals: [],
+      normalizedInstrumentationText: null,
+    };
+  }
+
+  const orchestraSignals = collectSignalNames(normalized, ORCHESTRA_PATTERNS);
+  if (orchestraSignals.length > 0) {
+    return {
+      classification: "orchestral",
+      reason: "explicit_orchestra_signal",
+      matchedSignals: orchestraSignals,
+      normalizedInstrumentationText: normalized,
+    };
+  }
+
+  const stringSignals = collectSignalNames(
+    normalized,
+    STRING_PATTERNS,
+  );
+  const woodwindSignals = collectSignalNames(
+    normalized,
+    WOODWIND_PATTERNS,
+  );
+  const brassSignals = collectSignalNames(
+    normalized,
+    BRASS_PATTERNS,
+  );
+  const percussionSignals = collectSignalNames(
+    normalized,
+    PERCUSSION_PATTERNS,
+  );
+
+  const orchestralFamilyCount = [
+    stringSignals.length > 0,
+    woodwindSignals.length > 0,
+    brassSignals.length > 0,
+    percussionSignals.length > 0,
+  ].filter(Boolean).length;
+
+  const matchedSignals = [
+    ...stringSignals,
+    ...woodwindSignals,
+    ...brassSignals,
+    ...percussionSignals,
+  ];
+
+  if (
+    stringSignals.length >= 3 &&
+    matchedSignals.length >= 6 &&
+    orchestralFamilyCount >= 3
+  ) {
+    return {
+      classification: "orchestral",
+      reason: "multi_family_orchestral_scoring",
+      matchedSignals,
+      normalizedInstrumentationText: normalized,
+    };
+  }
+
+  return {
+    classification: "non_orchestral",
+    reason: "instrumentation_lacks_orchestral_signals",
+    matchedSignals,
+    normalizedInstrumentationText: normalized,
+  };
 }
 
 function extractWorkInfoBlock(wikitext: string): string {

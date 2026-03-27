@@ -6,7 +6,10 @@ import type {
 } from "@/lib/ingest/candidates";
 import type { IngestIssue, JsonObject } from "@/lib/ingest/domain";
 import type { ImslpWorkPageRecord } from "@/lib/ingest/adapters/imslp/page-client";
-import type { ImslpWorkFieldExtraction } from "@/lib/ingest/adapters/imslp/work-fields";
+import {
+  assessImslpWorkOrchestralScope,
+  type ImslpWorkFieldExtraction,
+} from "@/lib/ingest/adapters/imslp/work-fields";
 import type {
   ImslpType1ParsedRow,
   ImslpType2ParsedRow,
@@ -272,6 +275,9 @@ export function mapImslpWorkCandidate(args: {
     fields.opusCatalogueText ?? row.catalogNumber,
   );
   const { movements, issues: movementIssues } = parseMovements(fields.movementText);
+  const orchestralScope = assessImslpWorkOrchestralScope(
+    fields.instrumentationText,
+  );
 
   issues.push(...yearIssues, ...movementIssues);
 
@@ -332,6 +338,13 @@ export function mapImslpWorkCandidate(args: {
         movement_text: fields.movementText,
         duration_text: fields.durationText,
         raw_fields: fields.rawFields,
+      },
+      orchestral_scope: {
+        classification: orchestralScope.classification,
+        reason: orchestralScope.reason,
+        matched_signals: orchestralScope.matchedSignals,
+        normalized_instrumentation_text:
+          orchestralScope.normalizedInstrumentationText,
       },
     },
     title,
