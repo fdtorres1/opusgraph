@@ -1999,3 +1999,39 @@ Append-only log for implementation, investigation, and planning sessions. Keep e
   - the slice is operationally recovered
   - the next clean step is offset `2200`
   - DB state remains more trustworthy than wrapper process output for these live recovery commands
+
+### Offset-`2200` recovered after the final duration-parser gap was closed
+- Initial dry-run for offset `2200`:
+  - job `67ce7ead-5334-4ead-af6b-1eb5bbee4af0`
+  - `100` processed
+  - `44` flagged
+  - `56` failed
+  - failure mix:
+    - `55` `missing_resolved_composer_id`
+    - `1` `invalid_duration_text`
+- Targeted composer seeding updated `48` existing IMSLP-linked composer rows for the slice.
+- The final replay blocker was isolated to:
+  - `12 Soliloqui invernali, Marginalia No.263`
+  - composer `Caldini, Fulvio`
+  - duration text `9:30 minutes`
+- `lib/duration.ts` now accepts colon durations with trailing units, so values like `9:30 minutes` normalize correctly.
+- Post-fix replay dry-run completed green on:
+  - job `441a3a30-d44e-4b25-b7bd-4285f020d439`
+  - `100` processed
+  - `100` flagged
+  - `0` failed
+  - cursor advanced to `2300`
+- The live wrapper-owned row again stayed stale at zero counters:
+  - job `77acbdbe-9ca2-4643-aea4-c36a7e0efbef`
+  - later explicitly canceled once the DB writes were verified
+- Effective live impact was verified directly in the database after the run started:
+  - `90` new IMSLP-linked work rows
+  - `90` new open `orchestral_scope_review` flags
+- Current linked-cloud coverage after offset `2200`:
+  - `2544` IMSLP composers
+  - `2112` IMSLP works
+  - `2062` open `orchestral_scope_review` flags
+- Interpretation:
+  - the slice is operationally recovered
+  - the next clean step is offset `2300`
+  - the wrapper bookkeeping issue is still the main operational nuisance, not the ingest logic itself

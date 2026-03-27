@@ -9,7 +9,15 @@ export const formatDuration = (seconds?: number | null) => {
 };
 
 function parseColonDuration(text: string): number | null {
-  const parts = text.split(":").map(Number);
+  const normalized = normalizeDurationText(text);
+  if (!normalized) return null;
+
+  const match = normalized.match(
+    /^(\d+(?::\d+){1,2})\s*(hours?|hrs?|hr|h|minutes?|mins?|min|m|seconds?|secs?|sec|s)?$/,
+  );
+  if (!match) return null;
+
+  const parts = (match[1] ?? "").split(":").map(Number);
   if (parts.some(isNaN)) return null;
   if (parts.length === 2) return parts[0] * 60 + parts[1];
   if (parts.length === 3) return parts[0] * 3600 + parts[1] * 60 + parts[2];

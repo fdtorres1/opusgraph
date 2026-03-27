@@ -79,8 +79,17 @@ This file is the current priority view for OpusGraph. Keep it short, current, an
     - final replay dry-run: `1` created, `99` flagged, `0` failed
     - effective live batch: `1` created, `99` flagged, `0` failed
     - cursor advanced to `2200`
+  - offset `2200` is now recovered:
+    - initial dry-run: `44` flagged, `55` composer-resolution failures, `1` `invalid_duration_text`
+    - targeted composer seeding updated `48` existing IMSLP-linked composers
+    - `lib/duration.ts` now accepts colon durations with trailing units like `9:30 minutes`
+    - post-fix replay dry-run: `100` flagged, `0` failed
+    - effective live impact landed despite a stale wrapper row:
+      - `90` new IMSLP works
+      - `90` new open `orchestral_scope_review` flags
+    - cursor advanced to `2300`
   - next operator step:
-    - run the offset-`2200` recovery flow
+    - run the offset-`2300` recovery flow
   - the CLI wrappers still settle late enough to look hung, so operator verification against `source_ingest_job`, `review_flag`, and coverage counts remains the safer path during live runs
   - the `200`, `300`, and `400` slices are now operationally recovered to:
     - `0` failed rows

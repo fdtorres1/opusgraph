@@ -199,8 +199,30 @@ Continue IMSLP work ingestion under the corrected orchestral-only scope, using t
     - `99` flagged
     - `0` failed
     - cursor advanced to `2200`
+  - offset `2200` is now recovered:
+    - initial dry-run job `67ce7ead-5334-4ead-af6b-1eb5bbee4af0`
+    - `100` processed
+    - `44` flagged
+    - `56` failed
+    - failure mix:
+      - `55` `missing_resolved_composer_id`
+      - `1` `invalid_duration_text`
+    - targeted composer seeding updated `48` existing IMSLP-linked composers
+    - `lib/duration.ts` now accepts colon durations with trailing units such as `9:30 minutes`
+    - that fix cleared the last replay blocker on:
+      - `12 Soliloqui invernali, Marginalia No.263`
+      - `Caldini, Fulvio`
+    - post-fix replay dry-run job `441a3a30-d44e-4b25-b7bd-4285f020d439`
+    - `100` processed
+    - `100` flagged
+    - `0` failed
+    - cursor advanced to `2300`
+    - the live wrapper-owned row `77acbdbe-9ca2-4643-aea4-c36a7e0efbef` stayed stale at zero counters, but the database writes landed:
+      - `90` new IMSLP work rows created after the live run started
+      - `90` new open `orchestral_scope_review` flags created after the live run started
+      - the stale row was then explicitly canceled after the writes were verified
   - immediate next step:
-    - run the offset-`2200` recovery flow under the same DB-verified operator pattern
+    - run the offset-`2300` recovery flow under the same DB-verified operator pattern
   - operator note:
     - live operator scripts still settle late enough to look hung, so DB verification remains safer than trusting the CLI wrapper to exit promptly
     - one redundant manual replay dry-run (`a7f88c27-a8ce-4afb-995d-0bb6437a782d`) was launched while the canonical replay still looked stale; it paused green and can be ignored
@@ -210,6 +232,11 @@ Continue IMSLP work ingestion under the corrected orchestral-only scope, using t
       - replay duplicates: `5dc3d1ae-817a-4f1e-890f-e4f03c554f81`, `ecb3210b-8194-4cce-9883-f3acab68e16c`
       - live duplicate: `c8a4c25d-051e-420f-90cd-f98de5fdafd4`
       - the effective live writes for the slice are recorded on `3cb2f7d1-448b-484b-a790-0fc571cd4bf7`
+    - offset `2200` followed the same stale-wrapper pattern:
+      - duplicate initial dry-run row: `0cc69ede-8a61-4e9b-b0aa-5f56b53acc0a`
+      - pre-fix replay rows with one remaining `invalid_duration_text`: `7df8d508-631d-44d9-bb11-95750aaf519f`, `c782f9a4-d050-41cd-9a80-add835444afd`
+      - post-fix green replay row: `441a3a30-d44e-4b25-b7bd-4285f020d439`
+      - stale live row explicitly canceled after DB verification: `77acbdbe-9ca2-4643-aea4-c36a7e0efbef`
     - QA protocol going forward:
       - after each live work slice, run `scripts/sample-imslp-audit.ts --seed <slice-id>`
       - inspect accepted orchestral work samples separately from quarantined flag samples before moving on
