@@ -13,7 +13,7 @@ This file is the current priority view for OpusGraph. Keep it short, current, an
   - use source identity in `external_ids` and raw payloads in `extra_metadata`
   - route ambiguous matches into `review_flag` instead of auto-merging
 - Immediate task slice:
-  - replay work offset `600` in dry-run mode
+  - replay work offset `700` in dry-run mode
   - if it is still composer-thin, repeat the targeted missing-composer recovery pattern on that exact slice instead of doing more broad composer catch-up
   - the `200`, `300`, and `400` slices are now operationally recovered to:
     - `0` failed rows
@@ -35,12 +35,16 @@ This file is the current priority view for OpusGraph. Keep it short, current, an
     - `72` exact missing composers created
     - follow-up dry-run returned `100` creates and `0` failures
     - matching live batch returned `93` creates, `2` updates, `5` duplicate flags, and `0` failures
+  - targeted offset-`600` composer recovery also worked:
+    - `65` exact missing composers created
+    - follow-up dry-run returned `96` creates, `4` duplicate flags, and `0` failures
+    - matching live batch returned `94` creates, `6` duplicate flags, and `0` failures
   - the fresh live offset-`400` job exposed `96` new composer-resolution misses; the follow-up composer-link pass resolved them by updating `86` existing composers with IMSLP source identity, and the backfill reduced the slice to:
     - `0` failed rows
     - `6` duplicate-review cases
   - current linked-cloud IMSLP coverage is:
-    - `1567` composers
-    - `583` works
+    - `1632` composers
+    - `677` works
   - inspect the remaining warning mix at real write scale:
     - movement parsing
     - redirected IMSLP pages

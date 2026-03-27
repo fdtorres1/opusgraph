@@ -1322,3 +1322,44 @@ Append-only log for implementation, investigation, and planning sessions. Keep e
 - Interpretation:
   - targeted recovery from the exact unresolved work slice is the right operational pattern once broad composer catch-up stops buying enough
   - the next clean move is to replay work offset `600` in dry-run mode and repeat the same pattern if it is still composer-thin
+
+### Targeted offset-`600` composer seeding also recovered cleanly
+- Replayed work offset `600` in dry-run mode:
+  - dry-run job `109ee6f9-8564-459d-ba87-db57b05283f8`
+  - `100` processed
+  - `27` created
+  - `4` flagged duplicates
+  - `69` failed
+  - all `69` failures were `missing_resolved_composer_id`
+- Derived the exact unresolved set from that slice and seeded it directly:
+  - derivation/seeding job `0f5fd8cc-d5bc-4086-a6dd-69692e0401a9`
+  - `69` failed work rows collapsed to `65` unique missing composers
+  - all `65` were created
+  - `0` flagged duplicates
+  - `0` failed writes
+  - IMSLP composer coverage rose from `1567` to `1632`
+- Replayed the same work slice after targeted seeding:
+  - dry-run job `e26d618b-9273-4f08-a16a-271adbf9331e`
+  - `100` processed
+  - `96` created
+  - `4` flagged duplicates
+  - `0` failed
+  - paused at offset `700`
+- Ran the matching live work batch:
+  - live job `f840e23c-8eb3-49fd-a83f-04ff5f13e9c8`
+  - `100` processed
+  - `94` created
+  - `0` updated
+  - `6` flagged duplicates
+  - `0` failed
+  - paused at offset `700`
+- Warning summary for the recovered `600` slice remained in the same quality band:
+  - `imslp_work_unparsed_movements` (`196`)
+  - `imslp_work_ambiguous_composition_year` (`6`)
+  - `imslp_work_page_redirected` (`2`)
+- Current linked-cloud IMSLP coverage after the live offset-`600` recovery:
+  - `1632` composers
+  - `677` works
+- Interpretation:
+  - the targeted recovery workflow is now proven on two consecutive work slices
+  - the next clean move is to replay work offset `700` in dry-run mode and repeat the same pattern if necessary
