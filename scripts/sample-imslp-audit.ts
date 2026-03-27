@@ -52,6 +52,14 @@ interface ReviewFlagAuditRow {
   created_at: string;
 }
 
+interface IdRow {
+  id: string;
+}
+
+interface ReviewFlagEntityRow {
+  entity_id: string | null;
+}
+
 function parseArgs(argv: string[]): CliArgs {
   const defaults: CliArgs = {
     seed: "imslp-audit",
@@ -127,9 +135,11 @@ function sampleOffsets(total: number, size: number, seed: string): number[] {
 async function fetchRowsAtOffsets<T>(
   fetchAtOffset: (offset: number) => Promise<T | null>,
   offsets: number[],
-) {
-  const rows = await Promise.all(offsets.map((offset) => fetchAtOffset(offset)));
-  return rows.filter((row): row is T => row != null);
+): Promise<Array<Awaited<T>>> {
+  const rows: Array<Awaited<T> | null> = await Promise.all(
+    offsets.map((offset) => fetchAtOffset(offset)),
+  );
+  return rows.filter((row): row is Awaited<T> => row != null);
 }
 
 function composerDisplayName(row: ComposerAuditRow) {
@@ -158,10 +168,11 @@ async function main() {
     },
   });
 
-  const [acceptedWorkCount, composerCount, flagCount] = await Promise.all([
+  const [acceptedWorkIdsResult, composerCount, flagCount, flaggedWorkIdsResult] =
+    await Promise.all([
     supabase
       .from("work")
-      .select("*", { count: "exact", head: true })
+      .select("id")
       .contains("external_ids", { imslp: {} })
       .contains("extra_metadata", {
         imslp: {
@@ -176,10 +187,34 @@ async function main() {
       .select("*", { count: "exact", head: true })
       .eq("status", "open")
       .eq("reason", "orchestral_scope_review"),
-  ]);
+    supabase
+      .from("review_flag")
+      .select("entity_id")
+      .eq("status", "open")
+      .eq("reason", "orchestral_scope_review")
+      .eq("entity_type", "work"),
+    ]);
+
+  if (acceptedWorkIdsResult.error) {
+    throw acceptedWorkIdsResult.error;
+  }
+
+  if (flaggedWorkIdsResult.error) {
+    throw flaggedWorkIdsResult.error;
+  }
+
+  const flaggedWorkIds = new Set(
+    ((flaggedWorkIdsResult.data ?? []) as ReviewFlagEntityRow[])
+      .map((row) => row.entity_id)
+      .filter((entityId): entityId is string => typeof entityId === "string"),
+  );
+
+  const acceptedWorkIds = ((acceptedWorkIdsResult.data ?? []) as IdRow[])
+    .map((row) => row.id)
+    .filter((id) => !flaggedWorkIds.has(id));
 
   const workOffsets = sampleOffsets(
-    acceptedWorkCount.count ?? 0,
+    acceptedWorkIds.length,
     args.works,
     `${args.seed}:works`,
   );
@@ -195,16 +230,7 @@ async function main() {
       const { data, error } = await supabase
         .from("work")
         .select("id, work_name, composer_id, instrumentation_text, duration_seconds, composition_year, status, external_ids, extra_metadata")
-        .contains("external_ids", { imslp: {} })
-        .contains("extra_metadata", {
-          imslp: {
-            orchestral_scope: {
-              classification: "orchestral",
-            },
-          },
-        })
-        .order("id", { ascending: true })
-        .range(offset, offset)
+        .eq("id", acceptedWorkIds[offset] ?? "")
         .maybeSingle();
 
       if (error) {
@@ -287,7 +313,7 @@ async function main() {
           flags: args.flags,
         },
         counts: {
-          acceptedImslpWorks: acceptedWorkCount.count ?? 0,
+          acceptedImslpWorks: acceptedWorkIds.length,
           imslpComposers: composerCount.count ?? 0,
           openOrchestralScopeFlags: flagCount.count ?? 0,
         },

@@ -42,6 +42,14 @@ const DURATION_KEYS = ["Average Duration"];
 const ORCHESTRA_PATTERNS: Array<[string, RegExp]> = [
   ["orchestra", /\borchestra(?:l)?\b/i],
 ];
+const WEAK_ORCHESTRA_REFERENCE_PATTERNS: Array<[string, RegExp]> = [
+  ["orchestral_accompaniment", /\borchestra(?:l)? accompaniment\b/i],
+  ["version_with_orchestra", /\bversion with orchestra(?:l)?\b/i],
+  ["version_with_orchestral_accompaniment", /\bversion with orchestra(?:l)? accompaniment\b/i],
+  ["implying_orchestral_accompaniment", /\bimplying orchestra(?:l)? accompaniment\b/i],
+  ["originally_orchestra", /\boriginally orchestra(?:l)?\b/i],
+  ["orchestra_question", /\borchestra(?:l)?\s*\?/i],
+];
 const STRING_PATTERNS: Array<[string, RegExp]> = [
   ["strings", /\bstrings?\b/i],
   ["violin", /\bviolins?\b/i],
@@ -133,14 +141,10 @@ export function assessImslpWorkOrchestralScope(
   }
 
   const orchestraSignals = collectSignalNames(normalized, ORCHESTRA_PATTERNS);
-  if (orchestraSignals.length > 0) {
-    return {
-      classification: "orchestral",
-      reason: "explicit_orchestra_signal",
-      matchedSignals: orchestraSignals,
-      normalizedInstrumentationText: normalized,
-    };
-  }
+  const weakOrchestraSignals = collectSignalNames(
+    normalized,
+    WEAK_ORCHESTRA_REFERENCE_PATTERNS,
+  );
 
   const stringSignals = collectSignalNames(
     normalized,
@@ -172,6 +176,24 @@ export function assessImslpWorkOrchestralScope(
     ...brassSignals,
     ...percussionSignals,
   ];
+
+  if (orchestraSignals.length > 0 && weakOrchestraSignals.length > 0) {
+    return {
+      classification: "unknown",
+      reason: "ambiguous_orchestral_reference_only",
+      matchedSignals: [...orchestraSignals, ...weakOrchestraSignals, ...matchedSignals],
+      normalizedInstrumentationText: normalized,
+    };
+  }
+
+  if (orchestraSignals.length > 0) {
+    return {
+      classification: "orchestral",
+      reason: "explicit_orchestra_signal",
+      matchedSignals: [...orchestraSignals, ...matchedSignals],
+      normalizedInstrumentationText: normalized,
+    };
+  }
 
   if (
     stringSignals.length >= 3 &&

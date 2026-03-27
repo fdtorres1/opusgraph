@@ -62,6 +62,11 @@ This file is the current priority view for OpusGraph. Keep it short, current, an
   - the first seeded audit sample is complete:
     - `offset-1900-audit`
     - sampled composers, works, and quarantine flags looked coherent enough to keep going
+  - the audit gate is now tighter:
+    - weak orchestra-reference cases now quarantine instead of remaining accepted
+    - `scripts/sample-imslp-audit.ts` excludes any work that already has an open `orchestral_scope_review` flag from the accepted-work pool
+    - `scripts/reconcile-imslp-accepted-work-scope.ts` can reconcile the currently accepted IMSLP work pool against the latest classifier
+    - latest `offset-2000-audit` sample reduced the accepted pool to `7` clearly orchestral IMSLP works
   - offset `2000` is now recovered:
     - initial dry-run: `1` created, `36` quarantined, `47` composer-resolution failures
     - targeted composer seeding increased IMSLP composer coverage from `2410` to `2441`

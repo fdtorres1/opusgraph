@@ -118,17 +118,65 @@ export async function quarantineWorkEntity(
     .single();
 
   let row = currentRow ?? null;
-  if (currentRow && currentRow.status !== "draft") {
+  if (currentRow) {
+    const updatePayload: Record<string, unknown> = {};
+
+    if (currentRow.status !== "draft") {
+      updatePayload.status = "draft";
+    }
+
+    const source = typeof details.source === "string" ? details.source : null;
+    if (source === "imslp") {
+      const existingExtraMetadata =
+        currentRow.extra_metadata &&
+        typeof currentRow.extra_metadata === "object" &&
+        !Array.isArray(currentRow.extra_metadata)
+          ? (currentRow.extra_metadata as JsonObject)
+          : {};
+      const existingImslp =
+        existingExtraMetadata.imslp &&
+        typeof existingExtraMetadata.imslp === "object" &&
+        !Array.isArray(existingExtraMetadata.imslp)
+          ? (existingExtraMetadata.imslp as JsonObject)
+          : {};
+
+      updatePayload.extra_metadata = {
+        ...existingExtraMetadata,
+        imslp: {
+          ...existingImslp,
+          orchestral_scope: {
+            classification:
+              typeof details.classification === "string"
+                ? details.classification
+                : null,
+            reason:
+              typeof details.classification_reason === "string"
+                ? details.classification_reason
+                : null,
+            matched_signals: Array.isArray(details.matched_signals)
+              ? details.matched_signals
+              : [],
+            normalized_instrumentation_text:
+              typeof details.normalized_instrumentation_text === "string"
+                ? details.normalized_instrumentation_text
+                : null,
+          },
+        },
+      } satisfies JsonObject;
+    }
+
+    if (Object.keys(updatePayload).length > 0) {
     const { data: drafted } = await supabase
       .from("work")
-      .update({ status: "draft" })
+      .update(updatePayload)
       .eq("id", entityId)
       .select("*")
       .single();
 
-    row = drafted ?? currentRow;
-    if (row) {
-      await insertRevision(supabase, "work", entityId, actorUserId, "update", row);
+      row = drafted ?? currentRow;
+      if (row) {
+        await insertRevision(supabase, "work", entityId, actorUserId, "update", row);
+      }
     }
   }
 

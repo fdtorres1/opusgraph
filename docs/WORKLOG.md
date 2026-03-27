@@ -1935,3 +1935,32 @@ Append-only log for implementation, investigation, and planning sessions. Keep e
 - Interpretation:
   - the targeted recovery workflow is now proven on two consecutive work slices
   - the next clean move is to replay work offset `700` in dry-run mode and repeat the same pattern if necessary
+
+### Audit and quarantine tightening after the first reproducible QA samples
+- The initial seeded audit samples exposed one remaining product-quality gap:
+  - weak references to orchestra inside instrumentation text were still being accepted in a few cases
+  - examples included:
+    - `version with orchestral accompaniment`
+    - `implying orchestral accompaniment`
+    - `originally orchestra?`
+- Tightened `lib/ingest/adapters/imslp/work-fields.ts` so those phrases now classify as `unknown` instead of `orchestral`.
+- Tightened `lib/ingest/persist/support.ts` so quarantining a work also rewrites `extra_metadata.imslp.orchestral_scope`, not just the `review_flag`.
+- Fixed `scripts/sample-imslp-audit.ts` so:
+  - it builds cleanly under `npm run build`
+  - it excludes any work that already has an open `orchestral_scope_review` flag from the accepted-work sample
+- Added `scripts/reconcile-imslp-accepted-work-scope.ts` to reconcile the currently accepted IMSLP work pool against the latest classifier.
+- Dry-run reconciliation found one remaining borderline accepted work:
+  - `12 Polonaises`
+  - instrumentation: `piano (originally orchestra?)`
+  - classification: `unknown`
+  - reason: `ambiguous_orchestral_reference_only`
+- Live reconciliation quarantined that row successfully.
+- Latest seeded audit after the tightening:
+  - command:
+    - `npx tsx scripts/sample-imslp-audit.ts --seed offset-2000-audit --works 5 --composers 3 --flags 5`
+  - accepted IMSLP works now sample cleanly as in-scope orchestral material
+  - open `orchestral_scope_review` samples remain clearly non-orchestral
+  - accepted IMSLP work pool is now down to `7`
+- Interpretation:
+  - the QA sample is now a useful gate for continuing ingest
+  - next clean operator step remains the offset-`2100` recovery flow

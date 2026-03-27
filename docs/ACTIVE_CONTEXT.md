@@ -144,6 +144,21 @@ Continue IMSLP work ingestion under the corrected orchestral-only scope, using t
     - sampled IMSLP-linked composers
     - sampled open `orchestral_scope_review` flags
     - sampled quarantine flags looked correct and support continuing ingest
+  - the audit and quarantine path are now tightened further:
+    - weak orchestra references now downgrade to quarantine instead of acceptance:
+      - `version with orchestral accompaniment`
+      - `implying orchestral accompaniment`
+      - `originally orchestra?`
+    - quarantining a work now also rewrites `extra_metadata.imslp.orchestral_scope`, so later audits reflect the stricter result
+    - `scripts/sample-imslp-audit.ts` now excludes any work that already has an open `orchestral_scope_review` flag from the accepted-work sample
+    - `scripts/reconcile-imslp-accepted-work-scope.ts` now reconciles the currently accepted IMSLP work pool against the current classifier
+    - the targeted reconciliation quarantined the remaining borderline accepted row:
+      - `12 Polonaises`
+      - `piano (originally orchestra?)`
+    - latest seeded audit with `offset-2000-audit` now shows:
+      - `7` accepted IMSLP works
+      - sampled accepted rows are clearly orchestral
+      - sampled quarantine flags remain clearly non-orchestral
   - offset `2000` is now recovered:
     - initial dry-run job `c10efe46-9bef-4fbd-a961-57f7b045642f`
     - `100` processed
