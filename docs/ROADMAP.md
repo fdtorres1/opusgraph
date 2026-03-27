@@ -97,7 +97,11 @@ This file is the current priority view for OpusGraph. Keep it short, current, an
       - `57` new open `orchestral_scope_review` flags
     - cursor advanced to `2400`
   - next operator step:
-    - run the offset-`2400` recovery flow
+    - finish the in-progress offset-`2400` recovery flow
+    - current initial result for `2400`:
+      - `60` flagged
+      - `40` composer-resolution failures
+    - targeted composer seeding for `2400` has already been started
   - the CLI wrappers still settle late enough to look hung, so operator verification against `source_ingest_job`, `review_flag`, and coverage counts remains the safer path during live runs
   - the `200`, `300`, and `400` slices are now operationally recovered to:
     - `0` failed rows
