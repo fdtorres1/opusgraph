@@ -4,7 +4,7 @@ This is the canonical handoff file for the next session. Rewrite freely as prior
 
 ## Current Objective
 
-Continue live IMSLP work ingestion from offset `1600` using the targeted recovery workflow, with follow-up attention on the delayed-settle behavior of the live operator scripts.
+Continue live IMSLP work ingestion from offset `1700` using the targeted recovery workflow, with follow-up attention on the delayed-settle behavior of the live operator scripts.
 
 ## Current Branch
 
@@ -126,6 +126,30 @@ Continue live IMSLP work ingestion from offset `1600` using the targeted recover
     - `1507` works
   - next clean move:
     - run the offset-`1600` recovery flow
+- The targeted offset-`1600` recovery path is now also proven:
+  - initial dry-run job `3a80a9f6-c48f-480f-9ab3-d7d28b88c19d` showed:
+    - `43` created
+    - `1` flagged duplicate
+    - `56` failed
+  - all `56` failures were `missing_resolved_composer_id`
+  - targeted composer seeding increased IMSLP composer coverage from `2193` to `2246`
+  - dry-run replay job `b0923569-1682-4873-8acb-da5303e8684a` is green:
+    - `99` created
+    - `1` flagged duplicate
+    - `0` failed
+    - paused at offset `1700`
+  - matching live job `61de1d2d-f892-4eb5-9760-491a9d2bb3c7` is also green:
+    - `100` processed
+    - `95` created
+    - `1` updated
+    - `4` flagged duplicates
+    - `0` failed
+    - paused at offset `1700`
+  - current observed IMSLP coverage is:
+    - `2246` composers
+    - `1602` works
+  - next clean move:
+    - run the offset-`1700` recovery flow
 - The targeted offset-`1200` recovery path is now also proven:
   - first dry-run attempts showed a mixed failure slice:
     - `68` `missing_resolved_composer_id`

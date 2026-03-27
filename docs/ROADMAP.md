@@ -13,7 +13,7 @@ This file is the current priority view for OpusGraph. Keep it short, current, an
   - use source identity in `external_ids` and raw payloads in `extra_metadata`
   - route ambiguous matches into `review_flag` instead of auto-merging
 - Immediate task slice:
-  - recover the next IMSLP work slice at offset `1600`
+  - recover the next IMSLP work slice at offset `1700`
   - preferred operator flow:
     - run the initial dry-run
     - use targeted composer seeding if `missing_resolved_composer_id` appears
@@ -93,12 +93,17 @@ This file is the current priority view for OpusGraph. Keep it short, current, an
     - targeted composer seeding expanded IMSLP composer coverage from `2139` to `2193`
     - dry-run replay returned `99` creates, `1` duplicate flag, and `0` failures
     - matching live batch returned `83` creates, `1` update, `16` duplicate flags, and `0` failures
+  - targeted offset-`1600` recovery now also works:
+    - initial dry-run returned `43` creates, `1` duplicate flag, and `56` composer-resolution failures
+    - targeted composer seeding expanded IMSLP composer coverage from `2193` to `2246`
+    - dry-run replay returned `99` creates, `1` duplicate flag, and `0` failures
+    - matching live batch returned `95` creates, `1` update, `4` duplicate flags, and `0` failures
   - the fresh live offset-`400` job exposed `96` new composer-resolution misses; the follow-up composer-link pass resolved them by updating `86` existing composers with IMSLP source identity, and the backfill reduced the slice to:
     - `0` failed rows
     - `6` duplicate-review cases
   - current linked-cloud IMSLP coverage is:
-    - `2193` composers
-    - `1507` works
+    - `2246` composers
+    - `1602` works
   - inspect the remaining warning mix at real write scale:
     - movement parsing
     - redirected IMSLP pages
