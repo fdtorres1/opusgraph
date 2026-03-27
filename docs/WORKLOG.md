@@ -2111,3 +2111,16 @@ Append-only log for implementation, investigation, and planning sessions. Keep e
   - the slice is operationally recovered
   - the next clean step is offset `2500`
   - the wrapper rows are still noisy, but they are no longer blocking safe forward motion
+
+### Offset-`2500` started, but the initial dry-run row has not backfilled yet
+- The wrapper-owned initial dry-run row for offset `2500` is:
+  - `1254f9ee-5bcd-48e6-8f51-69f18a491217`
+- At handoff time it is still stuck in the zero-counter `running` state:
+  - `processed_count = 0`
+  - `flagged_count = 0`
+  - `failed_count = 0`
+- No canonical backfilled result exists yet for the slice.
+- Next safe move:
+  - cancel `1254f9ee-5bcd-48e6-8f51-69f18a491217` if it still has zero counters
+  - rerun the initial dry-run manually
+  - then continue the usual targeted seeding / replay / live flow if needed

@@ -275,8 +275,14 @@ Continue IMSLP work ingestion under the corrected orchestral-only scope, using t
       - `2633` IMSLP composers
       - `2305` IMSLP works
       - `2251` open `orchestral_scope_review` flags
+  - offset `2500` is in progress:
+    - wrapper-owned initial dry-run row `1254f9ee-5bcd-48e6-8f51-69f18a491217` exists but is still sitting in the zero-counter `running` state
+    - no backfilled counters yet
+    - next safe move if it does not settle is the usual one:
+      - cancel `1254f9ee-5bcd-48e6-8f51-69f18a491217`
+      - rerun the initial dry-run manually
   - immediate next step:
-    - run the offset-`2500` recovery flow under the same DB-verified operator pattern
+    - finish the offset-`2500` recovery flow under the same DB-verified operator pattern
   - operator note:
     - live operator scripts still settle late enough to look hung, so DB verification remains safer than trusting the CLI wrapper to exit promptly
     - one redundant manual replay dry-run (`a7f88c27-a8ce-4afb-995d-0bb6437a782d`) was launched while the canonical replay still looked stale; it paused green and can be ignored
@@ -303,6 +309,8 @@ Continue IMSLP work ingestion under the corrected orchestral-only scope, using t
       - initial rows `0268256d-6cbc-4d2a-bf98-fe672fc3c6a5` and `8f6852e0-0148-4911-b533-4b3e1a477e49` both backfilled after looking stale
       - canonical green replay row: `9c802768-4389-4bd8-9352-f33fd6b3e800`
       - canonical live row: `ea8ddbe2-e08b-401b-9379-7a7fb0a733f6`
+    - offset `2500` has started with the same stale-initial-row pattern on:
+      - `1254f9ee-5bcd-48e6-8f51-69f18a491217`
     - QA protocol going forward:
       - after each live work slice, run `scripts/sample-imslp-audit.ts --seed <slice-id>`
       - inspect accepted orchestral work samples separately from quarantined flag samples before moving on

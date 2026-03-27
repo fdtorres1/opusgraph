@@ -103,7 +103,9 @@ This file is the current priority view for OpusGraph. Keep it short, current, an
     - live batch completed green at `100` flagged, `0` failed
     - cursor advanced to `2500`
   - next operator step:
-    - run the offset-`2500` recovery flow
+    - finish the offset-`2500` recovery flow
+    - current state:
+      - initial wrapper-owned dry-run row `1254f9ee-5bcd-48e6-8f51-69f18a491217` exists but has not backfilled yet
   - the CLI wrappers still settle late enough to look hung, so operator verification against `source_ingest_job`, `review_flag`, and coverage counts remains the safer path during live runs
   - the `200`, `300`, and `400` slices are now operationally recovered to:
     - `0` failed rows
