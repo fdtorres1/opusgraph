@@ -4,6 +4,17 @@ Append-only log for implementation, investigation, and planning sessions. Keep e
 
 ## 2026-03-27
 
+### Review queue now distinguishes orchestral-scope quarantine from duplicate review
+- Added a first-pass quarantine-focused review UI in `app/admin/review/review-queue.tsx`:
+  - summary cards for open review flags, open quarantine flags, and open duplicate flags
+  - one-click filtering into `orchestral_scope_review`
+  - structured quarantine details for scope classification, classifier reason, instrumentation text, and IMSLP source link
+  - raw `details` JSON remains available behind a disclosure instead of always rendering inline
+- Verified with `npm run build`.
+- Follow-up:
+  - push/PR the review-queue follow-up branch
+  - decide whether the current quarantine review flow is sufficient before resuming new IMSLP work ingestion
+
 ### IMSLP work ingest corrected to orchestral-only scope; imported mixed corpus quarantined
 - The user clarified that IMSLP work ingest was always intended to be orchestral-only, so the prior mixed-corpus work ingestion path was treated as a scope bug rather than continued as-is.
 - Added an orchestral-scope classifier to the IMSLP work path:
