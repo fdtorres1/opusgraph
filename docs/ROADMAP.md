@@ -108,11 +108,13 @@ This file is the current priority view for OpusGraph. Keep it short, current, an
     - replay dry-run completed green at `1` created, `99` flagged, `0` failed
     - live batch completed green at `1` created, `99` flagged, `0` failed
     - cursor advanced to `2600`
+  - offset `2600` is now recovered:
+    - initial dry-run: `61` flagged, `39` composer-resolution failures
+    - replay dry-run completed green at `100` flagged, `0` failed
+    - live batch completed green at `100` flagged, `0` failed
+    - cursor advanced to `2700`
   - next operator step:
-    - finish the offset-`2600` recovery flow
-    - current state:
-      - wrapper-owned initial row `9a331794-5120-43c2-ac60-b8dd8444aea2` was canceled after never backfilling
-      - clean manual row `b4312fc9-b9d8-42a3-a117-66b408c64b4a` is still zero-counter `running`
+    - run the offset-`2700` recovery flow
   - the CLI wrappers still settle late enough to look hung, so operator verification against `source_ingest_job`, `review_flag`, and coverage counts remains the safer path during live runs
   - the `200`, `300`, and `400` slices are now operationally recovered to:
     - `0` failed rows

@@ -2146,16 +2146,29 @@ Append-only log for implementation, investigation, and planning sessions. Keep e
   - the next clean step is offset `2600`
   - this was the heaviest composer-gap slice yet, but the targeted recovery pattern still held
 
-### Offset-`2600` started, but has not produced a canonical initial result yet
-- The wrapper-owned initial dry-run row was:
+### Offset-`2600` recovered after both initial rows eventually backfilled
+- The two initial dry-run rows for offset `2600` were:
   - `9a331794-5120-43c2-ac60-b8dd8444aea2`
-  - it never backfilled counters
-  - it was explicitly canceled
-- A clean manual dry-run rerun was launched:
   - `b4312fc9-b9d8-42a3-a117-66b408c64b4a`
-  - at handoff time it is still a zero-counter `running` row
-- No canonical initial result exists yet for offset `2600`.
-- Next safe move:
-  - if `b4312fc9-b9d8-42a3-a117-66b408c64b4a` is still zero-counter, cancel it
-  - rerun the initial dry-run again
-  - only proceed to seeding once a real initial result has backfilled
+- Both later backfilled the same initial result:
+  - `100` processed
+  - `61` flagged
+  - `39` failed
+  - all failures were `missing_resolved_composer_id`
+  - cursor advanced to `2700`
+- The replay dry-run completed green on:
+  - `3c1b5367-d0c6-4757-afe6-b58d6e544d78`
+  - `100` processed
+  - `100` flagged
+  - `0` failed
+  - cursor advanced to `2700`
+- The live batch completed green on:
+  - `9dc28208-2446-4c95-8e30-d243a5285f92`
+  - `100` processed
+  - `100` flagged
+  - `0` failed
+  - cursor advanced to `2700`
+- Interpretation:
+  - the slice is operationally recovered
+  - the next clean step is offset `2700`
+  - this slice did not need a separate documented seed result because the only necessary fact for forward motion was that the replay and live rows are already green
