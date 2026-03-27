@@ -323,8 +323,12 @@ Continue IMSLP work ingestion under the corrected orchestral-only scope, using t
       - `100` flagged
       - `0` failed
       - cursor advanced to `2700`
+  - offset `2700` is in progress:
+    - wrapper-owned initial dry-run row `3f7a7276-2962-4fd9-b2de-bd68d0cc7a7f` never backfilled and was explicitly canceled
+    - clean manual dry-run row `0feb24aa-dbcd-422d-a8de-965c8677cf83` is currently still sitting in the zero-counter `running` state
+    - there is no canonical backfilled result for the `2700` slice yet
   - immediate next step:
-    - run the offset-`2700` recovery flow under the same DB-verified operator pattern
+    - if `0feb24aa-dbcd-422d-a8de-965c8677cf83` is still zero-counter, cancel it and rerun the initial dry-run for offset `2700`
   - operator note:
     - live operator scripts still settle late enough to look hung, so DB verification remains safer than trusting the CLI wrapper to exit promptly
     - one redundant manual replay dry-run (`a7f88c27-a8ce-4afb-995d-0bb6437a782d`) was launched while the canonical replay still looked stale; it paused green and can be ignored
@@ -360,6 +364,9 @@ Continue IMSLP work ingestion under the corrected orchestral-only scope, using t
       - both later backfilled the same canonical initial result
       - canonical replay row: `3c1b5367-d0c6-4757-afe6-b58d6e544d78`
       - canonical live row: `9dc28208-2446-4c95-8e30-d243a5285f92`
+    - offset `2700` has so far only produced stale initial rows:
+      - canceled wrapper-owned row `3f7a7276-2962-4fd9-b2de-bd68d0cc7a7f`
+      - current zero-counter manual row `0feb24aa-dbcd-422d-a8de-965c8677cf83`
     - QA protocol going forward:
       - after each live work slice, run `scripts/sample-imslp-audit.ts --seed <slice-id>`
       - inspect accepted orchestral work samples separately from quarantined flag samples before moving on

@@ -2172,3 +2172,17 @@ Append-only log for implementation, investigation, and planning sessions. Keep e
   - the slice is operationally recovered
   - the next clean step is offset `2700`
   - this slice did not need a separate documented seed result because the only necessary fact for forward motion was that the replay and live rows are already green
+
+### Offset-`2700` started, but has not produced a canonical initial result yet
+- The wrapper-owned initial dry-run row was:
+  - `3f7a7276-2962-4fd9-b2de-bd68d0cc7a7f`
+  - it never backfilled counters
+  - it was explicitly canceled
+- A clean manual dry-run rerun was launched:
+  - `0feb24aa-dbcd-422d-a8de-965c8677cf83`
+  - at handoff time it is still a zero-counter `running` row
+- No canonical initial result exists yet for offset `2700`.
+- Next safe move:
+  - if `0feb24aa-dbcd-422d-a8de-965c8677cf83` is still zero-counter, cancel it
+  - rerun the initial dry-run again
+  - only proceed to seeding once a real initial result has backfilled
