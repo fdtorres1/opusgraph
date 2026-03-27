@@ -2073,8 +2073,8 @@ Append-only log for implementation, investigation, and planning sessions. Keep e
   - the next clean step is offset `2400`
   - replay/live wrapper ambiguity is still the main operator annoyance, but DB verification remains enough to keep moving safely
 
-### Offset-`2400` started, with the initial dry-run already backfilled
-- The wrapper-owned initial dry-run row stayed in `running` with zero counters until it was canceled, then backfilled its real result:
+### Offset-`2400` recovered after the same stale-wrapper dance
+- The wrapper-owned initial dry-run row again stayed in `running` with zero counters until it was canceled, then backfilled its real result:
   - job `0268256d-6cbc-4d2a-bf98-fe672fc3c6a5`
   - `100` processed
   - `60` flagged
@@ -2083,9 +2083,31 @@ Append-only log for implementation, investigation, and planning sessions. Keep e
   - cursor advanced to `2500`
 - A clean manual dry-run rerun was launched:
   - job `8f6852e0-0148-4911-b533-4b3e1a477e49`
-  - at handoff time it is still sitting in the stale zero-counter `running` state
-- The targeted seed step for the `40` missing-composer failures has already been started with:
-  - `npx tsx scripts/seed-imslp-work-composers.ts --offset 2400 --batch-size 100 --created-by f2ed501c-74ad-4c2e-bb66-c97f5a6aa0ba`
+  - it later backfilled the same `60`-flag / `40`-failure result after initially looking stale
+- The targeted composer seed step settled with:
+  - `11` failed work rows
+  - `10` unique missing composers
+  - `0` created
+  - `10` updated
+  - `0` flagged
+  - `0` failed
+- The replay dry-run completed green on:
+  - job `9c802768-4389-4bd8-9352-f33fd6b3e800`
+  - `100` processed
+  - `100` flagged
+  - `0` failed
+  - cursor advanced to `2500`
+- The live batch completed green on:
+  - job `ea8ddbe2-e08b-401b-9379-7a7fb0a733f6`
+  - `100` processed
+  - `100` flagged
+  - `0` failed
+  - cursor advanced to `2500`
+- Current linked-cloud coverage after offset `2400`:
+  - `2633` IMSLP composers
+  - `2305` IMSLP works
+  - `2251` open `orchestral_scope_review` flags
 - Interpretation:
-  - offset `2400` is not recovered yet
-  - the next clean step is to let the seed step settle, then replay the dry-run and continue the usual recovery flow
+  - the slice is operationally recovered
+  - the next clean step is offset `2500`
+  - the wrapper rows are still noisy, but they are no longer blocking safe forward motion

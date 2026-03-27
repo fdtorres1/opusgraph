@@ -96,12 +96,14 @@ This file is the current priority view for OpusGraph. Keep it short, current, an
       - `57` new IMSLP works
       - `57` new open `orchestral_scope_review` flags
     - cursor advanced to `2400`
+  - offset `2400` is now recovered:
+    - initial dry-run: `60` flagged, `40` composer-resolution failures
+    - targeted composer seeding settled at `10` updated composers
+    - replay dry-run completed green at `100` flagged, `0` failed
+    - live batch completed green at `100` flagged, `0` failed
+    - cursor advanced to `2500`
   - next operator step:
-    - finish the in-progress offset-`2400` recovery flow
-    - current initial result for `2400`:
-      - `60` flagged
-      - `40` composer-resolution failures
-    - targeted composer seeding for `2400` has already been started
+    - run the offset-`2500` recovery flow
   - the CLI wrappers still settle late enough to look hung, so operator verification against `source_ingest_job`, `review_flag`, and coverage counts remains the safer path during live runs
   - the `200`, `300`, and `400` slices are now operationally recovered to:
     - `0` failed rows
