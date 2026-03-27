@@ -280,6 +280,14 @@ function normalizeImslpDurationText(value: string | null): string | null {
     return `${eachMatch[1]} ${eachMatch[2]}`;
   }
 
+  const underDurationMatch =
+    /^(?:each\s+.+?\s+is\s+)?under\s+(\d+(?:\.\d+)?)\s+(minutes?|mins?|min|seconds?|secs?|sec|hours?|hrs?|hr)(?:\s+in\s+length)?$/i.exec(
+      value,
+    );
+  if (underDurationMatch?.[1] && underDurationMatch[2]) {
+    return `${underDurationMatch[1]} ${underDurationMatch[2]}`;
+  }
+
   const leadingDurationMatch =
     /^(\d+(?:\.\d+)?(?:\s*-\s*\d+(?:\.\d+)?)?)\s+(minutes?|mins?|min|seconds?|secs?|sec|hours?|hrs?|hr)\b(?:\s*ca\.?)?/i.exec(
       value,

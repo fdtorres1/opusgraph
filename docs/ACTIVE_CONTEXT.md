@@ -4,11 +4,11 @@ This is the canonical handoff file for the next session. Rewrite freely as prior
 
 ## Current Objective
 
-Correct IMSLP work ingestion to enforce orchestral-only scope, quarantine already imported non-orchestral works, and pause further live work-slice expansion until the scope gate is in place on `main`.
+Continue IMSLP work ingestion under the corrected orchestral-only scope, using the quarantine path for out-of-scope works and DB-verified operator recovery for each live slice.
 
 ## Current Branch
 
-- `feat/imslp-work-composer-resolution`
+- `main`
 
 ## Parallel Work Coordination
 
@@ -25,27 +25,14 @@ Correct IMSLP work ingestion to enforce orchestral-only scope, quarantine alread
 
 - Agent: current Codex session
   - Worktree: current checkout at `/Volumes/Felix-SSD-1/Cursor Projects/opusgraph`
-  - Branch: `feat/imslp-work-composer-resolution`
-  - Scope: correct the IMSLP work scope to orchestral-only, quarantine out-of-scope imported works, and document the policy shift and recovery state cleanly
+  - Branch: `main`
+  - Scope: resume IMSLP work ingestion under the corrected orchestral-only gate and keep the operator handoff current
   - File ownership:
     - `docs/ACTIVE_CONTEXT.md`
-    - `docs/DECISIONS.md`
-    - `lib/duration.ts`
-    - `lib/ingest/quarantine.ts`
-    - `lib/ingest/adapters/imslp/work-fields.ts`
-    - `lib/ingest/adapters/imslp/mapper.ts`
-    - `lib/ingest/results.ts`
-    - `lib/ingest/persist/support.ts`
-    - `lib/ingest/jobs/run.ts`
-    - `app/api/admin/ingest/_shared.ts`
-    - `scripts/run-ingest-job.ts`
-    - `scripts/seed-imslp-work-composers.ts`
-    - `scripts/inspect-imslp-work-slice.ts`
-    - `scripts/recover-imslp-work-slice.ts`
-    - `scripts/quarantine-imslp-work-scope.ts`
+    - `docs/ROADMAP.md`
     - `docs/WORKLOG.md`
   - Status: active
-  - Notes: auth/RLS is already signed off; managed daily Supabase physical backups are now available; `0016` is applied in the linked cloud; `T4`, `T5`, the IMSLP composer adapter, and the IMSLP work adapter are merged on `main`; the old offset-`1700` continuation plan is paused because the user clarified that IMSLP work ingest is supposed to be orchestral-only
+  - Notes: auth/RLS is already signed off; managed daily Supabase physical backups are now available; `0016` is applied in the linked cloud; `T4`, `T5`, the IMSLP composer adapter, the IMSLP work adapter, the orchestral-only quarantine flow, and the quarantine-review UI are all merged on `main`
 
 ## In Progress
 
@@ -73,11 +60,83 @@ Correct IMSLP work ingestion to enforce orchestral-only scope, quarantine alread
     - one-click filtering into `orchestral_scope_review`
     - structured quarantine details for instrumentation, classifier reason, and IMSLP link
     - raw JSON still available behind a details disclosure
+  - the first resumed live slice after the merge is now proven at offset `1700`:
+    - initial dry-run job `bb1d0e7b-d730-485e-95b2-ca0b681f2a31`
+    - `100` processed
+    - `1` created
+    - `45` quarantined
+    - `52` failed, all `missing_resolved_composer_id`
+    - targeted composer seeding raised IMSLP composer coverage from `2246` to `2292`
+    - replay dry-run job `3ac70df5-5f5b-4082-aaf8-25c68d262502`
+    - `100` processed
+    - `1` created
+    - `97` quarantined
+    - `0` failed
+    - live job `c1dfc8ed-1da0-4cd8-a83a-116a772ed3f6`
+    - `100` processed
+    - `1` created
+    - `99` flagged
+    - `85` quarantined
+    - `0` failed
+    - paused at offset `1800`
+  - the next resumed live slice is now also proven at offset `1800`:
+    - initial dry-run job `abcc1425-74c6-42a2-a876-a459a2f322d0`
+    - `100` processed
+    - `4` created
+    - `36` quarantined
+    - `57` failed, all `missing_resolved_composer_id`
+    - targeted composer seeding created `53` missing IMSLP composers
+    - replay dry-run job `3311e70b-a08c-4b52-9056-5479b8f3b3d3`
+    - `100` processed
+    - `6` created
+    - `94` flagged
+    - `91` quarantined
+    - `0` failed
+    - live job `f31ab0b7-fbb7-4074-b06b-b66b7367cff8`
+    - `100` processed
+    - `5` created
+    - `95` flagged
+    - `88` quarantined
+    - `0` failed
+    - paused at offset `1900`
+  - current observed linked-cloud coverage is:
+    - `2345` IMSLP composers
+    - `1781` IMSLP works
+    - `1734` open `orchestral_scope_review` flags
+  - offset `1900` is now recovered:
+    - initial dry-run job `6b6e5c72-6515-4dcb-abba-7066fa78d645`
+    - `100` processed
+    - `0` created
+    - `28` quarantined
+    - `71` failed, all `missing_resolved_composer_id`
+    - targeted composer seeding raised IMSLP composer coverage from `2345` to `2382`
+    - the first replay attempts exposed one remaining parser edge:
+      - `invalid_duration_text`
+      - IMSLP duration text `Each prelude is under 10 minutes in length`
+    - `lib/ingest/adapters/imslp/work-fields.ts` now normalizes `under X minutes in length` as an IMSLP-specific duration form
+    - final replay dry-run job `0c012a28-aaeb-49ae-8ce0-9c82d2c44d2d`
+    - `100` processed
+    - `1` created
+    - `99` flagged
+    - `98` quarantined
+    - `0` failed
+    - final live job `7cf74c24-577f-4737-b726-5324d8016901`
+    - `100` processed
+    - `1` created
+    - `99` flagged
+    - `95` quarantined
+    - `0` failed
+    - paused at offset `2000`
+  - current observed linked-cloud coverage is:
+    - `2410` IMSLP composers
+    - `1828` IMSLP works
+    - `1780` open `orchestral_scope_review` flags
   - immediate next step:
-    - push and PR the review-queue follow-up on `feat/review-queue-quarantine`
-    - then decide whether the current review workflow is sufficient to resume new IMSLP work ingestion
+    - run the offset-`2000` recovery flow under the same DB-verified operator pattern
   - operator note:
     - live operator scripts still settle late enough to look hung, so DB verification remains safer than trusting the CLI wrapper to exit promptly
+    - one redundant manual replay dry-run (`a7f88c27-a8ce-4afb-995d-0bb6437a782d`) was launched while the canonical replay still looked stale; it paused green and can be ignored
+    - two stale pre-fix replay rows remain in history for offset `1900` (`5ce868c9-d6a9-4d1d-9825-645da5ce9d5b`, `f6d7e276-4203-46c9-9f72-58e365b3955c`); both are paused and can be ignored
 
 - The work-slice recovery flow is now automated end to end:
   - `scripts/recover-imslp-work-slice.ts` now runs:

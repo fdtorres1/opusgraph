@@ -4,6 +4,121 @@ Append-only log for implementation, investigation, and planning sessions. Keep e
 
 ## 2026-03-27
 
+### Resumed IMSLP work ingest at offset `1700` under the merged orchestral-only scope
+- Re-ran the IMSLP work recovery flow at offset `1700` after the orchestral-only quarantine correction and review-queue follow-up were merged on `main`.
+- Initial dry-run job `bb1d0e7b-d730-485e-95b2-ca0b681f2a31` showed the new scope behavior clearly:
+  - `100` processed
+  - `1` created
+  - `45` quarantined
+  - `52` failed
+  - all failures were `missing_resolved_composer_id`
+- Ran targeted composer seeding for the slice:
+  - IMSLP composer coverage increased from `2246` to `2292`
+- Replay dry-run job `3ac70df5-5f5b-4082-aaf8-25c68d262502` settled green:
+  - `100` processed
+  - `1` created
+  - `99` flagged
+  - `97` quarantined
+  - `0` failed
+- Matching live job `c1dfc8ed-1da0-4cd8-a83a-116a772ed3f6` also settled cleanly:
+  - `100` processed
+  - `1` created
+  - `99` flagged
+  - `85` quarantined
+  - `0` failed
+  - paused at offset `1800`
+- Current observed linked-cloud coverage after the resumed slice:
+  - `2292` IMSLP composers
+  - `1688` IMSLP works
+  - `1646` open `orchestral_scope_review` flags
+- Operator note:
+  - the unified recovery wrapper still looked hung while the DB state moved forward
+  - the safer operating pattern remains “run once, verify `source_ingest_job` directly, then continue”
+- Follow-up:
+  - continue with the offset-`1800` recovery flow
+  - keep treating quarantined out-of-scope works as expected operational output, not ingest failure
+
+### Resumed IMSLP work ingest at offset `1800` under the merged orchestral-only scope
+- Replayed the next IMSLP work slice at offset `1800`.
+- Initial dry-run job `abcc1425-74c6-42a2-a876-a459a2f322d0` showed:
+  - `100` processed
+  - `4` created
+  - `36` quarantined
+  - `57` failed
+  - all failures were `missing_resolved_composer_id`
+- Ran targeted composer seeding for the unresolved slice:
+  - `53` missing IMSLP composers created
+- Canonical replay dry-run job `3311e70b-a08c-4b52-9056-5479b8f3b3d3` settled green:
+  - `100` processed
+  - `6` created
+  - `94` flagged
+  - `91` quarantined
+  - `0` failed
+- Matching live job `f31ab0b7-fbb7-4074-b06b-b66b7367cff8` also settled green:
+  - `100` processed
+  - `5` created
+  - `95` flagged
+  - `88` quarantined
+  - `0` failed
+  - paused at offset `1900`
+- Current observed linked-cloud coverage after the offset `1800` live batch:
+  - `2345` IMSLP composers
+  - `1781` IMSLP works
+  - `1734` open `orchestral_scope_review` flags
+- Operator note:
+  - the canonical replay and live rows again looked stale while they were still in progress
+  - one redundant manual replay dry-run (`a7f88c27-a8ce-4afb-995d-0bb6437a782d`) was launched during that ambiguity; it also paused green and can be ignored
+- Follow-up:
+  - continue with the offset-`1900` recovery flow
+
+### Offset `1900` recovery started, but replay is currently blocked on stale running rows
+- Initial dry-run job `6b6e5c72-6515-4dcb-abba-7066fa78d645` settled as:
+  - `100` processed
+  - `0` created
+  - `28` quarantined
+  - `71` failed
+  - all failures were `missing_resolved_composer_id`
+- Targeted composer seeding did complete for the slice:
+  - IMSLP composer coverage increased from `2345` to `2382`
+- The recovery flow then stalled between seeding and replay:
+  - the wrapper session for `scripts/recover-imslp-work-slice.ts --offset 1900` stayed quiet without yielding a replay result
+  - a manual replay attempt created job `f6d7e276-4203-46c9-9f72-58e365b3955c`, but that row is still `running` with zero counters and no progress
+- Current state:
+  - offset `1900` is not yet complete
+  - do not move on to offset `2000` yet
+- Follow-up:
+  - resolve the stale replay state for offset `1900`
+  - then complete the replay dry-run and live batch
+
+### Offset `1900` recovered after fixing one remaining IMSLP duration edge case
+- The offset `1900` slice ultimately failed on just one parser issue after targeted composer seeding:
+  - `invalid_duration_text`
+  - IMSLP duration text: `Each prelude is under 10 minutes in length`
+- Updated `lib/ingest/adapters/imslp/work-fields.ts` so the IMSLP-specific duration normalizer treats `under X minutes in length` as a valid duration form.
+- Verified with `npm run build`.
+- Final replay dry-run job `0c012a28-aaeb-49ae-8ce0-9c82d2c44d2d` settled green:
+  - `100` processed
+  - `1` created
+  - `99` flagged
+  - `98` quarantined
+  - `0` failed
+- Final live job `7cf74c24-577f-4737-b726-5324d8016901` also settled green:
+  - `100` processed
+  - `1` created
+  - `99` flagged
+  - `95` quarantined
+  - `0` failed
+  - paused at offset `2000`
+- Current observed linked-cloud coverage after the offset `1900` live batch:
+  - `2410` IMSLP composers
+  - `1828` IMSLP works
+  - `1780` open `orchestral_scope_review` flags
+- Operator note:
+  - the stale-wrapper problem still exists in the operator scripts, and several pre-fix replay rows remain in history
+  - the canonical successful rows for this slice are `0c012a28-aaeb-49ae-8ce0-9c82d2c44d2d` and `7cf74c24-577f-4737-b726-5324d8016901`
+- Follow-up:
+  - continue with the offset-`2000` recovery flow
+
 ### Review queue now distinguishes orchestral-scope quarantine from duplicate review
 - Added a first-pass quarantine-focused review UI in `app/admin/review/review-queue.tsx`:
   - summary cards for open review flags, open quarantine flags, and open duplicate flags

@@ -13,8 +13,7 @@ This file is the current priority view for OpusGraph. Keep it short, current, an
   - use source identity in `external_ids` and raw payloads in `extra_metadata`
   - route ambiguous matches into `review_flag` instead of auto-merging
 - Immediate task slice:
-  - pause further live IMSLP work-slice expansion beyond offset `1600`
-  - merge the new orchestral-only correction before resuming work ingest:
+  - continue IMSLP work ingestion under the merged orchestral-only correction:
     - the IMSLP work adapter now classifies orchestral scope from instrumentation text
     - non-orchestral or unconfirmed IMSLP work candidates are quarantined into `review_flag.reason = "orchestral_scope_review"` instead of flowing through normal work ingest
     - live dry-run check on the first `25` rows now returns `20` quarantined and only `5` positively orchestral updates
@@ -25,12 +24,39 @@ This file is the current priority view for OpusGraph. Keep it short, current, an
       - `1555` `non_orchestral`
       - `6` `unknown`
       - `41` positively `orchestral`
-  - next operator step after merge:
-    - inspect the quarantine queue and decide whether new IMSLP work ingestion should resume immediately or wait for deeper review tooling improvements
-  - the first review-ops follow-up is now local on `feat/review-queue-quarantine`:
+  - the quarantine review follow-up is now merged:
     - quarantine/open-flag summary cards
     - direct filter shortcut into `orchestral_scope_review`
     - structured quarantine details in the review queue instead of raw JSON only
+  - the first resumed post-merge work slice at offset `1700` is now recovered:
+    - initial dry-run: `1` created, `45` quarantined, `52` composer-resolution failures
+    - targeted composer seeding increased IMSLP composer coverage from `2246` to `2292`
+    - replay dry-run: `1` created, `97` quarantined, `0` failed
+    - live batch: `1` created, `99` flagged, `85` quarantined, `0` failed
+    - paused at offset `1800`
+  - the next resumed work slice at offset `1800` is also recovered:
+    - initial dry-run: `4` created, `36` quarantined, `57` composer-resolution failures
+    - targeted composer seeding created `53` missing IMSLP composers
+    - replay dry-run: `6` created, `91` quarantined, `0` failed
+    - live batch: `5` created, `95` flagged, `88` quarantined, `0` failed
+    - paused at offset `1900`
+  - current observed coverage:
+    - `2345` IMSLP composers
+    - `1781` IMSLP works
+    - `1734` open `orchestral_scope_review` flags
+  - offset `1900` is now recovered:
+    - initial dry-run: `0` created, `28` quarantined, `71` composer-resolution failures
+    - targeted composer seeding increased IMSLP composer coverage from `2345` to `2382`
+    - one remaining parser edge was fixed for IMSLP duration text like `Each prelude is under 10 minutes in length`
+    - final replay dry-run: `1` created, `98` quarantined, `0` failed
+    - final live batch: `1` created, `95` quarantined, `0` failed
+    - paused at offset `2000`
+  - current observed coverage:
+    - `2410` IMSLP composers
+    - `1828` IMSLP works
+    - `1780` open `orchestral_scope_review` flags
+  - next operator step:
+    - run the offset-`2000` recovery flow
   - the CLI wrappers still settle late enough to look hung, so operator verification against `source_ingest_job`, `review_flag`, and coverage counts remains the safer path during live runs
   - the `200`, `300`, and `400` slices are now operationally recovered to:
     - `0` failed rows
