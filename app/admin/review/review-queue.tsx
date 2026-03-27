@@ -44,6 +44,23 @@ function isOrchestralScopeReason(reason: string) {
   return reason === ORCHESTRAL_SCOPE_REASON;
 }
 
+function getSafeExternalUrl(value: unknown): string | null {
+  if (typeof value !== "string" || !value.trim()) {
+    return null;
+  }
+
+  try {
+    const parsed = new URL(value);
+    if (parsed.protocol === "http:" || parsed.protocol === "https:") {
+      return parsed.toString();
+    }
+  } catch {
+    return null;
+  }
+
+  return null;
+}
+
 function getReasonBadgeVariant(reason: string) {
   if (isDuplicateReason(reason)) return "destructive";
   if (isOrchestralScopeReason(reason)) return "outline";
@@ -58,7 +75,7 @@ function renderStructuredDetails(flag: ReviewFlag) {
 
   if (isOrchestralScopeReason(flag.reason)) {
     const details = flag.details as Record<string, unknown>;
-    const sourceUrl = typeof details.source_url === "string" ? details.source_url : null;
+    const sourceUrl = getSafeExternalUrl(details.source_url);
 
     return (
       <div className="space-y-2 rounded-md border border-zinc-200 bg-zinc-50 p-3 text-sm">
