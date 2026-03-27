@@ -1,5 +1,6 @@
 import { config } from "dotenv";
 import { resolve } from "path";
+import { pathToFileURL } from "url";
 
 import { createClient } from "@supabase/supabase-js";
 
@@ -21,14 +22,14 @@ if (!SUPABASE_URL || !SUPABASE_SECRET_KEY) {
   process.exit(1);
 }
 
-interface CliArgs {
+export interface SeedMissingWorkComposersCliArgs {
   offset: number;
   batchSize: number;
   createdBy: string;
 }
 
-function parseArgs(argv: string[]): CliArgs {
-  const defaults: CliArgs = {
+function parseArgs(argv: string[]): SeedMissingWorkComposersCliArgs {
+  const defaults: SeedMissingWorkComposersCliArgs = {
     offset: 0,
     batchSize: 100,
     createdBy: "f2ed501c-74ad-4c2e-bb66-c97f5a6aa0ba",
@@ -59,7 +60,7 @@ function parseArgs(argv: string[]): CliArgs {
   return defaults;
 }
 
-function buildSyntheticJob(args: CliArgs): IngestJobRecord {
+function buildSyntheticJob(args: SeedMissingWorkComposersCliArgs): IngestJobRecord {
   const now = new Date().toISOString();
 
   return {
@@ -176,6 +177,13 @@ function isMissingResolvedComposer(result: CandidatePersistResult): boolean {
 
 async function main() {
   const args = parseArgs(process.argv.slice(2));
+  const result = await seedMissingWorkComposers(args);
+  console.log(JSON.stringify(result, null, 2));
+}
+
+export async function seedMissingWorkComposers(
+  args: SeedMissingWorkComposersCliArgs,
+) {
   const adapter = ingestAdapterRegistry.imslp;
 
   if (!adapter) {
@@ -274,22 +282,23 @@ async function main() {
     }
   }
 
-  console.log(
-    JSON.stringify(
-      {
-        offset: args.offset,
-        batchSize: args.batchSize,
-        failedWorkRows: missingCandidates.length,
-        uniqueMissingComposers: uniqueComposerCandidates.size,
-        seedResults: results,
-      },
-      null,
-      2,
-    ),
-  );
+  return {
+    offset: args.offset,
+    batchSize: args.batchSize,
+    failedWorkRows: missingCandidates.length,
+    uniqueMissingComposers: uniqueComposerCandidates.size,
+    seedResults: results,
+  };
 }
 
-main().catch((error) => {
-  console.error(error);
-  process.exit(1);
-});
+function isMainModule() {
+  const entry = process.argv[1];
+  return entry != null && import.meta.url === pathToFileURL(entry).href;
+}
+
+if (isMainModule()) {
+  main().catch((error) => {
+    console.error(error);
+    process.exit(1);
+  });
+}

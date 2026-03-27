@@ -1,5 +1,6 @@
 import { config } from "dotenv";
 import { resolve } from "path";
+import { pathToFileURL } from "url";
 
 import { createClient } from "@supabase/supabase-js";
 
@@ -21,7 +22,7 @@ if (!SUPABASE_URL || !SUPABASE_SECRET_KEY) {
 type EntityKind = "composer" | "work";
 type SourceEntityKind = "person" | "work";
 
-interface CliArgs {
+export interface RunIngestJobCliArgs {
   source: string;
   entityKind: EntityKind;
   offset: number;
@@ -36,8 +37,8 @@ function readBoolean(value: string): boolean {
   return value === "true" || value === "1";
 }
 
-function parseArgs(argv: string[]): CliArgs {
-  const defaults: CliArgs = {
+function parseArgs(argv: string[]): RunIngestJobCliArgs {
+  const defaults: RunIngestJobCliArgs = {
     source: "imslp",
     entityKind: "work",
     offset: 0,
@@ -97,9 +98,9 @@ function parseArgs(argv: string[]): CliArgs {
   return defaults;
 }
 
-async function main() {
-  const args = parseArgs(process.argv.slice(2));
-
+export async function runIngestJob(
+  args: RunIngestJobCliArgs,
+) {
   const supabase = createClient(SUPABASE_URL, SUPABASE_SECRET_KEY, {
     auth: {
       autoRefreshToken: false,
@@ -132,8 +133,11 @@ async function main() {
   });
 
   if (!created.ok || !created.data) {
-    console.log(JSON.stringify({ stage: "create_failed", issues: created.issues }, null, 2));
-    process.exit(1);
+    return {
+      ok: false as const,
+      stage: "create_failed" as const,
+      issues: created.issues,
+    };
   }
 
   const executed = await runIngestJobBatch({
@@ -150,46 +154,53 @@ async function main() {
   });
 
   if (!executed.ok || !executed.data) {
-    console.log(
-      JSON.stringify(
-        {
-          stage: "run_failed",
-          jobId: created.data.id,
-          issues: executed.issues,
-        },
-        null,
-        2,
-      ),
-    );
-    process.exit(1);
+    return {
+      ok: false as const,
+      stage: "run_failed" as const,
+      jobId: created.data.id,
+      issues: executed.issues,
+    };
   }
 
   const job = executed.data.job;
-  console.log(
-    JSON.stringify(
-      {
-        stage: "ok",
-        jobId: job.id,
-        status: job.status,
-        processedCount: job.processedCount,
-        createdCount: job.createdCount,
-        updatedCount: job.updatedCount,
-        flaggedCount: job.flaggedCount,
-        failedCount: job.failedCount,
-        skippedCount: job.skippedCount,
-        warningCount: job.warningCount,
-        cursor: job.cursor,
-        errorSummary: job.errorSummary,
-        warningSummary: job.warningSummary,
-        resultSummary: job.resultSummary,
-      },
-      null,
-      2,
-    ),
-  );
+
+  return {
+    ok: true as const,
+    stage: "ok" as const,
+    jobId: job.id,
+    status: job.status,
+    processedCount: job.processedCount,
+    createdCount: job.createdCount,
+    updatedCount: job.updatedCount,
+    flaggedCount: job.flaggedCount,
+    failedCount: job.failedCount,
+    skippedCount: job.skippedCount,
+    warningCount: job.warningCount,
+    cursor: job.cursor,
+    errorSummary: job.errorSummary,
+    warningSummary: job.warningSummary,
+    resultSummary: job.resultSummary,
+    itemResults: executed.data.itemResults,
+  };
 }
 
-main().catch((error) => {
-  console.error(error);
-  process.exit(1);
-});
+async function main() {
+  const args = parseArgs(process.argv.slice(2));
+  const result = await runIngestJob(args);
+  console.log(JSON.stringify(result, null, 2));
+  if (!result.ok) {
+    process.exit(1);
+  }
+}
+
+function isMainModule() {
+  const entry = process.argv[1];
+  return entry != null && import.meta.url === pathToFileURL(entry).href;
+}
+
+if (isMainModule()) {
+  main().catch((error) => {
+    console.error(error);
+    process.exit(1);
+  });
+}

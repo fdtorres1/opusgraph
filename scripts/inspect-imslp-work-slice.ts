@@ -1,5 +1,6 @@
 import { config } from "dotenv";
 import { resolve } from "path";
+import { pathToFileURL } from "url";
 
 import { createClient } from "@supabase/supabase-js";
 
@@ -19,14 +20,14 @@ if (!SUPABASE_URL || !SUPABASE_SECRET_KEY) {
   process.exit(1);
 }
 
-interface CliArgs {
+export interface InspectImslpWorkSliceCliArgs {
   offset: number;
   batchSize: number;
   createdBy: string;
 }
 
-function parseArgs(argv: string[]): CliArgs {
-  const defaults: CliArgs = {
+function parseArgs(argv: string[]): InspectImslpWorkSliceCliArgs {
+  const defaults: InspectImslpWorkSliceCliArgs = {
     offset: 0,
     batchSize: 100,
     createdBy: "f2ed501c-74ad-4c2e-bb66-c97f5a6aa0ba",
@@ -57,7 +58,7 @@ function parseArgs(argv: string[]): CliArgs {
   return defaults;
 }
 
-function buildSyntheticJob(args: CliArgs): IngestJobRecord {
+function buildSyntheticJob(args: InspectImslpWorkSliceCliArgs): IngestJobRecord {
   const now = new Date().toISOString();
 
   return {
@@ -105,8 +106,9 @@ function buildSyntheticJob(args: CliArgs): IngestJobRecord {
   };
 }
 
-async function main() {
-  const args = parseArgs(process.argv.slice(2));
+export async function inspectImslpWorkSlice(
+  args: InspectImslpWorkSliceCliArgs,
+) {
   const adapter = ingestAdapterRegistry.imslp;
 
   if (!adapter) {
@@ -180,21 +182,28 @@ async function main() {
     }
   }
 
-  console.log(
-    JSON.stringify(
-      {
-        offset: args.offset,
-        batchSize: args.batchSize,
-        failureCount: failures.length,
-        failures,
-      },
-      null,
-      2,
-    ),
-  );
+  return {
+    offset: args.offset,
+    batchSize: args.batchSize,
+    failureCount: failures.length,
+    failures,
+  };
 }
 
-main().catch((error) => {
-  console.error(error);
-  process.exit(1);
-});
+async function main() {
+  const args = parseArgs(process.argv.slice(2));
+  const result = await inspectImslpWorkSlice(args);
+  console.log(JSON.stringify(result, null, 2));
+}
+
+function isMainModule() {
+  const entry = process.argv[1];
+  return entry != null && import.meta.url === pathToFileURL(entry).href;
+}
+
+if (isMainModule()) {
+  main().catch((error) => {
+    console.error(error);
+    process.exit(1);
+  });
+}

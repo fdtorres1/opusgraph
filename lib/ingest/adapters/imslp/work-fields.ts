@@ -133,6 +133,13 @@ function normalizeImslpDurationText(value: string | null): string | null {
     return `${value} minutes`;
   }
 
+  // IMSLP occasionally leaks non-duration prose into Average Duration.
+  // If there is no numeric signal at all, preserve the raw field text in
+  // metadata but do not promote it into normalized duration parsing.
+  if (!/\d/.test(value)) {
+    return null;
+  }
+
   return value;
 }
 

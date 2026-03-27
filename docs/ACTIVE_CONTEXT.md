@@ -4,7 +4,7 @@ This is the canonical handoff file for the next session. Rewrite freely as prior
 
 ## Current Objective
 
-Continue live IMSLP work ingestion from offset `1200` using the scripted targeted missing-composer recovery loop instead of broad composer catch-up.
+Continue live IMSLP work ingestion from offset `1300` using the new unified recovery script for mixed error slices and targeted composer seeding.
 
 ## Current Branch
 
@@ -30,16 +30,53 @@ Continue live IMSLP work ingestion from offset `1200` using the scripted targete
   - File ownership:
     - `docs/ACTIVE_CONTEXT.md`
     - `lib/duration.ts`
+    - `lib/ingest/adapters/imslp/work-fields.ts`
     - `scripts/run-ingest-job.ts`
     - `scripts/seed-imslp-work-composers.ts`
     - `scripts/inspect-imslp-work-slice.ts`
-    - `lib/ingest/adapters/imslp/work-fields.ts`
+    - `scripts/recover-imslp-work-slice.ts`
     - `docs/WORKLOG.md`
   - Status: active
   - Notes: auth/RLS is already signed off; managed daily Supabase physical backups are now available; `0016` is applied in the linked cloud; `T4`, `T5`, the IMSLP composer adapter, and the IMSLP work adapter are merged on `main`; the current task slice is operational recovery and scaling for live IMSLP work ingestion
 
 ## In Progress
 
+- The work-slice recovery flow is now automated end to end:
+  - `scripts/recover-imslp-work-slice.ts` now runs:
+    - initial work dry-run
+    - targeted composer seeding if `missing_resolved_composer_id` is present
+    - dry-run replay
+    - live batch when the replay is green
+  - the helper now tolerates mixed failure slices instead of requiring a pure missing-composer failure mix
+  - it summarizes run output instead of dumping full candidate payloads on failure
+  - `scripts/run-ingest-job.ts`, `scripts/seed-imslp-work-composers.ts`, and `scripts/inspect-imslp-work-slice.ts` are now import-safe and export their core helpers for reuse
+- The targeted offset-`1200` recovery path is now also proven:
+  - first dry-run attempts showed a mixed failure slice:
+    - `68` `missing_resolved_composer_id`
+    - `1` `invalid_duration_text`
+  - the remaining parser edge case was not a real duration:
+    - IMSLP had leaked `'dedicate alle Dame'` into `Average Duration`
+  - `lib/ingest/adapters/imslp/work-fields.ts` now drops non-numeric IMSLP `Average Duration` strings instead of promoting them into duration parsing
+  - with that fix in place, the unified recovery script ran cleanly at offset `1200`
+  - final dry-run summary:
+    - `100` created
+    - `0` failed
+    - paused at offset `1300`
+  - final live summary:
+    - `100` processed
+    - `95` created
+    - `1` updated
+    - `4` flagged duplicates
+    - `0` failed
+    - paused at offset `1300`
+  - warning mix stayed bounded:
+    - `imslp_work_page_redirected` (`4`)
+    - `imslp_work_unparsed_movements` (`188`)
+  - current observed IMSLP coverage is:
+    - `2021` composers
+    - `1238` works
+  - next clean move:
+    - run `scripts/recover-imslp-work-slice.ts --offset 1300 --batch-size 100 --run-live true`
 - The targeted offset-`1100` recovery path is now also proven:
   - first dry-run `09ca985d-5e1c-4632-a0c0-d60fb67f9ad2` showed:
     - `33` created

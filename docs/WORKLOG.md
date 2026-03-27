@@ -428,6 +428,41 @@ Append-only log for implementation, investigation, and planning sessions. Keep e
   - replay work offset `1200` in dry-run mode
   - if it is still composer-thin, repeat the same targeted missing-composer recovery pattern before any live write
 
+### Unified recovery script added, and offset `1200` recovery succeeded
+- Added `scripts/recover-imslp-work-slice.ts` as the new one-command operator path for IMSLP work slices.
+- Refactored the existing helper scripts so they can be imported safely:
+  - `scripts/run-ingest-job.ts`
+  - `scripts/seed-imslp-work-composers.ts`
+  - `scripts/inspect-imslp-work-slice.ts`
+- The unified recovery flow now does:
+  - initial dry-run
+  - targeted composer seeding when `missing_resolved_composer_id` appears
+  - dry-run replay
+  - live run if the replay is green
+- Offset `1200` exposed the first mixed slice:
+  - initial failures were `68` unresolved composers plus `1` `invalid_duration_text`
+  - the remaining non-composer failure came from IMSLP leaking `'dedicate alle Dame'` into `Average Duration`
+- `lib/ingest/adapters/imslp/work-fields.ts` now drops non-numeric IMSLP `Average Duration` strings instead of passing them into duration parsing.
+- With that fix in place, the unified recovery script completed offset `1200` end to end:
+  - final dry-run summary:
+    - `100` created
+    - `0` failed
+  - final live summary:
+    - `100` processed
+    - `95` created
+    - `1` updated
+    - `4` flagged duplicates
+    - `0` failed
+    - paused at offset `1300`
+- Warning mix for the recovered slice stayed bounded:
+  - `imslp_work_page_redirected`: `4`
+  - `imslp_work_unparsed_movements`: `188`
+- Current linked-cloud coverage after the live `1200` slice:
+  - `2021` IMSLP composers
+  - `1238` IMSLP works
+- Next clean move:
+  - run `scripts/recover-imslp-work-slice.ts --offset 1300 --batch-size 100 --run-live true`
+
 ## 2026-03-22
 
 ### Final auth/RLS verification signoff completed
