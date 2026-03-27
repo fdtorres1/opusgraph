@@ -293,6 +293,39 @@ Append-only log for implementation, investigation, and planning sessions. Keep e
   - replay work offset `800` in dry-run mode
   - if it is still composer-thin, repeat the same targeted missing-composer recovery pattern before any live write
 
+### Targeted offset `800` recovery also succeeded
+- Ran the first offset-`800` IMSLP work dry-run:
+  - job `87013916-601c-4f16-9faf-825e6e468df5`
+  - `25` created
+  - `75` failed
+  - all `75` failures were `missing_resolved_composer_id`
+- Derived and seeded the exact missing composer set for that slice:
+  - `75` failed rows collapsed to `68` unique missing composers
+  - targeted seeding created all `68`
+  - composer coverage rose to `1769`
+- Replayed offset `800` after targeted seeding:
+  - dry-run job `de5be60e-d558-494f-b555-6b6935a1b42c`
+  - `100` created
+  - `0` failed
+- Matching live offset-`800` work batch:
+  - job `a8c76450-337d-49d7-89ab-fc95a76db4d2`
+  - `100` processed
+  - `91` created
+  - `5` updated
+  - `4` flagged duplicates
+  - `0` failed
+  - paused at offset `900`
+- Warning mix for the recovered slice stayed bounded:
+  - `imslp_work_unparsed_movements`: `166`
+  - `imslp_work_page_redirected`: `10`
+  - `imslp_work_ambiguous_composition_year`: `6`
+- Current linked-cloud coverage after the live `800` slice:
+  - `1769` IMSLP composers
+  - `864` IMSLP works
+- Next clean move:
+  - replay work offset `900` in dry-run mode
+  - if it is still composer-thin, repeat the same targeted missing-composer recovery pattern before any live write
+
 ## 2026-03-22
 
 ### Final auth/RLS verification signoff completed
