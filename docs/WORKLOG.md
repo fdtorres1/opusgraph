@@ -2215,3 +2215,39 @@ Append-only log for implementation, investigation, and planning sessions. Keep e
   - `2513` open `orchestral_scope_review` flags
 - Follow-up:
   - continue with the offset-`2800` recovery flow
+
+### Offset-`2800` recovered after targeted composer seeding and replay verification
+- The initial dry-run rows for offset `2800` both backfilled to the same result:
+  - `4e0050c9-265e-423b-b379-3fc25ca287e8`
+  - `e60a4a25-59c7-48c4-b9c9-a78a396cac23`
+  - effective initial result:
+    - `100` processed
+    - `1` created
+    - `56` flagged
+    - `43` failed
+    - all `43` failures were `missing_resolved_composer_id`
+- Targeted composer seeding completed for the slice:
+  - IMSLP composer coverage increased from `2763` to `2789`
+- The replay dry-run rows later both backfilled green:
+  - `269a52f0-dbb8-4ff8-9ba6-0ca7e5784a80`
+  - `e207c2da-fa6a-404f-8010-679e5f4bc06a`
+  - effective replay result:
+    - `100` processed
+    - `1` created
+    - `99` flagged
+    - `0` failed
+- Because the replay wrapper rows lingered before backfilling, `scripts/debug-imslp-work-slice.ts --offset 2800 --batch-size 100 --mode dry-run` was also used as a direct verification path:
+  - no failed rows remained after seeding
+  - the slice reduced to a mix of quarantines, duplicate flags, and one in-scope work update
+- Final live job `0d71a8fa-f0f8-43df-bb44-46efb15a41e4` backfilled green:
+  - `100` processed
+  - `1` created
+  - `99` flagged
+  - `0` failed
+  - cursor advanced to `2900`
+- Current observed linked-cloud coverage after the recovered `2800` slice:
+  - `2806` IMSLP composers
+  - `2657` IMSLP works
+  - `2601` open `orchestral_scope_review` flags
+- Follow-up:
+  - continue with the offset-`2900` recovery flow

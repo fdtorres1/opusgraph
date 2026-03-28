@@ -356,8 +356,41 @@ Continue IMSLP work ingestion under the corrected orchestral-only scope, using t
       - `2763` IMSLP composers
       - `2568` IMSLP works
       - `2513` open `orchestral_scope_review` flags
+  - offset `2800` is now recovered:
+    - initial dry-run rows:
+      - `4e0050c9-265e-423b-b379-3fc25ca287e8`
+      - `e60a4a25-59c7-48c4-b9c9-a78a396cac23`
+    - both backfilled to the same initial result:
+      - `100` processed
+      - `1` created
+      - `56` flagged
+      - `43` failed, all `missing_resolved_composer_id`
+      - cursor advanced to `2900`
+    - targeted composer seeding raised IMSLP composer coverage from `2763` to `2789`
+    - replay dry-run rows:
+      - `269a52f0-dbb8-4ff8-9ba6-0ca7e5784a80`
+      - `e207c2da-fa6a-404f-8010-679e5f4bc06a`
+    - both backfilled green:
+      - `100` processed
+      - `1` created
+      - `99` flagged
+      - `0` failed
+      - cursor advanced to `2900`
+    - direct candidate-level verification with `scripts/debug-imslp-work-slice.ts` matched the replay outcome:
+      - no failed rows remained after seeding
+      - the slice was a mix of `quarantined`, `flagged_duplicate`, and one in-scope `updated` work
+    - final live job `0d71a8fa-f0f8-43df-bb44-46efb15a41e4` backfilled green:
+      - `100` processed
+      - `1` created
+      - `99` flagged
+      - `0` failed
+      - cursor advanced to `2900`
+    - current linked-cloud coverage:
+      - `2806` IMSLP composers
+      - `2657` IMSLP works
+      - `2601` open `orchestral_scope_review` flags
   - immediate next step:
-    - continue with the offset-`2800` recovery flow
+    - continue with the offset-`2900` recovery flow
   - operator note:
     - live operator scripts still settle late enough to look hung, so DB verification remains safer than trusting the CLI wrapper to exit promptly
     - one redundant manual replay dry-run (`a7f88c27-a8ce-4afb-995d-0bb6437a782d`) was launched while the canonical replay still looked stale; it paused green and can be ignored

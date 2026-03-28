@@ -129,8 +129,24 @@ This file is the current priority view for OpusGraph. Keep it short, current, an
       - `100` flagged
       - `0` failed
       - cursor advanced to `2800`
+  - offset `2800` is now recovered:
+    - initial dry-run backfilled at `1` created, `56` flagged, `43` composer-resolution failures
+    - targeted composer seeding increased IMSLP composer coverage from `2763` to `2789`
+    - replay dry-run backfilled green on:
+      - `269a52f0-dbb8-4ff8-9ba6-0ca7e5784a80`
+      - `e207c2da-fa6a-404f-8010-679e5f4bc06a`
+      - effective replay result:
+        - `1` created
+        - `99` flagged
+        - `0` failed
+    - direct candidate-level debug replay confirmed there were no remaining failed rows after seeding
+    - final live job `0d71a8fa-f0f8-43df-bb44-46efb15a41e4` backfilled green:
+      - `1` created
+      - `99` flagged
+      - `0` failed
+      - cursor advanced to `2900`
   - next operator step:
-    - continue with the offset-`2800` recovery flow
+    - continue with the offset-`2900` recovery flow
   - the CLI wrappers still settle late enough to look hung, so operator verification against `source_ingest_job`, `review_flag`, and coverage counts remains the safer path during live runs
   - the `200`, `300`, and `400` slices are now operationally recovered to:
     - `0` failed rows
