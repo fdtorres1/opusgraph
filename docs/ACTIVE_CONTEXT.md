@@ -323,12 +323,41 @@ Continue IMSLP work ingestion under the corrected orchestral-only scope, using t
       - `100` flagged
       - `0` failed
       - cursor advanced to `2700`
-  - offset `2700` is in progress:
-    - wrapper-owned initial dry-run row `3f7a7276-2962-4fd9-b2de-bd68d0cc7a7f` never backfilled and was explicitly canceled
-    - clean manual dry-run row `0feb24aa-dbcd-422d-a8de-965c8677cf83` is currently still sitting in the zero-counter `running` state
-    - there is no canonical backfilled result for the `2700` slice yet
+  - offset `2700` is now recovered:
+    - initial dry-run rows:
+      - `3f7a7276-2962-4fd9-b2de-bd68d0cc7a7f`
+      - `0feb24aa-dbcd-422d-a8de-965c8677cf83`
+    - both eventually backfilled to the initial result:
+      - `100` processed
+      - `54-55` flagged
+      - `45-46` failed, all `missing_resolved_composer_id`
+      - cursor advanced to `2800`
+    - replay dry-run completed green on `c232e068-7496-45dd-9d4e-27b28080a014`
+    - first live row `88ea1317-d0a8-4671-8d6f-ee416a1c77b8` was not clean:
+      - `100` processed
+      - `91` flagged
+      - `9` failed
+      - failure mix:
+        - `8` `missing_resolved_composer_id`
+        - `1` `work_write_failed`
+    - investigation added `scripts/debug-imslp-work-slice.ts` to compare slice candidates against current open quarantine flags and optional per-candidate dry-run/live processing
+    - that investigation narrowed the only non-routine row to:
+      - `12th Street Rag (Bowman, Euday L.)`
+      - current replay now resolves it as a normal `flagged_duplicate`, not a write failure
+    - targeted live replay of the `9` unresolved rows then succeeded:
+      - `8` rows now quarantine cleanly with open `orchestral_scope_review` flags
+      - `12th Street Rag (Bowman, Euday L.)` now returns `flagged_duplicate`
+    - final full live rerun job `7b113cd7-3c4f-4c74-8a2f-f45204dfa41e` backfilled green:
+      - `100` processed
+      - `100` flagged
+      - `0` failed
+      - cursor advanced to `2800`
+    - current linked-cloud coverage:
+      - `2763` IMSLP composers
+      - `2568` IMSLP works
+      - `2513` open `orchestral_scope_review` flags
   - immediate next step:
-    - if `0feb24aa-dbcd-422d-a8de-965c8677cf83` is still zero-counter, cancel it and rerun the initial dry-run for offset `2700`
+    - continue with the offset-`2800` recovery flow
   - operator note:
     - live operator scripts still settle late enough to look hung, so DB verification remains safer than trusting the CLI wrapper to exit promptly
     - one redundant manual replay dry-run (`a7f88c27-a8ce-4afb-995d-0bb6437a782d`) was launched while the canonical replay still looked stale; it paused green and can be ignored

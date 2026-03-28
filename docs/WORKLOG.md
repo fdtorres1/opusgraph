@@ -2173,16 +2173,45 @@ Append-only log for implementation, investigation, and planning sessions. Keep e
   - the next clean step is offset `2700`
   - this slice did not need a separate documented seed result because the only necessary fact for forward motion was that the replay and live rows are already green
 
-### Offset-`2700` started, but has not produced a canonical initial result yet
-- The wrapper-owned initial dry-run row was:
+### Offset-`2700` recovered after targeted investigation of one write failure
+- The initial dry-run rows for offset `2700` eventually both backfilled:
   - `3f7a7276-2962-4fd9-b2de-bd68d0cc7a7f`
-  - it never backfilled counters
-  - it was explicitly canceled
-- A clean manual dry-run rerun was launched:
   - `0feb24aa-dbcd-422d-a8de-965c8677cf83`
-  - at handoff time it is still a zero-counter `running` row
-- No canonical initial result exists yet for offset `2700`.
-- Next safe move:
-  - if `0feb24aa-dbcd-422d-a8de-965c8677cf83` is still zero-counter, cancel it
-  - rerun the initial dry-run again
-  - only proceed to seeding once a real initial result has backfilled
+  - effective initial result:
+    - `100` processed
+    - `54-55` flagged
+    - `45-46` failed
+    - all initial failures were `missing_resolved_composer_id`
+- Replay dry-run job `c232e068-7496-45dd-9d4e-27b28080a014` settled green:
+  - `100` processed
+  - `100` flagged
+  - `0` failed
+- The first live row was not green:
+  - `88ea1317-d0a8-4671-8d6f-ee416a1c77b8`
+  - `100` processed
+  - `91` flagged
+  - `9` failed
+  - failure mix:
+    - `8` `missing_resolved_composer_id`
+    - `1` `work_write_failed`
+- Added `scripts/debug-imslp-work-slice.ts` to debug IMSLP work slices directly:
+  - compare parsed candidates against open `orchestral_scope_review` flags
+  - optionally run candidate-level dry-run or live processing for a selected source-id subset
+- That helper narrowed the unresolved set to `9` source ids and showed the lone non-quarantine row had become:
+  - `12th Street Rag (Bowman, Euday L.)`
+  - current live replay result: `flagged_duplicate`
+- Ran targeted live replay for those `9` rows:
+  - `8` rows now quarantine cleanly with open `orchestral_scope_review` flags
+  - `12th Street Rag (Bowman, Euday L.)` now returns `flagged_duplicate`
+- Final full live rerun job `7b113cd7-3c4f-4c74-8a2f-f45204dfa41e` backfilled green:
+  - `100` processed
+  - `100` flagged
+  - `0` failed
+  - cursor advanced to `2800`
+- `npm run build` passes after adding the new debug helper.
+- Current observed linked-cloud coverage after the recovered `2700` slice:
+  - `2763` IMSLP composers
+  - `2568` IMSLP works
+  - `2513` open `orchestral_scope_review` flags
+- Follow-up:
+  - continue with the offset-`2800` recovery flow

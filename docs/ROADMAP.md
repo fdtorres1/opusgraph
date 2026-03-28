@@ -113,11 +113,24 @@ This file is the current priority view for OpusGraph. Keep it short, current, an
     - replay dry-run completed green at `100` flagged, `0` failed
     - live batch completed green at `100` flagged, `0` failed
     - cursor advanced to `2700`
+  - offset `2700` is now recovered:
+    - initial dry-run eventually backfilled at `54-55` flagged and `45-46` composer-resolution failures
+    - first live batch was not clean:
+      - `91` flagged
+      - `9` failed
+      - failure mix:
+        - `8` `missing_resolved_composer_id`
+        - `1` `work_write_failed`
+    - investigation added `scripts/debug-imslp-work-slice.ts` for candidate-vs-flag comparison and optional targeted live replay
+    - the lone `work_write_failed` row later replayed as a normal duplicate on:
+      - `12th Street Rag (Bowman, Euday L.)`
+    - targeted live replay of the `9` unresolved rows cleared the slice
+    - final full live rerun backfilled green on `7b113cd7-3c4f-4c74-8a2f-f45204dfa41e`:
+      - `100` flagged
+      - `0` failed
+      - cursor advanced to `2800`
   - next operator step:
-    - finish the offset-`2700` recovery flow
-    - current state:
-      - wrapper-owned initial row `3f7a7276-2962-4fd9-b2de-bd68d0cc7a7f` was canceled after never backfilling
-      - clean manual row `0feb24aa-dbcd-422d-a8de-965c8677cf83` is still zero-counter `running`
+    - continue with the offset-`2800` recovery flow
   - the CLI wrappers still settle late enough to look hung, so operator verification against `source_ingest_job`, `review_flag`, and coverage counts remains the safer path during live runs
   - the `200`, `300`, and `400` slices are now operationally recovered to:
     - `0` failed rows
