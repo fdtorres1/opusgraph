@@ -4,11 +4,11 @@ This is the canonical handoff file for the next session. Rewrite freely as prior
 
 ## Current Objective
 
-Ship the offset-`2900` duplicate-flag repair and then continue IMSLP work ingestion at offset `3000` from a fresh worktree, with the stale historical `2900` live row documented as bookkeeping debt rather than an ingestion blocker.
+Use a stricter IMSLP audit pass to decide whether it is safe to continue at offset `3000`, and separate real ingest risk from historical duplicate-review bookkeeping debt.
 
 ## Current Branch
 
-- `fix/imslp-offset-2900-recovery`
+- `chore/imslp-strict-audit`
 
 ## Parallel Work Coordination
 
@@ -24,15 +24,16 @@ Ship the offset-`2900` duplicate-flag repair and then continue IMSLP work ingest
 ### Active Workstreams
 
 - Agent: current Codex session
-  - Worktree: current checkout at `/Users/felixtorres/dev/opusgraph-imslp-2900`
-  - Branch: `fix/imslp-offset-2900-recovery`
-  - Scope: close out the IMSLP work slice at offset `2900`, fix duplicate-flag reuse so each IMSLP duplicate candidate keeps its own source identity, and keep the operator handoff current
+  - Worktree: current checkout at `/Users/felixtorres/dev/opusgraph-imslp-strict-audit`
+  - Branch: `chore/imslp-strict-audit`
+  - Scope: run a stricter IMSLP audit across the recovered range, capture the results, and decide whether offset `3000` is safe
   - File ownership:
+    - `scripts/audit-imslp-work-coverage.ts`
     - `docs/ACTIVE_CONTEXT.md`
     - `docs/ROADMAP.md`
     - `docs/WORKLOG.md`
   - Status: active
-  - Notes: auth/RLS is already signed off; managed daily Supabase physical backups are now available; `0016` is applied in the linked cloud; `T4`, `T5`, the IMSLP composer adapter, the IMSLP work adapter, the orchestral-only quarantine flow, and the quarantine-review UI are all merged on `main`; this task branch is intentionally separate from the dedicated integration worktree at `/Users/felixtorres/coding/opusgraph`
+  - Notes: auth/RLS is already signed off; managed daily Supabase physical backups are now available; `0016` is applied in the linked cloud; `T4`, `T5`, the IMSLP composer adapter, the IMSLP work adapter, the orchestral-only quarantine flow, and the quarantine-review UI are all merged on `main`; PR `#40` is merged on `main`; this task branch is intentionally separate from the dedicated integration worktree at `/Users/felixtorres/coding/opusgraph`
 
 ## In Progress
 
@@ -445,8 +446,16 @@ Ship the offset-`2900` duplicate-flag repair and then continue IMSLP work ingest
         - `176` open `possible_duplicate` work flags
         - `0` rows missing `details.source_identity`
         - `9` historical source-identity collisions across open duplicate flags, all predating this fix
+    - stricter post-merge audit across offsets `1700` through `2900` now exists on this branch:
+      - `scripts/audit-imslp-work-coverage.ts --offset-start 1700 --offset-end 2900 --step 100 --batch-size 100`
+      - exact range audit found `51` source candidates not covered by persisted work rows or source-specific open flags
+      - every one of those `51` rows still dry-runs as `flagged_duplicate` with no issue codes
+      - interpretation:
+        - current ingest behavior is not silently losing parse/write outcomes
+        - historical duplicate-review bookkeeping is still incomplete for older slices because those source candidates reused older duplicate flags before PR `#40`
+        - proceeding to offset `3000` is reasonable if that historical review debt is accepted and tracked separately
   - immediate next step:
-    - open or ship this branch’s duplicate-flag fix plus handoff docs, then start offset `3000` from a fresh task worktree rather than extending this one
+    - decide whether to clean the `51` historical duplicate-only bookkeeping gaps first, or accept them as tracked review debt and start offset `3000` from a fresh task worktree
   - operator note:
     - live operator scripts still settle late enough to look hung, so DB verification remains safer than trusting the CLI wrapper to exit promptly
     - the first attempt to rerun offset `2900` from this Mac mini failed immediately because `scripts/populate-composers.env.local` still carries a legacy service-role key and the linked cloud now rejects it with `Legacy API keys are disabled`; use a modern `SUPABASE_SECRET_KEY` instead

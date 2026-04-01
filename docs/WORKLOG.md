@@ -4,6 +4,31 @@ Append-only log for implementation, investigation, and planning sessions. Keep e
 
 ## 2026-04-01
 
+### Stricter IMSLP audit shows historical duplicate-review debt, not fresh ingest corruption
+- Created a fresh audit worktree at `/Users/felixtorres/dev/opusgraph-imslp-strict-audit` on `chore/imslp-strict-audit` after PR `#40` merged to `main`.
+- Added `scripts/audit-imslp-work-coverage.ts` to reconcile exact IMSLP source candidates against:
+  - persisted `work.external_ids.imslp.source_id`
+  - open `review_flag.reason = 'orchestral_scope_review'`
+  - open `review_flag.reason = 'possible_duplicate'`
+- Ran the broader sampler:
+  - `scripts/sample-imslp-audit.ts --seed strict-audit-post-2900 --works 12 --composers 8 --flags 12`
+  - sampled accepted works still looked plausibly orchestral
+  - sampled quarantine flags still looked clearly non-orchestral
+- Ran the exact range audit:
+  - `scripts/audit-imslp-work-coverage.ts --offset-start 1700 --offset-end 2900 --step 100 --batch-size 100`
+- Strict range results:
+  - `176` open duplicate-review flags
+  - `0` open duplicate-review rows missing `details.source_identity`
+  - `9` historical duplicate-source collisions still exist in open duplicate-review flags
+  - `51` source candidates across offsets `1700` through `2900` are not covered by persisted work rows or source-specific open flags
+- Dry-run classification of all `51` uncovered rows:
+  - every one currently resolves to `flagged_duplicate`
+  - no issue codes were attached
+- Interpretation:
+  - the audited range does not show fresh parse/write corruption
+  - the real remaining debt is historical duplicate-review bookkeeping from pre-PR-`#40` behavior
+  - the user can reasonably continue to offset `3000` if that debt is tracked separately, but a follow-up cleanup branch for the `51` duplicate-only gaps would give stronger source-level audit integrity
+
 ### Offset `2900` duplicate coverage was missing two source-specific flags; fixed reuse logic and closed the slice
 - Verified the nine still-uncovered offset-`2900` rows were duplicate-review cases, not missing quarantines or missing work writes.
 - Confirmed seven of those rows already had open `possible_duplicate` flags keyed to their own IMSLP source identities.

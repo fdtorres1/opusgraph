@@ -186,6 +186,15 @@ This file is the current priority view for OpusGraph. Keep it short, current, an
   - the `200`, `300`, and `400` slices are now operationally recovered to:
     - `0` failed rows
     - only duplicate-review cases remaining
+  - stricter audit after merging PR `#40` adds a clearer safety line:
+    - `scripts/audit-imslp-work-coverage.ts` now reconciles exact IMSLP source candidates against persisted work rows, open orchestral-scope flags, and open duplicate-review flags across a range of offsets
+    - range audit for offsets `1700` through `2900` found `51` candidates without source-specific persisted/flagged coverage
+    - all `51` currently dry-run as `flagged_duplicate` with no issue codes
+    - interpretation:
+      - current ingest is not showing hidden parse/write corruption in the audited range
+      - the remaining risk is historical duplicate-review bookkeeping debt, not fresh bad reference rows
+    - next cleanup candidate:
+      - backfill or normalize those `51` historical duplicate-review rows so old slices have exact source-level audit coverage, not just entity-level duplicate coverage
   - the first deliberate composer catch-up batch succeeded:
     - dry-run `218` usable rows with `137` creates and `0` failures
     - live `218` usable rows with `130` creates, `80` updates, `8` duplicate flags, and `0` failures
