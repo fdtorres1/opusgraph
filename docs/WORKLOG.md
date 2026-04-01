@@ -2380,3 +2380,54 @@ Append-only log for implementation, investigation, and planning sessions. Keep e
 - Result:
   - the audited recovered IMSLP range now has exact source-level persisted/quarantine/duplicate coverage
   - the next operational step is to merge this cleanup branch, then start offset `3000` from a fresh worktree
+
+### 2026-04-01 — Offset `3000` recovered after transient composer-coverage lag and direct verification
+
+- A fresh offset-`3000` worktree was created on top of merged `main` to continue the IMSLP work recovery flow after the duplicate-review cleanup landed.
+- Initial dry-run rows for offset `3000` both settled at the same result:
+  - `7e317a7f-8c8a-43a3-ac6c-c758f8ffff22`
+  - `27859d92-139c-40e6-b8b6-6f9e2be54886`
+  - effective initial result:
+    - `100` processed
+    - `1` created
+    - `61` flagged
+    - `38` failed
+    - all `38` failures were `missing_resolved_composer_id`
+- By the time manual intervention resumed, direct composer seeding no longer found any remaining missing-composer work rows for the slice:
+  - `scripts/seed-imslp-work-composers.ts --offset 3000 --batch-size 100`
+  - `failedWorkRows = 0`
+  - `uniqueMissingComposers = 0`
+- Direct candidate-level verification then showed the slice was green:
+  - `scripts/inspect-imslp-work-slice.ts --offset 3000 --batch-size 100`
+  - `failureCount = 0`
+- Canonical green dry-run row:
+  - `7009e75a-9d60-4b4c-b799-4569b6314554`
+  - `100` processed
+  - `2` created
+  - `98` flagged
+  - `0` failed
+  - cursor advanced to `3100`
+- Canonical live row:
+  - `f4ba5ee9-7983-4f8c-b64f-c8acc10a257c`
+  - `100` processed
+  - `2` created
+  - `98` flagged
+  - `0` failed
+  - cursor advanced to `3100`
+- Exact post-slice coverage audit passed:
+  - `scripts/audit-imslp-work-coverage.ts --offset-start 3000 --offset-end 3000 --step 100 --batch-size 100`
+  - `100` covered candidates
+  - `0` uncovered candidates
+  - `95` persisted IMSLP work rows
+  - `5` duplicate-only review cases
+  - duplicate-flag hygiene remained clean:
+    - `0` missing `details.source_identity`
+    - `0` duplicate-source collisions
+- Seeded sampler `offset-3000-postship` looked coherent for accepted orchestral works, IMSLP composers, and open quarantine rows:
+  - `scripts/sample-imslp-audit.ts --seed offset-3000-postship --works 8 --composers 5 --flags 8`
+- This session also produced stale zero-count wrapper rows that should be treated as bookkeeping noise unless they ever acquire counters:
+  - dry-run `0219764a-8494-4fdb-8503-d82b89a819e5`
+  - dry-run `da2ea856-b9d5-450d-975a-9225f1a8253c`
+  - live `26b32793-2837-4988-9a0f-065585d17903`
+- Follow-up:
+  - continue with the offset-`3100` recovery flow

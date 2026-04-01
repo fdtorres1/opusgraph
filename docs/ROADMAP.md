@@ -146,7 +146,7 @@ This file is the current priority view for OpusGraph. Keep it short, current, an
       - `0` failed
       - cursor advanced to `2900`
   - next operator step:
-    - ship `fix/imslp-duplicate-cleanup`, then resume at offset `3000` from a fresh worktree
+    - ship the offset-`3000` recovery handoff, then resume at offset `3100` from a fresh worktree
   - offset `2900` is operationally closed:
     - initial dry-run `386741bb-fe80-49b8-8f95-e42506b22743` settled at:
       - `0` created
@@ -180,6 +180,35 @@ This file is the current priority view for OpusGraph. Keep it short, current, an
       - exact offset-`2900` coverage audit returned `100` covered candidates and `0` uncovered rows
       - duplicate-flag hygiene found `0` open duplicate rows missing source identity, but `9` historical source-identity collisions remain from pre-fix behavior
   - the CLI wrappers still settle late enough to look hung, so operator verification against `source_ingest_job`, `review_flag`, and coverage counts remains the safer path during live runs
+  - offset `3000` is now operationally closed:
+    - initial dry-run rows settled at:
+      - `1` created
+      - `61` flagged
+      - `38` failed
+      - all `38` failures were `missing_resolved_composer_id`
+    - direct composer seeding later saw no remaining missing-composer work rows for the slice
+    - direct candidate inspection then came back green with `0` failures
+    - canonical green dry-run row `7009e75a-9d60-4b4c-b799-4569b6314554` finished at:
+      - `100` processed
+      - `2` created
+      - `98` flagged
+      - `0` failed
+      - cursor advanced to `3100`
+    - canonical live row `f4ba5ee9-7983-4f8c-b64f-c8acc10a257c` finished at:
+      - `100` processed
+      - `2` created
+      - `98` flagged
+      - `0` failed
+      - cursor advanced to `3100`
+    - exact offset-`3000` coverage audit returned:
+      - `100` covered candidates
+      - `0` uncovered candidates
+      - `5` duplicate-only review cases
+    - seeded sampler `offset-3000-postship` looked coherent for accepted orchestral works, IMSLP composers, and open quarantine rows
+    - the session also left stale zero-count wrapper rows in `running`; treat them as historical bookkeeping noise unless they ever acquire counters:
+      - `0219764a-8494-4fdb-8503-d82b89a819e5`
+      - `da2ea856-b9d5-450d-975a-9225f1a8253c`
+      - `26b32793-2837-4988-9a0f-065585d17903`
   - the Mac mini operator environment also exposed a credential drift:
     - `scripts/populate-composers.env.local` still contains a legacy service-role key and fails with `Legacy API keys are disabled`
     - the recovery scripts now need a modern `SUPABASE_SECRET_KEY`
@@ -201,7 +230,7 @@ This file is the current priority view for OpusGraph. Keep it short, current, an
       - current ingest is not showing hidden parse/write corruption in the audited range
       - the recovered `1700` through `2900` range now has exact source-level persisted/quarantine/duplicate coverage rather than only entity-level duplicate coverage
     - next operator move:
-      - start offset `3000` from a fresh worktree after this cleanup branch is merged
+      - start offset `3100` from a fresh worktree after this recovery handoff is shipped
   - the first deliberate composer catch-up batch succeeded:
     - dry-run `218` usable rows with `137` creates and `0` failures
     - live `218` usable rows with `130` creates, `80` updates, `8` duplicate flags, and `0` failures
