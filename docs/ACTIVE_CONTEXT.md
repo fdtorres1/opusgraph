@@ -4,11 +4,11 @@ This is the canonical handoff file for the next session. Rewrite freely as prior
 
 ## Current Objective
 
-Use a stricter IMSLP audit pass to decide whether it is safe to continue at offset `3000`, and separate real ingest risk from historical duplicate-review bookkeeping debt.
+Ship the historical IMSLP duplicate-review cleanup, then resume IMSLP work ingestion at offset `3000` from a fresh worktree with strict source-level coverage now green across offsets `1700` through `2900`.
 
 ## Current Branch
 
-- `chore/imslp-strict-audit`
+- `fix/imslp-duplicate-cleanup`
 
 ## Parallel Work Coordination
 
@@ -24,18 +24,38 @@ Use a stricter IMSLP audit pass to decide whether it is safe to continue at offs
 ### Active Workstreams
 
 - Agent: current Codex session
-  - Worktree: current checkout at `/Users/felixtorres/dev/opusgraph-imslp-strict-audit`
-  - Branch: `chore/imslp-strict-audit`
-  - Scope: run a stricter IMSLP audit across the recovered range, capture the results, and decide whether offset `3000` is safe
+  - Worktree: current checkout at `/Users/felixtorres/dev/opusgraph-imslp-duplicate-cleanup`
+  - Branch: `fix/imslp-duplicate-cleanup`
+  - Scope: backfill historical IMSLP duplicate-only review gaps, collapse duplicate-source flag collisions, rerun the strict audit, and hand off a clean starting point for offset `3000`
   - File ownership:
-    - `scripts/audit-imslp-work-coverage.ts`
+    - `scripts/cleanup-imslp-duplicate-review-debt.ts`
     - `docs/ACTIVE_CONTEXT.md`
     - `docs/ROADMAP.md`
     - `docs/WORKLOG.md`
   - Status: active
-  - Notes: auth/RLS is already signed off; managed daily Supabase physical backups are now available; `0016` is applied in the linked cloud; `T4`, `T5`, the IMSLP composer adapter, the IMSLP work adapter, the orchestral-only quarantine flow, and the quarantine-review UI are all merged on `main`; PR `#40` is merged on `main`; this task branch is intentionally separate from the dedicated integration worktree at `/Users/felixtorres/coding/opusgraph`
+  - Notes: auth/RLS is already signed off; managed daily Supabase physical backups are now available; `0016` is applied in the linked cloud; `T4`, `T5`, the IMSLP composer adapter, the IMSLP work adapter, the orchestral-only quarantine flow, the quarantine-review UI, the offset-`2900` duplicate-flag repair, and the strict audit helper are all merged on `main`; this task branch is intentionally separate from the dedicated integration worktree at `/Users/felixtorres/coding/opusgraph`
 
 ## In Progress
+
+- Strict IMSLP coverage and duplicate-review hygiene are now clean across offsets `1700` through `2900`:
+  - `scripts/audit-imslp-work-coverage.ts` established the pre-cleanup baseline:
+    - `51` uncovered IMSLP work candidates
+    - `9` duplicate-source collision buckets
+    - `0` open duplicate flags missing `details.source_identity`
+  - `scripts/cleanup-imslp-duplicate-review-debt.ts` now clears that historical debt:
+    - live replay backfilled all `51` uncovered candidates as source-specific `possible_duplicate` flags
+    - `10` redundant open duplicate flags were dismissed across the `9` safe collision buckets, always keeping the oldest open flag
+    - `0` unsafe collision buckets were left behind
+  - post-cleanup strict audit over offsets `1700` through `2900` now returns:
+    - `0` uncovered candidates
+    - `0` duplicate-source collisions
+    - `0` open duplicate flags missing `details.source_identity`
+  - interpretation:
+    - the audited recovered range now has exact source-level persisted/quarantine/duplicate coverage
+    - the remaining open duplicate flags in that range are expected review work, not historical bookkeeping drift
+  - next step:
+    - ship `fix/imslp-duplicate-cleanup`
+    - start offset `3000` from a fresh ingestion worktree on top of updated `main`
 
 - IMSLP work ingest is now being corrected to orchestral-only scope:
   - the work adapter now computes an orchestral-scope assessment from persisted/parsed instrumentation text
