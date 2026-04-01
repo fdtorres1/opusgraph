@@ -53,14 +53,89 @@ export async function createDuplicateReviewFlag(
   actorUserId: string,
   details: JsonObject,
 ): Promise<string | null> {
-  return createOrReuseReviewFlag(
-    supabase,
-    entityKind,
-    entityId,
-    "possible_duplicate",
-    actorUserId,
-    details,
-  );
+  const existingForEntity = await supabase
+    .from("review_flag")
+    .select("id, details")
+    .eq("entity_type", entityKind)
+    .eq("entity_id", entityId)
+    .eq("reason", "possible_duplicate")
+    .eq("status", "open");
+
+  const expectedSourceIdentity = readDuplicateFlagSourceIdentity(details);
+  if (
+    !existingForEntity.error &&
+    Array.isArray(existingForEntity.data) &&
+    existingForEntity.data.length > 0
+  ) {
+    for (const row of existingForEntity.data) {
+      const currentSourceIdentity = readDuplicateFlagSourceIdentity(
+        row.details as JsonObject | null | undefined,
+      );
+      if (
+        expectedSourceIdentity != null &&
+        currentSourceIdentity != null &&
+        currentSourceIdentity === expectedSourceIdentity
+      ) {
+        return row.id ?? null;
+      }
+    }
+  }
+
+  const { data, error } = await supabase
+    .from("review_flag")
+    .insert({
+      entity_type: entityKind,
+      entity_id: entityId,
+      reason: "possible_duplicate",
+      details,
+      status: "open",
+      created_by: actorUserId,
+    })
+    .select("id")
+    .single();
+
+  if (error) {
+    return null;
+  }
+
+  return data?.id ?? null;
+}
+
+function readDuplicateFlagSourceIdentity(
+  details: JsonObject | null | undefined,
+): string | null {
+  if (details == null) {
+    return null;
+  }
+
+  const sourceIdentity = details.source_identity;
+  if (
+    sourceIdentity == null ||
+    typeof sourceIdentity !== "object" ||
+    Array.isArray(sourceIdentity)
+  ) {
+    return null;
+  }
+
+  const source = typeof sourceIdentity.source === "string"
+    ? sourceIdentity.source.trim()
+    : "";
+  const sourceEntityKind = typeof sourceIdentity.source_entity_kind === "string"
+    ? sourceIdentity.source_entity_kind.trim()
+    : typeof sourceIdentity.sourceEntityKind === "string"
+      ? sourceIdentity.sourceEntityKind.trim()
+      : "";
+  const sourceId = typeof sourceIdentity.source_id === "string"
+    ? sourceIdentity.source_id.trim()
+    : typeof sourceIdentity.sourceId === "string"
+      ? sourceIdentity.sourceId.trim()
+      : "";
+
+  if (!source || !sourceEntityKind || !sourceId) {
+    return null;
+  }
+
+  return `${source}:${sourceEntityKind}:${sourceId}`;
 }
 
 export async function createOrReuseReviewFlag(

@@ -2,6 +2,85 @@
 
 Append-only log for implementation, investigation, and planning sessions. Keep entries short and resume-oriented.
 
+## 2026-04-01
+
+### Offset `2900` duplicate coverage was missing two source-specific flags; fixed reuse logic and closed the slice
+- Verified the nine still-uncovered offset-`2900` rows were duplicate-review cases, not missing quarantines or missing work writes.
+- Confirmed seven of those rows already had open `possible_duplicate` flags keyed to their own IMSLP source identities.
+- Isolated the remaining two unresolved source IDs:
+  - `14 Romances, Op.34 (Rachmaninoff, Sergei)`
+  - `15 Lieder, Op.55 (Reger, Max)`
+- Proved the root cause was duplicate-flag reuse by `(entity_id, reason)` only:
+  - both candidates resolved to `flagged_duplicate`
+  - both target works already had older open `possible_duplicate` flags from different IMSLP source pages
+  - the new candidates therefore reused the old flag rows and lost their own `details.source_identity`
+- Patched `lib/ingest/persist/support.ts` so duplicate review flags are reused only when the existing open flag already represents the same source candidate.
+- Re-ran the narrow live repair with the existing debug operator path:
+  - `scripts/debug-imslp-work-slice.ts --offset 2900 --batch-size 100 --mode live --source-id '14 Romances, Op.34 (Rachmaninoff, Sergei)' --source-id '15 Lieder, Op.55 (Reger, Max)'`
+- Verified the missing source-specific duplicate flags now exist:
+  - `4ba88b28-f482-4c34-b059-79c666a0a263`
+  - `04fba951-2666-467e-b14a-e8bfdcaea3e0`
+- Ran a focused post-repair audit:
+  - `scripts/sample-imslp-audit.ts --seed offset-2900-postship --works 8 --composers 5 --flags 8`
+  - targeted offset-`2900` coverage audit returned:
+    - `100` candidates
+    - `91` persisted work rows
+    - `9` duplicate-only review cases
+    - `0` uncovered rows
+  - duplicate-flag hygiene query over open `possible_duplicate` work flags returned:
+    - `176` open duplicate flags
+    - `0` rows missing `details.source_identity`
+    - `9` historical source-identity collisions that predate this fix
+- Built the app successfully with `npm run build`.
+- Follow-up:
+  - treat offset `2900` as operationally closed
+  - keep the stale live job row `8f11aab0-17bb-457c-90f5-9c6ee9a06640` documented as historical bookkeeping debt
+  - start offset `3000` from a fresh task worktree after this fix/doc branch is shipped
+
+### Offset `2900` recovery resumed from a new Mac mini worktree; replay dry-runs are green but the live row is stale
+- Created a dedicated task worktree and branch for this operator pass:
+  - worktree: `/Users/felixtorres/dev/opusgraph-imslp-2900`
+  - branch: `fix/imslp-offset-2900-recovery`
+- Verified the synced integration checkout remains clean at `/Users/felixtorres/coding/opusgraph` on `main`.
+- Installed dependencies in the new worktree with `npm ci`.
+- The first attempt to run the recovery wrapper from the Mac mini using `scripts/populate-composers.env.local` failed immediately:
+  - `create_ingest_job_failed`
+  - `Legacy API keys are disabled`
+- Re-ran the operator scripts using the modern `.env.local` from the mounted SSD checkout instead of the legacy seed env file.
+- Initial dry-run row `386741bb-fe80-49b8-8f95-e42506b22743` settled at:
+  - `100` processed
+  - `0` created
+  - `55` flagged
+  - `45` failed
+  - all failures were `missing_resolved_composer_id`
+  - `47` rows would quarantine
+- The first recovery wrapper stayed silent after the initial dry-run, but linked-cloud coverage changed in a way consistent with targeted composer seeding having progressed:
+  - IMSLP composer coverage moved from the post-`2800` baseline of `2806` to `2848`
+- Manual replay dry-run runs were then issued directly:
+  - `f60635bd-94d1-4f92-ab44-14bbea472726`
+  - `7d48adb9-a03d-4e64-88ec-a464185e13f0`
+- Both replay dry-run rows later backfilled green:
+  - `100` processed
+  - `1` created
+  - `99` flagged
+  - `0` failed
+  - `91` rows would quarantine
+  - cursor advanced to `3000`
+- A live row was then created:
+  - `8f11aab0-17bb-457c-90f5-9c6ee9a06640`
+- Current state of that live row:
+  - still `running`
+  - zero counters
+  - no heartbeat beyond the initial claim/start timestamp
+  - not yet trustworthy as the canonical live result for offset `2900`
+- Current observed linked-cloud totals during the attempted `2900` live run:
+  - `2848` IMSLP composers
+  - `2683` IMSLP works
+  - `2627` open `orchestral_scope_review` flags
+- Follow-up:
+  - verify whether the `2900` live writes already landed despite the stale row, or explicitly repair/rerun the live step until there is a canonical terminal result
+  - do not move to offset `3000` until offset `2900` is conclusively closed out
+
 ## 2026-03-27
 
 ### Resumed IMSLP work ingest at offset `1700` under the merged orchestral-only scope
