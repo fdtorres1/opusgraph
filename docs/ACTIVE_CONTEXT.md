@@ -434,6 +434,13 @@ Ship the offset-`2900` duplicate-flag repair and then continue IMSLP work ingest
     - DB verification now shows source-specific open `possible_duplicate` flags for both missing rows:
       - `4ba88b28-f482-4c34-b059-79c666a0a263`
       - `04fba951-2666-467e-b14a-e8bfdcaea3e0`
+    - focused post-repair audit passed:
+      - `scripts/sample-imslp-audit.ts --seed offset-2900-postship --works 8 --composers 5 --flags 8` sampled clean accepted orchestral works, IMSLP composers, and open quarantine flags
+      - targeted offset-`2900` coverage audit returned:
+        - `100` candidates
+        - `91` persisted work rows
+        - `9` duplicate-only review cases
+        - `0` uncovered rows
   - immediate next step:
     - open or ship this branch’s duplicate-flag fix plus handoff docs, then start offset `3000` from a fresh task worktree rather than extending this one
   - operator note:

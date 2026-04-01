@@ -20,6 +20,13 @@ Append-only log for implementation, investigation, and planning sessions. Keep e
 - Verified the missing source-specific duplicate flags now exist:
   - `4ba88b28-f482-4c34-b059-79c666a0a263`
   - `04fba951-2666-467e-b14a-e8bfdcaea3e0`
+- Ran a focused post-repair audit:
+  - `scripts/sample-imslp-audit.ts --seed offset-2900-postship --works 8 --composers 5 --flags 8`
+  - targeted offset-`2900` coverage audit returned:
+    - `100` candidates
+    - `91` persisted work rows
+    - `9` duplicate-only review cases
+    - `0` uncovered rows
 - Built the app successfully with `npm run build`.
 - Follow-up:
   - treat offset `2900` as operationally closed

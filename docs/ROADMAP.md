@@ -175,6 +175,9 @@ This file is the current priority view for OpusGraph. Keep it short, current, an
     - targeted live replay after the fix created the missing source-specific duplicate flags:
       - `4ba88b28-f482-4c34-b059-79c666a0a263`
       - `04fba951-2666-467e-b14a-e8bfdcaea3e0`
+    - focused post-repair audit passed:
+      - seeded IMSLP sampler returned clean accepted orchestral works, composers, and open quarantine examples
+      - exact offset-`2900` coverage audit returned `100` covered candidates and `0` uncovered rows
   - the CLI wrappers still settle late enough to look hung, so operator verification against `source_ingest_job`, `review_flag`, and coverage counts remains the safer path during live runs
   - the Mac mini operator environment also exposed a credential drift:
     - `scripts/populate-composers.env.local` still contains a legacy service-role key and fails with `Legacy API keys are disabled`
