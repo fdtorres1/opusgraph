@@ -8,7 +8,7 @@ Ship the offset-`3000` recovery handoff, then continue IMSLP work ingestion at o
 
 ## Current Branch
 
-- `fix/imslp-duplicate-cleanup`
+- `fix/imslp-offset-3000-recovery`
 
 ## Parallel Work Coordination
 
@@ -24,11 +24,10 @@ Ship the offset-`3000` recovery handoff, then continue IMSLP work ingestion at o
 ### Active Workstreams
 
 - Agent: current Codex session
-  - Worktree: current checkout at `/Users/felixtorres/dev/opusgraph-imslp-duplicate-cleanup`
-  - Branch: `fix/imslp-duplicate-cleanup`
-  - Scope: backfill historical IMSLP duplicate-only review gaps, collapse duplicate-source flag collisions, rerun the strict audit, and hand off a clean starting point for offset `3000`
+  - Worktree: current checkout at `/Users/felixtorres/dev/opusgraph-imslp-3000`
+  - Branch: `fix/imslp-offset-3000-recovery`
+  - Scope: recover offset `3000`, verify exact source-level coverage, and hand off a clean starting point for offset `3100`
   - File ownership:
-    - `scripts/cleanup-imslp-duplicate-review-debt.ts`
     - `docs/ACTIVE_CONTEXT.md`
     - `docs/ROADMAP.md`
     - `docs/WORKLOG.md`
