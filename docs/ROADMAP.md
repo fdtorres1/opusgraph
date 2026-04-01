@@ -146,8 +146,39 @@ This file is the current priority view for OpusGraph. Keep it short, current, an
       - `0` failed
       - cursor advanced to `2900`
   - next operator step:
-    - continue with the offset-`2900` recovery flow
+    - ship the offset-`2900` duplicate-flag repair from `fix/imslp-offset-2900-recovery`, then resume at offset `3000` from a fresh worktree
+  - offset `2900` is operationally closed:
+    - initial dry-run `386741bb-fe80-49b8-8f95-e42506b22743` settled at:
+      - `0` created
+      - `55` flagged
+      - `45` composer-resolution failures
+      - `47` quarantines
+    - targeted composer seeding appears to have increased IMSLP composer coverage from `2806` to `2848`
+    - replay dry-runs `f60635bd-94d1-4f92-ab44-14bbea472726` and `7d48adb9-a03d-4e64-88ec-a464185e13f0` both backfilled green:
+      - `1` created
+      - `99` flagged
+      - `0` failed
+      - `91` quarantines
+      - cursor advanced to `3000`
+    - live row `8f11aab0-17bb-457c-90f5-9c6ee9a06640` remains stale in `running` with zero counters, but it is now treated as historical bookkeeping debt rather than an ingestion blocker
+    - current observed coverage during the attempted `2900` live run:
+      - `2848` IMSLP composers
+      - `2683` IMSLP works
+      - `2627` open `orchestral_scope_review` flags
+    - the final unresolved coverage gap turned out to be two duplicate-review cases with no source-specific open flag:
+      - `14 Romances, Op.34 (Rachmaninoff, Sergei)`
+      - `15 Lieder, Op.55 (Reger, Max)`
+    - root cause:
+      - duplicate review flags reused any open `(entity_id, reason)` row, so later IMSLP duplicate candidates against the same work did not retain their own `details.source_identity`
+    - fix:
+      - `lib/ingest/persist/support.ts` now reuses duplicate flags only when the same source candidate is already represented
+    - targeted live replay after the fix created the missing source-specific duplicate flags:
+      - `4ba88b28-f482-4c34-b059-79c666a0a263`
+      - `04fba951-2666-467e-b14a-e8bfdcaea3e0`
   - the CLI wrappers still settle late enough to look hung, so operator verification against `source_ingest_job`, `review_flag`, and coverage counts remains the safer path during live runs
+  - the Mac mini operator environment also exposed a credential drift:
+    - `scripts/populate-composers.env.local` still contains a legacy service-role key and fails with `Legacy API keys are disabled`
+    - the recovery scripts now need a modern `SUPABASE_SECRET_KEY`
   - the `200`, `300`, and `400` slices are now operationally recovered to:
     - `0` failed rows
     - only duplicate-review cases remaining

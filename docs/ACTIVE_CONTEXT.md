@@ -4,11 +4,11 @@ This is the canonical handoff file for the next session. Rewrite freely as prior
 
 ## Current Objective
 
-Continue IMSLP work ingestion under the corrected orchestral-only scope, using the quarantine path for out-of-scope works and DB-verified operator recovery for each live slice.
+Ship the offset-`2900` duplicate-flag repair and then continue IMSLP work ingestion at offset `3000` from a fresh worktree, with the stale historical `2900` live row documented as bookkeeping debt rather than an ingestion blocker.
 
 ## Current Branch
 
-- `main`
+- `fix/imslp-offset-2900-recovery`
 
 ## Parallel Work Coordination
 
@@ -24,15 +24,15 @@ Continue IMSLP work ingestion under the corrected orchestral-only scope, using t
 ### Active Workstreams
 
 - Agent: current Codex session
-  - Worktree: current checkout at `/Volumes/Felix-SSD-1/Cursor Projects/opusgraph`
-  - Branch: `main`
-  - Scope: resume IMSLP work ingestion under the corrected orchestral-only gate and keep the operator handoff current
+  - Worktree: current checkout at `/Users/felixtorres/dev/opusgraph-imslp-2900`
+  - Branch: `fix/imslp-offset-2900-recovery`
+  - Scope: close out the IMSLP work slice at offset `2900`, fix duplicate-flag reuse so each IMSLP duplicate candidate keeps its own source identity, and keep the operator handoff current
   - File ownership:
     - `docs/ACTIVE_CONTEXT.md`
     - `docs/ROADMAP.md`
     - `docs/WORKLOG.md`
   - Status: active
-  - Notes: auth/RLS is already signed off; managed daily Supabase physical backups are now available; `0016` is applied in the linked cloud; `T4`, `T5`, the IMSLP composer adapter, the IMSLP work adapter, the orchestral-only quarantine flow, and the quarantine-review UI are all merged on `main`
+  - Notes: auth/RLS is already signed off; managed daily Supabase physical backups are now available; `0016` is applied in the linked cloud; `T4`, `T5`, the IMSLP composer adapter, the IMSLP work adapter, the orchestral-only quarantine flow, and the quarantine-review UI are all merged on `main`; this task branch is intentionally separate from the dedicated integration worktree at `/Users/felixtorres/coding/opusgraph`
 
 ## In Progress
 
@@ -389,10 +389,56 @@ Continue IMSLP work ingestion under the corrected orchestral-only scope, using t
       - `2806` IMSLP composers
       - `2657` IMSLP works
       - `2601` open `orchestral_scope_review` flags
+  - offset `2900` is now operationally reconciled, even though the original live job row is still stale:
+    - initial dry-run row:
+      - `386741bb-fe80-49b8-8f95-e42506b22743`
+    - initial dry-run settled at:
+      - `100` processed
+      - `0` created
+      - `55` flagged
+      - `45` failed, all `missing_resolved_composer_id`
+      - `47` rows would quarantine
+    - targeted composer seeding appears to have completed after the initial dry-run:
+      - current IMSLP composer coverage increased from the post-`2800` baseline of `2806` to `2848`
+      - the first recovery wrapper never emitted a final JSON summary after seeding, so the seeding result is currently inferred from DB-visible coverage change rather than wrapper stdout
+    - replay dry-run rows:
+      - `f60635bd-94d1-4f92-ab44-14bbea472726`
+      - `7d48adb9-a03d-4e64-88ec-a464185e13f0`
+    - both replay rows later backfilled green:
+      - `100` processed
+      - `1` created
+      - `99` flagged
+      - `0` failed
+      - `91` rows would quarantine
+      - cursor advanced to `3000`
+    - live row:
+      - `8f11aab0-17bb-457c-90f5-9c6ee9a06640`
+    - current live-row state:
+      - still `running`
+      - `0` counters
+      - no heartbeat beyond claim/start time
+      - still not trustworthy as the canonical historical live record for the slice
+    - current linked-cloud coverage during the attempted `2900` live run:
+      - `2848` IMSLP composers
+      - `2683` IMSLP works
+      - `2627` open `orchestral_scope_review` flags
+    - duplicate-review repair confirmed the remaining unresolved rows were:
+      - `14 Romances, Op.34 (Rachmaninoff, Sergei)`
+      - `15 Lieder, Op.55 (Reger, Max)`
+    - root cause:
+      - duplicate review flags were being reused by `(entity_id, reason)` only, so new IMSLP duplicate candidates against a work that already had an open `possible_duplicate` flag lost their own `details.source_identity`
+    - fix applied on this branch:
+      - `lib/ingest/persist/support.ts` now reuses open duplicate flags only when the existing flag already represents the same source candidate
+    - targeted live replay after the fix used:
+      - `scripts/debug-imslp-work-slice.ts --offset 2900 --batch-size 100 --mode live --source-id '14 Romances, Op.34 (Rachmaninoff, Sergei)' --source-id '15 Lieder, Op.55 (Reger, Max)'`
+    - DB verification now shows source-specific open `possible_duplicate` flags for both missing rows:
+      - `4ba88b28-f482-4c34-b059-79c666a0a263`
+      - `04fba951-2666-467e-b14a-e8bfdcaea3e0`
   - immediate next step:
-    - continue with the offset-`2900` recovery flow
+    - open or ship this branch’s duplicate-flag fix plus handoff docs, then start offset `3000` from a fresh task worktree rather than extending this one
   - operator note:
     - live operator scripts still settle late enough to look hung, so DB verification remains safer than trusting the CLI wrapper to exit promptly
+    - the first attempt to rerun offset `2900` from this Mac mini failed immediately because `scripts/populate-composers.env.local` still carries a legacy service-role key and the linked cloud now rejects it with `Legacy API keys are disabled`; use a modern `SUPABASE_SECRET_KEY` instead
     - one redundant manual replay dry-run (`a7f88c27-a8ce-4afb-995d-0bb6437a782d`) was launched while the canonical replay still looked stale; it paused green and can be ignored
     - two stale pre-fix replay rows remain in history for offset `1900` (`5ce868c9-d6a9-4d1d-9825-645da5ce9d5b`, `f6d7e276-4203-46c9-9f72-58e365b3955c`); both are paused and can be ignored
     - duplicate replay/live rows also exist for offset `2000` (`5637c43a-37a8-402c-8d95-144758a0546f`, `c5320eb3-a564-41c1-9658-3c9e8bf656ee`) because the wrapper again looked stale mid-run; the canonical successful rows are `f800f935-feca-4244-8823-b128cf071b6f` and `2a819619-acbd-4887-9c34-e36ae2b06377`
