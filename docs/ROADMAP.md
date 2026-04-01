@@ -146,7 +146,7 @@ This file is the current priority view for OpusGraph. Keep it short, current, an
       - `0` failed
       - cursor advanced to `2900`
   - next operator step:
-    - ship the offset-`2900` duplicate-flag repair from `fix/imslp-offset-2900-recovery`, then resume at offset `3000` from a fresh worktree
+    - ship `fix/imslp-duplicate-cleanup`, then resume at offset `3000` from a fresh worktree
   - offset `2900` is operationally closed:
     - initial dry-run `386741bb-fe80-49b8-8f95-e42506b22743` settled at:
       - `0` created
@@ -186,15 +186,22 @@ This file is the current priority view for OpusGraph. Keep it short, current, an
   - the `200`, `300`, and `400` slices are now operationally recovered to:
     - `0` failed rows
     - only duplicate-review cases remaining
-  - stricter audit after merging PR `#40` adds a clearer safety line:
+  - stricter audit after merging PR `#40` and PR `#41` is now fully green:
     - `scripts/audit-imslp-work-coverage.ts` now reconciles exact IMSLP source candidates against persisted work rows, open orchestral-scope flags, and open duplicate-review flags across a range of offsets
-    - range audit for offsets `1700` through `2900` found `51` candidates without source-specific persisted/flagged coverage
-    - all `51` currently dry-run as `flagged_duplicate` with no issue codes
+    - pre-cleanup range audit for offsets `1700` through `2900` found `51` candidates without source-specific persisted/flagged coverage
+    - all `51` dry-ran as `flagged_duplicate` with no issue codes
+    - `scripts/cleanup-imslp-duplicate-review-debt.ts` then:
+      - live-replayed all `51` uncovered candidates into source-specific open `possible_duplicate` flags
+      - dismissed `10` redundant open duplicate flags across `9` historical collision buckets, always keeping the oldest open flag
+    - post-cleanup range audit for offsets `1700` through `2900` now returns:
+      - `0` uncovered candidates
+      - `0` duplicate-source collisions
+      - `0` open duplicate flags missing `details.source_identity`
     - interpretation:
       - current ingest is not showing hidden parse/write corruption in the audited range
-      - the remaining risk is historical duplicate-review bookkeeping debt, not fresh bad reference rows
-    - next cleanup candidate:
-      - backfill or normalize those `51` historical duplicate-review rows so old slices have exact source-level audit coverage, not just entity-level duplicate coverage
+      - the recovered `1700` through `2900` range now has exact source-level persisted/quarantine/duplicate coverage rather than only entity-level duplicate coverage
+    - next operator move:
+      - start offset `3000` from a fresh worktree after this cleanup branch is merged
   - the first deliberate composer catch-up batch succeeded:
     - dry-run `218` usable rows with `137` creates and `0` failures
     - live `218` usable rows with `130` creates, `80` updates, `8` duplicate flags, and `0` failures

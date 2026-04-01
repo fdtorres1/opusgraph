@@ -2355,3 +2355,28 @@ Append-only log for implementation, investigation, and planning sessions. Keep e
   - `2601` open `orchestral_scope_review` flags
 - Follow-up:
   - continue with the offset-`2900` recovery flow
+
+### 2026-04-01 — Cleared historical IMSLP duplicate-review debt across offsets `1700` through `2900`
+
+- Created `scripts/cleanup-imslp-duplicate-review-debt.ts` on `fix/imslp-duplicate-cleanup` to turn the strict audit findings into deterministic repairs.
+- Pre-cleanup strict coverage baseline from `scripts/audit-imslp-work-coverage.ts --offset-start 1700 --offset-end 2900 --step 100 --batch-size 100` was:
+  - `51` uncovered IMSLP work candidates with no source-specific persisted row or open review flag
+  - all `51` dry-ran as `flagged_duplicate` with no issue codes
+  - `9` open duplicate-source collision buckets
+  - `0` open duplicate flags missing `details.source_identity`
+- Live cleanup result from `scripts/cleanup-imslp-duplicate-review-debt.ts --dry-run false` was:
+  - `51` uncovered candidates replayed live as source-specific `possible_duplicate` flags
+  - `10` redundant open duplicate flags dismissed across the `9` historical collision buckets
+  - `0` unsafe collision buckets required manual intervention
+  - duplicate-flag hygiene after the live cleanup:
+    - `217` open duplicate flags
+    - `0` missing `details.source_identity`
+    - `0` duplicate-source collisions
+- Post-cleanup strict audit over offsets `1700` through `2900` now returns:
+  - `0` uncovered candidates
+  - `0` duplicate-source collisions
+  - `0` open duplicate flags missing `details.source_identity`
+- `npm run build` passes on the cleanup branch after adding the cleanup helper.
+- Result:
+  - the audited recovered IMSLP range now has exact source-level persisted/quarantine/duplicate coverage
+  - the next operational step is to merge this cleanup branch, then start offset `3000` from a fresh worktree
