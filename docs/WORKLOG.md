@@ -27,6 +27,10 @@ Append-only log for implementation, investigation, and planning sessions. Keep e
     - `91` persisted work rows
     - `9` duplicate-only review cases
     - `0` uncovered rows
+  - duplicate-flag hygiene query over open `possible_duplicate` work flags returned:
+    - `176` open duplicate flags
+    - `0` rows missing `details.source_identity`
+    - `9` historical source-identity collisions that predate this fix
 - Built the app successfully with `npm run build`.
 - Follow-up:
   - treat offset `2900` as operationally closed

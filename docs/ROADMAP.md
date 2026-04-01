@@ -178,6 +178,7 @@ This file is the current priority view for OpusGraph. Keep it short, current, an
     - focused post-repair audit passed:
       - seeded IMSLP sampler returned clean accepted orchestral works, composers, and open quarantine examples
       - exact offset-`2900` coverage audit returned `100` covered candidates and `0` uncovered rows
+      - duplicate-flag hygiene found `0` open duplicate rows missing source identity, but `9` historical source-identity collisions remain from pre-fix behavior
   - the CLI wrappers still settle late enough to look hung, so operator verification against `source_ingest_job`, `review_flag`, and coverage counts remains the safer path during live runs
   - the Mac mini operator environment also exposed a credential drift:
     - `scripts/populate-composers.env.local` still contains a legacy service-role key and fails with `Legacy API keys are disabled`

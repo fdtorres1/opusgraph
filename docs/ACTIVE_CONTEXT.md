@@ -441,6 +441,10 @@ Ship the offset-`2900` duplicate-flag repair and then continue IMSLP work ingest
         - `91` persisted work rows
         - `9` duplicate-only review cases
         - `0` uncovered rows
+      - duplicate-flag hygiene audit also found:
+        - `176` open `possible_duplicate` work flags
+        - `0` rows missing `details.source_identity`
+        - `9` historical source-identity collisions across open duplicate flags, all predating this fix
   - immediate next step:
     - open or ship this branch’s duplicate-flag fix plus handoff docs, then start offset `3000` from a fresh task worktree rather than extending this one
   - operator note:
