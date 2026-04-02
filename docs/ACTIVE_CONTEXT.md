@@ -4,7 +4,7 @@ This is the canonical handoff file for the next session. Rewrite freely as prior
 
 ## Current Objective
 
-Ship the offset-`3300` recovery handoff, then continue IMSLP work ingestion at offset `3400` from a fresh worktree or a clean follow-on branch.
+Ship the offset-`3300` recovery handoff, apply `0017_review_flag_duplicate_source_identity.sql` in the linked cloud, then continue IMSLP work ingestion at offset `3400` from a fresh worktree or a clean follow-on branch.
 
 ## Current Branch
 
@@ -26,7 +26,7 @@ Ship the offset-`3300` recovery handoff, then continue IMSLP work ingestion at o
 - Agent: current Codex session
   - Worktree: current checkout at `/Users/felixtorres/dev/opusgraph-imslp-3300`
   - Branch: `fix/imslp-offset-3300-recovery`
-  - Scope: recover offset `3300`, harden duplicate-review idempotency under overlapping live runs, and hand off a clean starting point for offset `3400`
+  - Scope: recover offset `3300`, harden duplicate-review idempotency under overlapping live runs, and hand off a clean starting point for offset `3400` once the DB uniqueness guard is applied
   - File ownership:
     - `lib/ingest/persist/support.ts`
     - `docs/ACTIVE_CONTEXT.md`
@@ -74,9 +74,8 @@ Ship the offset-`3300` recovery handoff, then continue IMSLP work ingestion at o
     - `lib/ingest/persist/support.ts` now re-checks same-source open duplicate rows after insert failure so callers can reuse the already-created row
     - `supabase/migrations/0017_review_flag_duplicate_source_identity.sql` adds a partial unique index for open `possible_duplicate` rows keyed by `(entity_type, entity_id, source_identity.source, source_identity.source_entity_kind, source_identity.source_id)`
   - cleanup:
-    - dismissed the two redundant open duplicate flags from the overlapping rerun:
-      - `c38d93ac-34a2-458a-ba1c-9f20267da8ed`
-      - `7b772bf1-ac9a-400a-b929-86333953441b`
+    - `scripts/cleanup-imslp-duplicate-review-debt.ts --offset-start 3300 --offset-end 3300 --step 100 --batch-size 100 --dry-run false` found no remaining open collision buckets to dismiss
+    - the authoritative current state is that the overlapping-rerun duplicate rows are no longer open and duplicate hygiene is already back to zero
   - authoritative post-cleanup verification passed:
     - `scripts/audit-imslp-work-coverage.ts --offset-start 3300 --offset-end 3300 --step 100 --batch-size 100`
     - `100` covered candidates
@@ -92,8 +91,11 @@ Ship the offset-`3300` recovery handoff, then continue IMSLP work ingestion at o
   - operator note:
     - this slice confirmed a second failure mode besides slow wrapper bookkeeping: accidentally overlapping live reruns can create duplicate-source review debt unless the write path is DB-idempotent
     - keep verifying against `source_ingest_job`, `review_flag`, and the exact coverage audit rather than trusting the first wrapper invocation
+    - the migration file is ready in this branch, but it was not applied from this checkout because `supabase link` failed with `Access token not provided`
   - next step:
-    - ship this `3300` handoff branch, then continue with the offset-`3400` recovery flow from a fresh worktree
+    - ship this `3300` handoff branch
+    - apply `supabase/migrations/0017_review_flag_duplicate_source_identity.sql` in the linked cloud
+    - then continue with the offset-`3400` recovery flow from a fresh worktree
 
 - Offset `3200` is now operationally recovered:
   - initial dry-run rows `a1396585-b5ad-437c-b695-968646521b2c` and `49b8e73e-afcf-4a91-a098-188c1dccc691` both eventually settled at:

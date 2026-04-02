@@ -170,7 +170,7 @@ This file is the current priority view for OpusGraph. Keep it short, current, an
       - `lib/ingest/persist/support.ts` now re-checks same-source duplicate rows after insert failure
       - `supabase/migrations/0017_review_flag_duplicate_source_identity.sql` adds a partial unique index for open source-specific `possible_duplicate` flags
     - cleanup:
-      - dismissed the two redundant duplicate rows from the overlapping rerun
+      - the targeted duplicate-review cleanup rerun found no remaining open collision buckets
     - exact post-cleanup coverage audit returned:
       - `100` covered candidates
       - `0` uncovered candidates
@@ -181,7 +181,9 @@ This file is the current priority view for OpusGraph. Keep it short, current, an
       - `0` open duplicate flags missing `details.source_identity`
       - `0` duplicate-source collisions
   - next operator step:
-    - ship the offset-`3300` recovery handoff, then resume at offset `3400` from a fresh worktree
+    - ship the offset-`3300` recovery handoff
+    - apply `supabase/migrations/0017_review_flag_duplicate_source_identity.sql` in the linked cloud
+    - then resume at offset `3400` from a fresh worktree
   - offset `2900` is operationally closed:
     - initial dry-run `386741bb-fe80-49b8-8f95-e42506b22743` settled at:
       - `0` created

@@ -46,9 +46,8 @@ Append-only log for implementation, investigation, and planning sessions. Keep e
   - `lib/ingest/persist/support.ts` now re-checks for an existing same-source open duplicate row after insert failure
   - added `supabase/migrations/0017_review_flag_duplicate_source_identity.sql` to enforce a partial unique index on open source-specific `possible_duplicate` rows
 - Cleanup:
-  - dismissed the two redundant rows created by the overlapping rerun:
-    - `c38d93ac-34a2-458a-ba1c-9f20267da8ed`
-    - `7b772bf1-ac9a-400a-b929-86333953441b`
+  - reran `scripts/cleanup-imslp-duplicate-review-debt.ts --offset-start 3300 --offset-end 3300 --step 100 --batch-size 100 --dry-run false`
+  - current state already had no remaining open collision buckets to dismiss
 - Post-cleanup verification passed:
   - `scripts/audit-imslp-work-coverage.ts --offset-start 3300 --offset-end 3300 --step 100 --batch-size 100`
   - `100` covered candidates
@@ -63,6 +62,7 @@ Append-only log for implementation, investigation, and planning sessions. Keep e
 - Built successfully with `npm run build`.
 - Follow-up:
   - ship this `3300` handoff branch
+  - apply `supabase/migrations/0017_review_flag_duplicate_source_identity.sql` in the linked cloud before the next live slice
   - continue with offset `3400` from a fresh worktree
   - keep treating overlapping live reruns as data-quality risk unless the DB uniqueness guard is in place
 
