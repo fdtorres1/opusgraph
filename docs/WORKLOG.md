@@ -2,6 +2,70 @@
 
 Append-only log for implementation, investigation, and planning sessions. Keep entries short and resume-oriented.
 
+## 2026-04-02
+
+### Offset `3300` recovered after overlapping live reruns exposed a duplicate-review race
+- Created a fresh IMSLP recovery worktree at `/Users/felixtorres/dev/opusgraph-imslp-3300` on `fix/imslp-offset-3300-recovery`.
+- Initial dry-run row `239f0e56-c5c6-41c7-a6b3-39d400d9129c` settled at:
+  - `100` processed
+  - `4` created
+  - `66` flagged
+  - `30` failed
+  - all failures were `missing_resolved_composer_id`
+- Ran targeted composer seeding for the slice:
+  - `scripts/seed-imslp-work-composers.ts --offset 3300 --batch-size 100`
+  - `failedWorkRows = 30`
+  - `uniqueMissingComposers = 29`
+  - `seedResults = { created: 29, updated: 0, flagged: 0, failed: 0 }`
+- Canonical replay dry-run row `d3e909d4-896a-47f8-8268-0870347b26ff` then settled green:
+  - `100` processed
+  - `4` created
+  - `96` flagged
+  - `0` failed
+  - `87` rows would quarantine
+  - cursor advanced to `3400`
+- Two overlapping live runs then processed the same `3300` slice:
+  - `730b9225-0c67-4738-be92-1d0115a1dad6`
+    - `100` processed
+    - `4` created
+    - `96` flagged
+    - `0` failed
+  - `90754112-56e8-4ad1-be4c-cb1dd8f85591`
+    - `100` processed
+    - `4` updated
+    - `96` flagged
+    - `0` failed
+- The post-live exact audit proved source-level coverage was still complete but duplicate hygiene regressed:
+  - `100` covered candidates
+  - `0` uncovered candidates
+  - `2` duplicate-source collision buckets in open `possible_duplicate` flags
+- Root cause:
+  - `createDuplicateReviewFlag` in `lib/ingest/persist/support.ts` still used a plain app-level read-then-insert path
+  - overlapping live writers could therefore both miss the existing row and insert the same source-specific open duplicate flag
+- Fix:
+  - `lib/ingest/persist/support.ts` now re-checks for an existing same-source open duplicate row after insert failure
+  - added `supabase/migrations/0017_review_flag_duplicate_source_identity.sql` to enforce a partial unique index on open source-specific `possible_duplicate` rows
+- Cleanup:
+  - dismissed the two redundant rows created by the overlapping rerun:
+    - `c38d93ac-34a2-458a-ba1c-9f20267da8ed`
+    - `7b772bf1-ac9a-400a-b929-86333953441b`
+- Post-cleanup verification passed:
+  - `scripts/audit-imslp-work-coverage.ts --offset-start 3300 --offset-end 3300 --step 100 --batch-size 100`
+  - `100` covered candidates
+  - `0` uncovered candidates
+  - `91` persisted IMSLP work rows
+  - `87` open `orchestral_scope_review` flags
+  - `9` duplicate-only review cases
+  - duplicate hygiene returned to:
+    - `239` open duplicate flags
+    - `0` missing `details.source_identity`
+    - `0` duplicate-source collisions
+- Built successfully with `npm run build`.
+- Follow-up:
+  - ship this `3300` handoff branch
+  - continue with offset `3400` from a fresh worktree
+  - keep treating overlapping live reruns as data-quality risk unless the DB uniqueness guard is in place
+
 ## 2026-04-01
 
 ### Offset `3200` recovered after composer seeding, a green replay, and post-live coverage verification

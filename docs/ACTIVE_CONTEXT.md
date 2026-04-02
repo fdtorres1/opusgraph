@@ -4,11 +4,11 @@ This is the canonical handoff file for the next session. Rewrite freely as prior
 
 ## Current Objective
 
-Ship the offset-`3200` recovery handoff, then continue IMSLP work ingestion at offset `3300` from a fresh worktree or a clean follow-on branch.
+Ship the offset-`3300` recovery handoff, then continue IMSLP work ingestion at offset `3400` from a fresh worktree or a clean follow-on branch.
 
 ## Current Branch
 
-- `fix/imslp-offset-3200-recovery`
+- `fix/imslp-offset-3300-recovery`
 
 ## Parallel Work Coordination
 
@@ -24,17 +24,76 @@ Ship the offset-`3200` recovery handoff, then continue IMSLP work ingestion at o
 ### Active Workstreams
 
 - Agent: current Codex session
-  - Worktree: current checkout at `/Users/felixtorres/dev/opusgraph-imslp-3200`
-  - Branch: `fix/imslp-offset-3200-recovery`
-  - Scope: recover offset `3200`, verify exact source-level coverage, and hand off a clean starting point for offset `3300`
+  - Worktree: current checkout at `/Users/felixtorres/dev/opusgraph-imslp-3300`
+  - Branch: `fix/imslp-offset-3300-recovery`
+  - Scope: recover offset `3300`, harden duplicate-review idempotency under overlapping live runs, and hand off a clean starting point for offset `3400`
   - File ownership:
+    - `lib/ingest/persist/support.ts`
     - `docs/ACTIVE_CONTEXT.md`
     - `docs/ROADMAP.md`
     - `docs/WORKLOG.md`
+    - `supabase/migrations/0017_review_flag_duplicate_source_identity.sql`
   - Status: active
-  - Notes: auth/RLS is already signed off; managed daily Supabase physical backups are now available; `0016` is applied in the linked cloud; `T4`, `T5`, the IMSLP composer adapter, the IMSLP work adapter, the orchestral-only quarantine flow, the quarantine-review UI, the offset-`2900` duplicate-flag repair, and the strict audit helper are all merged on `main`; this task branch is intentionally separate from the dedicated integration worktree at `/Users/felixtorres/coding/opusgraph`
+  - Notes: auth/RLS is already signed off; managed daily Supabase physical backups are now available; `0016` is applied in the linked cloud; `T4`, `T5`, the IMSLP composer adapter, the IMSLP work adapter, the orchestral-only quarantine flow, the quarantine-review UI, the offset-`2900` duplicate-flag repair, the strict audit helper, and the duplicate-review cleanup are all merged on `main`; this task branch is intentionally separate from the dedicated integration worktree at `/Users/felixtorres/coding/opusgraph`
 
 ## In Progress
+
+- Offset `3300` is now operationally recovered and duplicate-review hygiene is clean again:
+  - initial dry-run row `239f0e56-c5c6-41c7-a6b3-39d400d9129c` settled at:
+    - `100` processed
+    - `4` created
+    - `66` flagged
+    - `30` failed
+    - all `30` failures were `missing_resolved_composer_id`
+  - targeted composer seeding from `scripts/seed-imslp-work-composers.ts --offset 3300 --batch-size 100` then created `29` IMSLP-linked composers:
+    - `failedWorkRows = 30`
+    - `uniqueMissingComposers = 29`
+    - `seedResults = { created: 29, updated: 0, flagged: 0, failed: 0 }`
+  - canonical replay dry-run row `d3e909d4-896a-47f8-8268-0870347b26ff` settled green:
+    - `100` processed
+    - `4` created
+    - `96` flagged
+    - `0` failed
+    - `87` rows would quarantine
+    - cursor advanced to `3400`
+  - two overlapping live runs then processed the same slice:
+    - first live row `730b9225-0c67-4738-be92-1d0115a1dad6`
+      - `100` processed
+      - `4` created
+      - `96` flagged
+      - `0` failed
+    - overlapping rerun `90754112-56e8-4ad1-be4c-cb1dd8f85591`
+      - `100` processed
+      - `4` updated
+      - `96` flagged
+      - `0` failed
+  - root cause:
+    - `createDuplicateReviewFlag` was still a plain read-then-insert path
+    - overlapping live writers could therefore race and each insert the same source-specific open `possible_duplicate` row before the other was visible to the app-level reuse check
+  - fix:
+    - `lib/ingest/persist/support.ts` now re-checks same-source open duplicate rows after insert failure so callers can reuse the already-created row
+    - `supabase/migrations/0017_review_flag_duplicate_source_identity.sql` adds a partial unique index for open `possible_duplicate` rows keyed by `(entity_type, entity_id, source_identity.source, source_identity.source_entity_kind, source_identity.source_id)`
+  - cleanup:
+    - dismissed the two redundant open duplicate flags from the overlapping rerun:
+      - `c38d93ac-34a2-458a-ba1c-9f20267da8ed`
+      - `7b772bf1-ac9a-400a-b929-86333953441b`
+  - authoritative post-cleanup verification passed:
+    - `scripts/audit-imslp-work-coverage.ts --offset-start 3300 --offset-end 3300 --step 100 --batch-size 100`
+    - `100` covered candidates
+    - `0` uncovered candidates
+    - `91` persisted IMSLP work rows
+    - `87` open `orchestral_scope_review` flags
+    - `9` duplicate-only review cases
+    - duplicate-flag hygiene returned:
+      - `239` open duplicate flags
+      - `0` missing `details.source_identity`
+      - `0` duplicate-source collisions
+  - seeded audit from `scripts/sample-imslp-audit.ts --label offset-3300-postlive --sample-size 10 --seed 3300` also looked coherent before the duplicate cleanup
+  - operator note:
+    - this slice confirmed a second failure mode besides slow wrapper bookkeeping: accidentally overlapping live reruns can create duplicate-source review debt unless the write path is DB-idempotent
+    - keep verifying against `source_ingest_job`, `review_flag`, and the exact coverage audit rather than trusting the first wrapper invocation
+  - next step:
+    - ship this `3300` handoff branch, then continue with the offset-`3400` recovery flow from a fresh worktree
 
 - Offset `3200` is now operationally recovered:
   - initial dry-run rows `a1396585-b5ad-437c-b695-968646521b2c` and `49b8e73e-afcf-4a91-a098-188c1dccc691` both eventually settled at:
