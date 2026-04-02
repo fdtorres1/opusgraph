@@ -4,11 +4,11 @@ This is the canonical handoff file for the next session. Rewrite freely as prior
 
 ## Current Objective
 
-Ship the offset-`3000` recovery handoff, then continue IMSLP work ingestion at offset `3100` from a fresh worktree or a clean follow-on branch.
+Ship the offset-`3100` recovery handoff, then continue IMSLP work ingestion at offset `3200` from a fresh worktree or a clean follow-on branch.
 
 ## Current Branch
 
-- `fix/imslp-offset-3000-recovery`
+- `fix/imslp-offset-3100-recovery`
 
 ## Parallel Work Coordination
 
@@ -24,9 +24,9 @@ Ship the offset-`3000` recovery handoff, then continue IMSLP work ingestion at o
 ### Active Workstreams
 
 - Agent: current Codex session
-  - Worktree: current checkout at `/Users/felixtorres/dev/opusgraph-imslp-3000`
-  - Branch: `fix/imslp-offset-3000-recovery`
-  - Scope: recover offset `3000`, verify exact source-level coverage, and hand off a clean starting point for offset `3100`
+  - Worktree: current checkout at `/Users/felixtorres/dev/opusgraph-imslp-3100`
+  - Branch: `fix/imslp-offset-3100-recovery`
+  - Scope: recover offset `3100`, verify exact source-level coverage, and hand off a clean starting point for offset `3200`
   - File ownership:
     - `docs/ACTIVE_CONTEXT.md`
     - `docs/ROADMAP.md`
@@ -36,47 +36,52 @@ Ship the offset-`3000` recovery handoff, then continue IMSLP work ingestion at o
 
 ## In Progress
 
-- Offset `3000` is now operationally recovered:
-  - initial dry-run rows `7e317a7f-8c8a-43a3-ac6c-c758f8ffff22` and `27859d92-139c-40e6-b8b6-6f9e2be54886` both settled at:
+- Offset `3100` is now operationally recovered:
+  - initial dry-run row `d20c582b-fec1-462b-a786-743b40a01220` settled at:
     - `100` processed
-    - `1` created
-    - `61` flagged
-    - `38` failed
-    - all `38` failures were `missing_resolved_composer_id`
-  - by the time manual intervention resumed, `scripts/seed-imslp-work-composers.ts --offset 3000 --batch-size 100` reported no remaining missing-composer work rows:
-    - `failedWorkRows = 0`
-    - `uniqueMissingComposers = 0`
-  - direct candidate-level verification with `scripts/inspect-imslp-work-slice.ts --offset 3000 --batch-size 100` then came back green:
-    - `failureCount = 0`
-  - canonical green dry-run row:
-    - `7009e75a-9d60-4b4c-b799-4569b6314554`
+    - `0` created
+    - `60` flagged
+    - `40` failed
+    - all `40` failures were `missing_resolved_composer_id`
+  - targeted composer seeding from `scripts/seed-imslp-work-composers.ts --offset 3100 --batch-size 100` then created `39` IMSLP-linked composers:
+    - `failedWorkRows = 40`
+    - `uniqueMissingComposers = 39`
+    - `seedResults = { created: 39, updated: 0, flagged: 0, failed: 0 }`
+  - direct candidate inspection from `scripts/inspect-imslp-work-slice.ts --offset 3100 --batch-size 100` reduced the unresolved set to `5` remaining `missing_resolved_composer_id` rows:
+    - `150 Pseaumes de David (Desfontaines, Jean)`
+    - `150 Pseaumes de David, 1564 (Goudimel, Claude)`
+    - `150 Pseaumes de David, 1568 (Goudimel, Claude)`
+    - `150 Vocalises pour toutes les voix (Zingarelli, Niccolò Antonio)`
+    - `150 Vorspiele, Fugetten und Versetten (Starck, Johann Friedrich)`
+  - canonical replay dry-run row `da822fdd-0c78-4ec0-aec6-d0a42d055441` then settled green:
     - `100` processed
-    - `2` created
-    - `98` flagged
+    - `0` created
+    - `100` flagged
     - `0` failed
-    - cursor advanced to `3100`
-  - canonical live row:
-    - `f4ba5ee9-7983-4f8c-b64f-c8acc10a257c`
+    - `98` rows would quarantine
+    - cursor advanced to `3200`
+  - canonical live row `2d941aa7-e4c0-4605-80d2-f1009af162a4` later settled green:
     - `100` processed
-    - `2` created
-    - `98` flagged
+    - `0` created
+    - `100` flagged
     - `0` failed
-    - cursor advanced to `3100`
-  - exact post-slice coverage audit from `scripts/audit-imslp-work-coverage.ts --offset-start 3000 --offset-end 3000 --step 100 --batch-size 100` passed:
+    - `98` quarantined
+    - cursor advanced to `3200`
+  - exact post-slice coverage audit from `scripts/audit-imslp-work-coverage.ts --offset-start 3100 --offset-end 3100 --step 100 --batch-size 100` passed after the live row settled:
     - `100` covered candidates
     - `0` uncovered candidates
-    - `95` persisted IMSLP work rows
-    - `5` duplicate-only review cases
+    - `98` persisted IMSLP work rows
+    - `98` open `orchestral_scope_review` flags
+    - `2` duplicate-only review cases
     - duplicate-flag hygiene remained:
       - `0` missing `details.source_identity`
       - `0` duplicate-source collisions
-  - seeded audit from `scripts/sample-imslp-audit.ts --seed offset-3000-postship --works 8 --composers 5 --flags 8` sampled clean accepted orchestral works, IMSLP composers, and open quarantine rows
-  - this session also produced stale zero-count wrapper rows that should be treated as bookkeeping noise, not ingestion blockers:
-    - dry-run `0219764a-8494-4fdb-8503-d82b89a819e5`
-    - dry-run `da2ea856-b9d5-450d-975a-9225f1a8253c`
-    - live `26b32793-2837-4988-9a0f-065585d17903`
+  - operator note:
+    - a coverage audit launched while the live row was still `running` reported `61` uncovered candidates, but that result was stale race-condition noise and disappeared on the post-live rerun
+    - the safer operating pattern remains “wait for the DB row to settle, then rerun exact coverage”
+  - seeded audit from `scripts/sample-imslp-audit.ts --label offset-3100-postlive --sample-size 10 --seed 3100` sampled clean accepted orchestral works, IMSLP composers, and open quarantine rows
   - next step:
-    - continue with the offset-`3100` recovery flow
+    - continue with the offset-`3200` recovery flow
 
 - Strict IMSLP coverage and duplicate-review hygiene are now clean across offsets `1700` through `2900`:
   - `scripts/audit-imslp-work-coverage.ts` established the pre-cleanup baseline:
@@ -95,8 +100,7 @@ Ship the offset-`3000` recovery handoff, then continue IMSLP work ingestion at o
     - the audited recovered range now has exact source-level persisted/quarantine/duplicate coverage
     - the remaining open duplicate flags in that range are expected review work, not historical bookkeeping drift
   - next step:
-    - ship `fix/imslp-duplicate-cleanup`
-    - start offset `3000` from a fresh ingestion worktree on top of updated `main`
+    - keep using the strict coverage audit as the post-live gate while continuing beyond offset `3100`
 
 - IMSLP work ingest is now being corrected to orchestral-only scope:
   - the work adapter now computes an orchestral-scope assessment from persisted/parsed instrumentation text
