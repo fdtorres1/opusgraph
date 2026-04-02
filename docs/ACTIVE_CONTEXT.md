@@ -4,11 +4,11 @@ This is the canonical handoff file for the next session. Rewrite freely as prior
 
 ## Current Objective
 
-Ship the historical IMSLP duplicate-review cleanup, then resume IMSLP work ingestion at offset `3000` from a fresh worktree with strict source-level coverage now green across offsets `1700` through `2900`.
+Ship the offset-`3000` recovery handoff, then continue IMSLP work ingestion at offset `3100` from a fresh worktree or a clean follow-on branch.
 
 ## Current Branch
 
-- `fix/imslp-duplicate-cleanup`
+- `fix/imslp-offset-3000-recovery`
 
 ## Parallel Work Coordination
 
@@ -24,11 +24,10 @@ Ship the historical IMSLP duplicate-review cleanup, then resume IMSLP work inges
 ### Active Workstreams
 
 - Agent: current Codex session
-  - Worktree: current checkout at `/Users/felixtorres/dev/opusgraph-imslp-duplicate-cleanup`
-  - Branch: `fix/imslp-duplicate-cleanup`
-  - Scope: backfill historical IMSLP duplicate-only review gaps, collapse duplicate-source flag collisions, rerun the strict audit, and hand off a clean starting point for offset `3000`
+  - Worktree: current checkout at `/Users/felixtorres/dev/opusgraph-imslp-3000`
+  - Branch: `fix/imslp-offset-3000-recovery`
+  - Scope: recover offset `3000`, verify exact source-level coverage, and hand off a clean starting point for offset `3100`
   - File ownership:
-    - `scripts/cleanup-imslp-duplicate-review-debt.ts`
     - `docs/ACTIVE_CONTEXT.md`
     - `docs/ROADMAP.md`
     - `docs/WORKLOG.md`
@@ -36,6 +35,48 @@ Ship the historical IMSLP duplicate-review cleanup, then resume IMSLP work inges
   - Notes: auth/RLS is already signed off; managed daily Supabase physical backups are now available; `0016` is applied in the linked cloud; `T4`, `T5`, the IMSLP composer adapter, the IMSLP work adapter, the orchestral-only quarantine flow, the quarantine-review UI, the offset-`2900` duplicate-flag repair, and the strict audit helper are all merged on `main`; this task branch is intentionally separate from the dedicated integration worktree at `/Users/felixtorres/coding/opusgraph`
 
 ## In Progress
+
+- Offset `3000` is now operationally recovered:
+  - initial dry-run rows `7e317a7f-8c8a-43a3-ac6c-c758f8ffff22` and `27859d92-139c-40e6-b8b6-6f9e2be54886` both settled at:
+    - `100` processed
+    - `1` created
+    - `61` flagged
+    - `38` failed
+    - all `38` failures were `missing_resolved_composer_id`
+  - by the time manual intervention resumed, `scripts/seed-imslp-work-composers.ts --offset 3000 --batch-size 100` reported no remaining missing-composer work rows:
+    - `failedWorkRows = 0`
+    - `uniqueMissingComposers = 0`
+  - direct candidate-level verification with `scripts/inspect-imslp-work-slice.ts --offset 3000 --batch-size 100` then came back green:
+    - `failureCount = 0`
+  - canonical green dry-run row:
+    - `7009e75a-9d60-4b4c-b799-4569b6314554`
+    - `100` processed
+    - `2` created
+    - `98` flagged
+    - `0` failed
+    - cursor advanced to `3100`
+  - canonical live row:
+    - `f4ba5ee9-7983-4f8c-b64f-c8acc10a257c`
+    - `100` processed
+    - `2` created
+    - `98` flagged
+    - `0` failed
+    - cursor advanced to `3100`
+  - exact post-slice coverage audit from `scripts/audit-imslp-work-coverage.ts --offset-start 3000 --offset-end 3000 --step 100 --batch-size 100` passed:
+    - `100` covered candidates
+    - `0` uncovered candidates
+    - `95` persisted IMSLP work rows
+    - `5` duplicate-only review cases
+    - duplicate-flag hygiene remained:
+      - `0` missing `details.source_identity`
+      - `0` duplicate-source collisions
+  - seeded audit from `scripts/sample-imslp-audit.ts --seed offset-3000-postship --works 8 --composers 5 --flags 8` sampled clean accepted orchestral works, IMSLP composers, and open quarantine rows
+  - this session also produced stale zero-count wrapper rows that should be treated as bookkeeping noise, not ingestion blockers:
+    - dry-run `0219764a-8494-4fdb-8503-d82b89a819e5`
+    - dry-run `da2ea856-b9d5-450d-975a-9225f1a8253c`
+    - live `26b32793-2837-4988-9a0f-065585d17903`
+  - next step:
+    - continue with the offset-`3100` recovery flow
 
 - Strict IMSLP coverage and duplicate-review hygiene are now clean across offsets `1700` through `2900`:
   - `scripts/audit-imslp-work-coverage.ts` established the pre-cleanup baseline:
