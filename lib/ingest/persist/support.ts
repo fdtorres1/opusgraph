@@ -53,32 +53,15 @@ export async function createDuplicateReviewFlag(
   actorUserId: string,
   details: JsonObject,
 ): Promise<string | null> {
-  const existingForEntity = await supabase
-    .from("review_flag")
-    .select("id, details")
-    .eq("entity_type", entityKind)
-    .eq("entity_id", entityId)
-    .eq("reason", "possible_duplicate")
-    .eq("status", "open");
-
   const expectedSourceIdentity = readDuplicateFlagSourceIdentity(details);
-  if (
-    !existingForEntity.error &&
-    Array.isArray(existingForEntity.data) &&
-    existingForEntity.data.length > 0
-  ) {
-    for (const row of existingForEntity.data) {
-      const currentSourceIdentity = readDuplicateFlagSourceIdentity(
-        row.details as JsonObject | null | undefined,
-      );
-      if (
-        expectedSourceIdentity != null &&
-        currentSourceIdentity != null &&
-        currentSourceIdentity === expectedSourceIdentity
-      ) {
-        return row.id ?? null;
-      }
-    }
+  const existingFlagId = await findOpenDuplicateReviewFlagId(
+    supabase,
+    entityKind,
+    entityId,
+    expectedSourceIdentity,
+  );
+  if (existingFlagId) {
+    return existingFlagId;
   }
 
   const { data, error } = await supabase
@@ -94,11 +77,56 @@ export async function createDuplicateReviewFlag(
     .select("id")
     .single();
 
-  if (error) {
+  if (!error) {
+    return data?.id ?? null;
+  }
+
+  if (error.code !== "23505") {
     return null;
   }
 
-  return data?.id ?? null;
+  return await findOpenDuplicateReviewFlagId(
+    supabase,
+    entityKind,
+    entityId,
+    expectedSourceIdentity,
+  );
+}
+
+async function findOpenDuplicateReviewFlagId(
+  supabase: PersistSupabaseClient,
+  entityKind: IngestEntityKind,
+  entityId: string,
+  expectedSourceIdentity: string | null,
+): Promise<string | null> {
+  if (expectedSourceIdentity == null) {
+    return null;
+  }
+
+  const existingForEntity = await supabase
+    .from("review_flag")
+    .select("id, details")
+    .eq("entity_type", entityKind)
+    .eq("entity_id", entityId)
+    .eq("reason", "possible_duplicate")
+    .eq("status", "open");
+
+  if (
+    !existingForEntity.error &&
+    Array.isArray(existingForEntity.data) &&
+    existingForEntity.data.length > 0
+  ) {
+    for (const row of existingForEntity.data) {
+      const currentSourceIdentity = readDuplicateFlagSourceIdentity(
+        row.details as JsonObject | null | undefined,
+      );
+      if (currentSourceIdentity != null && currentSourceIdentity === expectedSourceIdentity) {
+        return row.id ?? null;
+      }
+    }
+  }
+
+  return null;
 }
 
 function readDuplicateFlagSourceIdentity(

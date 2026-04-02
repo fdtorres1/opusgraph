@@ -145,8 +145,43 @@ This file is the current priority view for OpusGraph. Keep it short, current, an
       - `99` flagged
       - `0` failed
       - cursor advanced to `2900`
+  - offset `3300` is now operationally closed:
+    - initial dry-run:
+      - `4` created
+      - `66` flagged
+      - `30` composer-resolution failures
+    - targeted composer seeding created `29` IMSLP-linked composers
+    - canonical replay dry-run completed green at:
+      - `4` created
+      - `96` flagged
+      - `0` failed
+    - two overlapping live runs then processed the same slice:
+      - `730b9225-0c67-4738-be92-1d0115a1dad6`
+        - `4` created
+        - `96` flagged
+        - `0` failed
+      - `90754112-56e8-4ad1-be4c-cb1dd8f85591`
+        - `4` updated
+        - `96` flagged
+        - `0` failed
+    - root cause:
+      - open `possible_duplicate` rows were still guarded only by an app-level read-then-insert check, so overlapping live writers could race and create the same source-specific duplicate flag twice
+    - fix:
+      - `lib/ingest/persist/support.ts` now re-checks same-source duplicate rows after insert failure
+      - `supabase/migrations/0017_review_flag_duplicate_source_identity.sql` adds a partial unique index for open source-specific `possible_duplicate` flags
+    - cleanup:
+      - dismissed the two redundant duplicate rows from the overlapping rerun
+    - exact post-cleanup coverage audit returned:
+      - `100` covered candidates
+      - `0` uncovered candidates
+      - `91` persisted work rows
+      - `87` open `orchestral_scope_review` flags
+      - `9` duplicate-only review cases
+    - duplicate-flag hygiene is back to:
+      - `0` open duplicate flags missing `details.source_identity`
+      - `0` duplicate-source collisions
   - next operator step:
-    - ship the offset-`3200` recovery handoff, then resume at offset `3300` from a fresh worktree
+    - ship the offset-`3300` recovery handoff, then resume at offset `3400` from a fresh worktree
   - offset `2900` is operationally closed:
     - initial dry-run `386741bb-fe80-49b8-8f95-e42506b22743` settled at:
       - `0` created
