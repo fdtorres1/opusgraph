@@ -4,6 +4,53 @@ Append-only log for implementation, investigation, and planning sessions. Keep e
 
 ## 2026-04-01
 
+### Offset `3200` recovered after composer seeding, a green replay, and post-live coverage verification
+- Created a fresh IMSLP recovery worktree at `/Users/felixtorres/dev/opusgraph-imslp-3200` on `fix/imslp-offset-3200-recovery`.
+- Initial dry-run rows `a1396585-b5ad-437c-b695-968646521b2c` and `49b8e73e-afcf-4a91-a098-188c1dccc691` both eventually settled at:
+  - `100` processed
+  - `1` created
+  - `54` flagged
+  - `45` failed
+  - all failures were `missing_resolved_composer_id`
+- Ran targeted composer seeding for the slice:
+  - `scripts/seed-imslp-work-composers.ts --offset 3200 --batch-size 100`
+  - `failedWorkRows = 45`
+  - `uniqueMissingComposers = 42`
+  - `seedResults = { created: 42, updated: 0, flagged: 0, failed: 0 }`
+- IMSLP-linked composer coverage moved from `2924` to `2966`.
+- Direct candidate inspection then came back green:
+  - `scripts/inspect-imslp-work-slice.ts --offset 3200 --batch-size 100`
+  - `failureCount = 0`
+- Canonical replay dry-run row `0ed8ecbc-e8d1-4f93-9c92-5bb6b1731050` settled green:
+  - `100` processed
+  - `3` created
+  - `97` flagged
+  - `0` failed
+  - `91` rows would quarantine
+  - cursor advanced to `3300`
+- Canonical live row `f30d0039-c3c6-498c-816c-8ce0d51c0225` later settled green:
+  - `100` processed
+  - `3` created
+  - `97` flagged
+  - `0` failed
+  - `90` quarantined
+  - cursor advanced to `3300`
+- The first concurrent coverage audit launched before the live row settled reported `100` uncovered candidates, and both initial dry-run rows also spent a misleading zero-counter window in `running`.
+- The authoritative post-live verification passed:
+  - `scripts/audit-imslp-work-coverage.ts --offset-start 3200 --offset-end 3200 --step 100 --batch-size 100`
+  - `100` covered candidates
+  - `0` uncovered candidates
+  - `93` persisted IMSLP work rows
+  - `90` open `orchestral_scope_review` flags
+  - `7` duplicate-only review cases
+  - duplicate hygiene remained clean at `0` missing `details.source_identity` and `0` duplicate-source collisions
+- Seeded audit sampler also looked coherent:
+  - `scripts/sample-imslp-audit.ts --label offset-3200-postlive --sample-size 10 --seed 3200`
+- Follow-up:
+  - ship this `3200` handoff branch
+  - continue with offset `3300` from a fresh worktree
+  - keep treating zero-counter wrapper rows and pre-live coverage audits as bookkeeping noise until the DB row and post-live coverage rerun agree
+
 ### Offset `3100` recovered after composer seeding, a green replay, and post-live coverage verification
 - Created a fresh IMSLP recovery worktree at `/Users/felixtorres/dev/opusgraph-imslp-3100` on `fix/imslp-offset-3100-recovery`.
 - Initial dry-run row `d20c582b-fec1-462b-a786-743b40a01220` settled at:
