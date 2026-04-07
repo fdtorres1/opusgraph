@@ -145,6 +145,31 @@ This file is the current priority view for OpusGraph. Keep it short, current, an
       - `99` flagged
       - `0` failed
       - cursor advanced to `2900`
+  - offset `3400` is now operationally closed:
+    - initial dry-run settled at:
+      - `2` created
+      - `44` flagged
+      - `54` composer-resolution failures
+    - targeted composer seeding created `51` IMSLP-linked composers
+    - direct post-seed resolution probing returned `0` unresolved composer matches
+    - canonical replay dry-run completed green at:
+      - `5` created
+      - `95` flagged
+      - `0` failed
+    - the broad live wrapper rows remained stale in `running` with zero counters
+    - exact source-level coverage initially exposed `31` uncovered candidates:
+      - `28` would quarantine
+      - `3` would flag as duplicates
+    - targeted live repair closed the uncovered set
+    - exact post-repair coverage audit returned:
+      - `100` covered candidates
+      - `0` uncovered candidates
+      - `91` persisted work rows
+      - `85` open `orchestral_scope_review` flags
+      - `9` duplicate-only review cases
+    - duplicate-flag hygiene remained:
+      - `0` open duplicate flags missing `details.source_identity`
+      - `0` duplicate-source collisions
   - offset `3300` is now operationally closed:
     - initial dry-run:
       - `4` created
@@ -181,9 +206,8 @@ This file is the current priority view for OpusGraph. Keep it short, current, an
       - `0` open duplicate flags missing `details.source_identity`
       - `0` duplicate-source collisions
   - next operator step:
-    - ship the offset-`3300` recovery handoff
-    - apply `supabase/migrations/0017_review_flag_duplicate_source_identity.sql` in the linked cloud
-    - then resume at offset `3400` from a fresh worktree
+    - ship the offset-`3400` recovery handoff
+    - then resume at offset `3500` from a fresh worktree
   - offset `2900` is operationally closed:
     - initial dry-run `386741bb-fe80-49b8-8f95-e42506b22743` settled at:
       - `0` created
