@@ -4,6 +4,54 @@ Append-only log for implementation, investigation, and planning sessions. Keep e
 
 ## 2026-04-07
 
+### Offset `3500` recovered after composer seeding and a delayed live write closed on its own
+- Created a fresh IMSLP recovery worktree at `/Users/felixtorres/dev/opusgraph-imslp-3500` on `fix/imslp-offset-3500-recovery`.
+- The first attempt to run the slice from this worktree failed because the fresh checkout had no `node_modules`; ran `npm ci` locally in the worktree before retrying.
+- Initial dry-run row `41c3d6c1-a613-4fa8-9fb3-d12d3559627e` settled at:
+  - `100` processed
+  - `2` created
+  - `49` flagged
+  - `49` failed
+  - all failures were `missing_resolved_composer_id`
+- Ran targeted composer seeding for the slice:
+  - `scripts/seed-imslp-work-composers.ts --offset 3500 --batch-size 100`
+  - `failedWorkRows = 49`
+  - `uniqueMissingComposers = 46`
+  - `seedResults = { created: 46, updated: 0, flagged: 0, failed: 0 }`
+- Canonical replay dry-run row `99738cfe-2535-4aed-a18a-6f22e7fb7d16` then settled green:
+  - `100` processed
+  - `3` created
+  - `97` flagged
+  - `0` failed
+  - `96` rows would quarantine
+  - cursor advanced to `3600`
+- The broad live row `437d78ca-9802-41d2-8a2f-112f53218058` initially sat in the familiar zero-counter window, and the first exact coverage audit raced ahead of the delayed writes:
+  - `71` covered candidates
+  - `29` uncovered candidates
+  - uncovered outcomes:
+    - `28` `quarantined`
+    - `1` `created`
+- A direct source-id reconciliation then showed the uncovered set had already collapsed to zero before any targeted replay was needed.
+- The live row later settled cleanly on its own:
+  - `100` processed
+  - `2` created
+  - `98` flagged
+  - `0` failed
+  - `90` quarantined
+  - cursor advanced to `3600`
+- The authoritative post-live audit passed:
+  - `scripts/audit-imslp-work-coverage.ts --offset-start 3500 --offset-end 3500 --step 100 --batch-size 100`
+  - `100` covered candidates
+  - `0` uncovered candidates
+  - `92` persisted IMSLP work rows
+  - `90` open `orchestral_scope_review` flags
+  - `8` duplicate-only review cases
+  - duplicate hygiene remained at `0` missing `details.source_identity` and `0` duplicate-source collisions
+- Follow-up:
+  - ship this `3500` handoff branch
+  - continue with offset `3600` from a fresh worktree
+  - keep treating early post-live coverage gaps as provisional until either the live row settles or the uncovered set stays non-zero across a second exact check
+
 ### Offset `3400` recovered after composer seeding and a targeted live repair closed a stale-wrapper gap
 - Reused the existing IMSLP recovery worktree at `/Users/felixtorres/dev/opusgraph-imslp-3400` on `fix/imslp-offset-3400-recovery` after syncing it to current `main`.
 - Initial dry-run row `fb521217-9ec3-469b-8f7b-c020cf9f0559` settled at:
