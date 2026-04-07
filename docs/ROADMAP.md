@@ -205,9 +205,43 @@ This file is the current priority view for OpusGraph. Keep it short, current, an
     - duplicate-flag hygiene is back to:
       - `0` open duplicate flags missing `details.source_identity`
       - `0` duplicate-source collisions
+  - offset `3500` is operationally closed:
+    - initial dry-run `41c3d6c1-a613-4fa8-9fb3-d12d3559627e` settled at:
+      - `2` created
+      - `49` flagged
+      - `49` failed
+      - all failures were `missing_resolved_composer_id`
+    - targeted composer seeding then created `46` IMSLP-linked composers:
+      - `failedWorkRows = 49`
+      - `uniqueMissingComposers = 46`
+      - `seedResults = { created: 46, updated: 0, flagged: 0, failed: 0 }`
+    - replay dry-run `99738cfe-2535-4aed-a18a-6f22e7fb7d16` settled green:
+      - `3` created
+      - `97` flagged
+      - `0` failed
+      - `96` quarantines
+      - cursor advanced to `3600`
+    - live row `437d78ca-9802-41d2-8a2f-112f53218058` initially looked stale, and the first exact audit raced ahead of delayed writes:
+      - `71` covered candidates
+      - `29` uncovered candidates
+      - uncovered outcomes: `28` `quarantined`, `1` `created`
+    - the live row later settled without a targeted repair:
+      - `2` created
+      - `98` flagged
+      - `0` failed
+      - `90` quarantines
+    - authoritative exact coverage audit then returned:
+      - `100` covered candidates
+      - `0` uncovered candidates
+      - `92` persisted work rows
+      - `90` open `orchestral_scope_review` flags
+      - `8` duplicate-only review cases
+    - duplicate-flag hygiene remains clean:
+      - `0` open duplicate flags missing `details.source_identity`
+      - `0` duplicate-source collisions
   - next operator step:
-    - ship the offset-`3400` recovery handoff
-    - then resume at offset `3500` from a fresh worktree
+    - ship the offset-`3500` recovery handoff
+    - then resume at offset `3600` from a fresh worktree
   - offset `2900` is operationally closed:
     - initial dry-run `386741bb-fe80-49b8-8f95-e42506b22743` settled at:
       - `0` created
