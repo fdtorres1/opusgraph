@@ -2,6 +2,54 @@
 
 Append-only log for implementation, investigation, and planning sessions. Keep entries short and resume-oriented.
 
+## 2026-04-07
+
+### Offset `3400` recovered after composer seeding and a targeted live repair closed a stale-wrapper gap
+- Reused the existing IMSLP recovery worktree at `/Users/felixtorres/dev/opusgraph-imslp-3400` on `fix/imslp-offset-3400-recovery` after syncing it to current `main`.
+- Initial dry-run row `fb521217-9ec3-469b-8f7b-c020cf9f0559` settled at:
+  - `100` processed
+  - `2` created
+  - `44` flagged
+  - `54` failed
+  - all failures were `missing_resolved_composer_id`
+- Ran targeted composer seeding for the slice:
+  - `scripts/seed-imslp-work-composers.ts --offset 3400 --batch-size 100`
+  - `failedWorkRows = 54`
+  - `uniqueMissingComposers = 51`
+  - `seedResults = { created: 51, updated: 0, flagged: 0, failed: 0 }`
+- A direct post-seed resolution probe then confirmed there were no genuinely unresolved composer matches left in the slice:
+  - `unresolvedCount = 0`
+- Canonical replay dry-run row `ebd0d31a-086e-4947-83fa-2b230faacb7e` settled green:
+  - `100` processed
+  - `5` created
+  - `95` flagged
+  - `0` failed
+  - `93` rows would quarantine
+  - cursor advanced to `3500`
+- The broad live wrapper path stalled again and left two zero-counter `running` rows:
+  - `e709e7db-ebb6-4370-b0aa-95d12ae56782`
+  - `9c834ca2-b502-437e-90a4-3230c1fd6a81`
+- Exact source-level coverage proved the missing live impact rather than trusting the wrapper rows:
+  - first post-live audit returned:
+    - `69` covered candidates
+    - `31` uncovered candidates
+    - uncovered outcomes:
+      - `28` `quarantined`
+      - `3` `flagged_duplicate`
+- Restored `.env.local` into both the integration checkout and the `3400` worktree after the old SSD path disappeared during the first repair attempt.
+- A targeted live repair then closed the uncovered set, and the authoritative post-repair audit passed:
+  - `scripts/audit-imslp-work-coverage.ts --offset-start 3400 --offset-end 3400 --step 100 --batch-size 100`
+  - `100` covered candidates
+  - `0` uncovered candidates
+  - `91` persisted IMSLP work rows
+  - `85` open `orchestral_scope_review` flags
+  - `9` duplicate-only review cases
+  - duplicate hygiene remained at `0` missing `details.source_identity` and `0` duplicate-source collisions
+- Follow-up:
+  - ship this `3400` handoff branch
+  - continue with offset `3500` from a fresh worktree
+  - keep treating stale wrapper rows as bookkeeping debt whenever exact coverage says the slice is closed
+
 ## 2026-04-02
 
 ### Offset `3300` recovered after overlapping live reruns exposed a duplicate-review race
