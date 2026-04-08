@@ -4,11 +4,11 @@ This is the canonical handoff file for the next session. Rewrite freely as prior
 
 ## Current Objective
 
-Ship the offset-`3500` recovery handoff, then continue IMSLP work ingestion at offset `3600` from a fresh worktree or a clean follow-on branch.
+Ship the offset-`3600` recovery handoff, then continue IMSLP work ingestion at offset `3700` from a fresh worktree or a clean follow-on branch.
 
 ## Current Branch
 
-- `fix/imslp-offset-3500-recovery`
+- `fix/imslp-offset-3600-recovery`
 
 ## Parallel Work Coordination
 
@@ -24,9 +24,9 @@ Ship the offset-`3500` recovery handoff, then continue IMSLP work ingestion at o
 ### Active Workstreams
 
 - Agent: current Codex session
-  - Worktree: current checkout at `/Users/felixtorres/dev/opusgraph-imslp-3500`
-  - Branch: `fix/imslp-offset-3500-recovery`
-  - Scope: recover offset `3500`, verify exact source-level coverage after the delayed live writes, and hand off a clean starting point for offset `3600`
+  - Worktree: current checkout at `/Users/felixtorres/dev/opusgraph-imslp-3600`
+  - Branch: `fix/imslp-offset-3600-recovery`
+  - Scope: recover offset `3600`, verify exact source-level coverage after the live row settles, and hand off a clean starting point for offset `3700`
   - File ownership:
     - `docs/ACTIVE_CONTEXT.md`
     - `docs/ROADMAP.md`
@@ -35,6 +35,47 @@ Ship the offset-`3500` recovery handoff, then continue IMSLP work ingestion at o
   - Notes: auth/RLS is already signed off; managed daily Supabase physical backups are now available; `0016` and `0017` are applied in the linked cloud; `T4`, `T5`, the IMSLP composer adapter, the IMSLP work adapter, the orchestral-only quarantine flow, the quarantine-review UI, the offset-`2900` duplicate-flag repair, the strict audit helper, and the duplicate-review cleanup are all merged on `main`; this task branch is intentionally separate from the dedicated integration worktree at `/Users/felixtorres/coding/opusgraph`
 
 ## In Progress
+
+- Offset `3600` is now operationally closed:
+  - initial dry-run row `6ae468d6-98b5-45a1-999f-0914258eb8d9` settled at:
+    - `100` processed
+    - `3` created
+    - `31` flagged
+    - `66` failed
+    - all `66` failures were `missing_resolved_composer_id`
+  - targeted composer seeding from `scripts/seed-imslp-work-composers.ts --offset 3600 --batch-size 100` then created `48` IMSLP-linked composers:
+    - `failedWorkRows = 66`
+    - `uniqueMissingComposers = 48`
+    - `seedResults = { created: 48, updated: 0, flagged: 0, failed: 0 }`
+  - canonical replay dry-run row `634bda18-0048-4eaa-9231-6c3dd4775f84` settled green:
+    - `100` processed
+    - `6` created
+    - `94` flagged
+    - `0` failed
+    - `92` rows would quarantine
+    - cursor advanced to `3700`
+  - live row `afefc740-058b-4ae1-965f-d11639b87ddc` eventually settled after the usual zero-counter window:
+    - `100` processed
+    - `5` created
+    - `1` updated
+    - `94` flagged
+    - `0` failed
+    - `88` rows quarantined
+    - cursor advanced to `3700`
+  - authoritative post-live verification passed:
+    - `scripts/audit-imslp-work-coverage.ts --offset-start 3600 --offset-end 3600 --step 100 --batch-size 100`
+    - `100` covered candidates
+    - `0` uncovered candidates
+    - `94` persisted IMSLP work rows
+    - `88` open `orchestral_scope_review` flags
+    - `6` duplicate-only review cases
+    - duplicate-flag hygiene remained:
+      - `0` missing `details.source_identity`
+      - `0` duplicate-source collisions
+  - operator note:
+    - this slice followed the normal pattern again: composer seeding fixed the failures, the replay dry-run was canonical, and the live row only looked stalled during the initial bookkeeping window
+  - next step:
+    - ship this `3600` handoff branch, then continue with the offset-`3700` recovery flow from a fresh worktree
 
 - Offset `3500` is now operationally closed:
   - initial dry-run row `41c3d6c1-a613-4fa8-9fb3-d12d3559627e` settled at:
