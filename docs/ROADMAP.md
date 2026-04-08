@@ -239,9 +239,40 @@ This file is the current priority view for OpusGraph. Keep it short, current, an
     - duplicate-flag hygiene remains clean:
       - `0` open duplicate flags missing `details.source_identity`
       - `0` duplicate-source collisions
+  - offset `3600` is operationally closed:
+    - initial dry-run `6ae468d6-98b5-45a1-999f-0914258eb8d9` settled at:
+      - `3` created
+      - `31` flagged
+      - `66` failed
+      - all failures were `missing_resolved_composer_id`
+    - targeted composer seeding then created `48` IMSLP-linked composers:
+      - `failedWorkRows = 66`
+      - `uniqueMissingComposers = 48`
+      - `seedResults = { created: 48, updated: 0, flagged: 0, failed: 0 }`
+    - replay dry-run `634bda18-0048-4eaa-9231-6c3dd4775f84` settled green:
+      - `6` created
+      - `94` flagged
+      - `0` failed
+      - `92` quarantines
+      - cursor advanced to `3700`
+    - live row `afefc740-058b-4ae1-965f-d11639b87ddc` later settled cleanly:
+      - `5` created
+      - `1` updated
+      - `94` flagged
+      - `0` failed
+      - `88` quarantines
+    - authoritative exact coverage audit then returned:
+      - `100` covered candidates
+      - `0` uncovered candidates
+      - `94` persisted work rows
+      - `88` open `orchestral_scope_review` flags
+      - `6` duplicate-only review cases
+    - duplicate-flag hygiene remains clean:
+      - `0` open duplicate flags missing `details.source_identity`
+      - `0` duplicate-source collisions
   - next operator step:
-    - ship the offset-`3500` recovery handoff
-    - then resume at offset `3600` from a fresh worktree
+    - ship the offset-`3600` recovery handoff
+    - then resume at offset `3700` from a fresh worktree
   - offset `2900` is operationally closed:
     - initial dry-run `386741bb-fe80-49b8-8f95-e42506b22743` settled at:
       - `0` created

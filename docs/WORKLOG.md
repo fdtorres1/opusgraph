@@ -4,6 +4,49 @@ Append-only log for implementation, investigation, and planning sessions. Keep e
 
 ## 2026-04-07
 
+### Offset `3600` recovered after composer seeding and a clean live settle
+- Created a fresh IMSLP recovery worktree at `/Users/felixtorres/dev/opusgraph-imslp-3600` on `fix/imslp-offset-3600-recovery`.
+- Fresh worktree setup again required local dependency install before the scripts would run:
+  - `npm ci`
+- Initial dry-run row `6ae468d6-98b5-45a1-999f-0914258eb8d9` settled at:
+  - `100` processed
+  - `3` created
+  - `31` flagged
+  - `66` failed
+  - all failures were `missing_resolved_composer_id`
+- Ran targeted composer seeding for the slice:
+  - `scripts/seed-imslp-work-composers.ts --offset 3600 --batch-size 100`
+  - `failedWorkRows = 66`
+  - `uniqueMissingComposers = 48`
+  - `seedResults = { created: 48, updated: 0, flagged: 0, failed: 0 }`
+- Canonical replay dry-run row `634bda18-0048-4eaa-9231-6c3dd4775f84` then settled green:
+  - `100` processed
+  - `6` created
+  - `94` flagged
+  - `0` failed
+  - `92` rows would quarantine
+  - cursor advanced to `3700`
+- Live row `afefc740-058b-4ae1-965f-d11639b87ddc` initially sat in the familiar zero-counter window, then later settled cleanly without a repair pass:
+  - `100` processed
+  - `5` created
+  - `1` updated
+  - `94` flagged
+  - `0` failed
+  - `88` quarantined
+  - cursor advanced to `3700`
+- The authoritative post-live audit passed:
+  - `scripts/audit-imslp-work-coverage.ts --offset-start 3600 --offset-end 3600 --step 100 --batch-size 100`
+  - `100` covered candidates
+  - `0` uncovered candidates
+  - `94` persisted IMSLP work rows
+  - `88` open `orchestral_scope_review` flags
+  - `6` duplicate-only review cases
+  - duplicate hygiene remained at `0` missing `details.source_identity` and `0` duplicate-source collisions
+- Follow-up:
+  - ship this `3600` handoff branch
+  - continue with offset `3700` from a fresh worktree
+  - keep using the exact coverage audit as the canonical post-live gate
+
 ### Offset `3500` recovered after composer seeding and a delayed live write closed on its own
 - Created a fresh IMSLP recovery worktree at `/Users/felixtorres/dev/opusgraph-imslp-3500` on `fix/imslp-offset-3500-recovery`.
 - The first attempt to run the slice from this worktree failed because the fresh checkout had no `node_modules`; ran `npm ci` locally in the worktree before retrying.
