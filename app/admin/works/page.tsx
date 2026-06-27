@@ -11,7 +11,7 @@ export default async function WorksPage() {
   const { data: works } = await supabase
     .from("work")
     .select(`
-      id, work_name, status, created_at,
+      id, work_name, public_tier, created_at,
       composer:composer_id ( id, first_name, last_name )
     `)
     .order("work_name")
@@ -42,8 +42,8 @@ export default async function WorksPage() {
                       {workName}
                     </Link>
                   </CardTitle>
-                  <Badge variant={work.status === "published" ? "default" : "secondary"}>
-                    {work.status}
+                  <Badge variant={work.public_tier === "draft" ? "secondary" : work.public_tier === "quarantined" ? "destructive" : "default"}>
+                    {work.public_tier}
                   </Badge>
                 </div>
                 {composer && (
@@ -65,4 +65,3 @@ export default async function WorksPage() {
     </div>
   );
 }
-

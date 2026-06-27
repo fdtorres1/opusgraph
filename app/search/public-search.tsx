@@ -5,10 +5,12 @@ import { useState, useEffect } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import Link from "next/link";
 import { Search, Loader2, User, Music } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
+import { WORK_TIER_LABELS, type PublicWorkTier } from "@/lib/public-index/confidence";
 
 type ComposerResult = {
   id: string;
@@ -20,6 +22,7 @@ type WorkResult = {
   id: string;
   work_name: string;
   composer_id: string;
+  public_tier?: PublicWorkTier;
 };
 
 export function PublicSearch() {
@@ -134,6 +137,11 @@ export function PublicSearch() {
                             >
                               {work.work_name || "Untitled Work"}
                             </Link>
+                            {work.public_tier && (
+                              <Badge className="ml-2" variant="outline">
+                                {WORK_TIER_LABELS[work.public_tier]}
+                              </Badge>
+                            )}
                           </CardContent>
                         </Card>
                       ))}
@@ -184,6 +192,11 @@ export function PublicSearch() {
                           >
                             {work.work_name || "Untitled Work"}
                           </Link>
+                          {work.public_tier && (
+                            <Badge className="ml-2" variant="outline">
+                              {WORK_TIER_LABELS[work.public_tier]}
+                            </Badge>
+                          )}
                         </CardContent>
                       </Card>
                     ))}
@@ -210,4 +223,3 @@ export function PublicSearch() {
     </div>
   );
 }
-

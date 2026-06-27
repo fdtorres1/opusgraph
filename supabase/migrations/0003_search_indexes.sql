@@ -29,11 +29,15 @@ create index if not exists work_name_search_idx
 -- Partial index on status for faster filtering (composers - only published)
 create index if not exists composer_status_idx on composer(status) where status = 'published';
 
--- Partial index on status for faster filtering (works - only published)
-create index if not exists work_status_idx on work(status) where status = 'published';
+-- Partial index on public tier for faster filtering (works - public tiers only)
+create index if not exists work_public_tier_idx
+  on work(public_tier)
+  where public_tier in ('indexed','verified','canonical');
 
 -- Composite index for work search with composer filtering
-create index if not exists work_composer_status_idx on work(composer_id, status) where status = 'published';
+create index if not exists work_composer_public_tier_idx
+  on work(composer_id, public_tier)
+  where public_tier in ('indexed','verified','canonical');
 
 -- Update search functions to add LIMIT and ORDER BY for better performance
 create or replace function public_min_composers(q text default null)
@@ -41,21 +45,28 @@ returns table (id uuid, first_name text, last_name text)
 language sql stable security definer set search_path=public as $$
   select c.id, c.first_name, c.last_name
   from composer c
-  where c.status = 'published'
-    and (q is null or unaccent(lower(c.first_name || ' ' || c.last_name)) like unaccent(lower('%' || q || '%')))
+  where (
+      c.status = 'published'
+      or exists (
+        select 1
+        from work w
+        where w.composer_id = c.id
+          and w.public_tier in ('indexed','verified','canonical')
+      )
+    )
+    and (q is null or unaccent_immutable(lower(c.first_name || ' ' || c.last_name)) like unaccent_immutable(lower('%' || q || '%')))
   order by c.last_name, c.first_name
   limit 50;
 $$;
 
 create or replace function public_min_works(q text default null, composer_id uuid default null)
-returns table (id uuid, work_name text, composer_id uuid)
+returns table (id uuid, work_name text, composer_id uuid, public_tier public_work_tier)
 language sql stable security definer set search_path=public as $$
-  select w.id, w.work_name, w.composer_id
+  select w.id, w.work_name, w.composer_id, w.public_tier
   from work w
-  where w.status = 'published'
+  where w.public_tier in ('indexed','verified','canonical')
     and (composer_id is null or w.composer_id = composer_id)
-    and (q is null or unaccent(lower(w.work_name)) like unaccent(lower('%' || q || '%')))
+    and (q is null or unaccent_immutable(lower(w.work_name)) like unaccent_immutable(lower('%' || q || '%')))
   order by w.work_name
   limit 50;
 $$;
-

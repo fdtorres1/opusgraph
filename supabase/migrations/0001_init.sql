@@ -13,6 +13,14 @@ do $$ begin
 exception when duplicate_object then null; end $$;
 
 do $$ begin
+  create type public_work_tier as enum ('draft','quarantined','indexed','verified','canonical');
+exception when duplicate_object then null; end $$;
+
+do $$ begin
+  create type confidence_level as enum ('confirmed','probable','inferred','conflicting','unknown','not_applicable');
+exception when duplicate_object then null; end $$;
+
+do $$ begin
   create type entity_kind as enum ('composer','work');
 exception when duplicate_object then null; end $$;
 
@@ -113,8 +121,8 @@ create table if not exists composer_link (
 -- =========
 create table if not exists work (
   id uuid primary key default gen_random_uuid(),
-  composer_id uuid references composer(id),          -- nullable in Draft; required when Published
-  work_name text,                                    -- nullable in Draft; required when Published
+  composer_id uuid references composer(id),          -- nullable in internal tiers; required when public
+  work_name text,                                    -- nullable in internal tiers; required when public
   composition_year smallint check (composition_year between 1000 and 2100),
   ensemble_id uuid references ensemble_type(id),
   instrumentation_text text,
@@ -122,21 +130,26 @@ create table if not exists work (
   publisher_id uuid references publisher(id),
   external_ids jsonb not null default '{}'::jsonb,
   extra_metadata jsonb not null default '{}'::jsonb,
+  field_confidence jsonb not null default '{}'::jsonb,
+  evidence_summary jsonb not null default '{}'::jsonb,
   work_type text,
   opus_number text,
   catalog_number text,
   movements jsonb,
   notes_md text,
+  public_notes text,
   rental_only boolean default false,
   territory_limits text,
   materials_available text,
   slug text unique,
-  status publication_status not null default 'draft',
+  public_tier public_work_tier not null default 'draft',
+  promoted_at timestamptz,
+  promotion_gate_version text,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now(),
-  constraint work_publish_requires_min_fields
+  constraint work_public_tier_requires_min_fields
     check (
-      status <> 'published' or
+      public_tier in ('draft','quarantined') or
       (work_name is not null and composer_id is not null)
     )
 );
@@ -157,6 +170,43 @@ create table if not exists work_recording (
   provider_key text,
   embed_url text,
   display_order int default 0
+);
+
+create table if not exists work_evidence (
+  id uuid primary key default gen_random_uuid(),
+  work_id uuid references work(id) on delete cascade,
+  source text not null,
+  source_display_name text,
+  source_url text not null,
+  source_record_id text,
+  source_title text,
+  evidence_kind text not null,
+  supports_fields text[] not null default '{}',
+  extracted_fields jsonb not null default '{}'::jsonb,
+  confidence confidence_level not null default 'unknown',
+  source_terms_status text not null default 'unverified'
+    check (source_terms_status in ('unverified','approved','restricted','blocked')),
+  is_public boolean not null default false,
+  public_label text,
+  public_url text,
+  fetched_at timestamptz,
+  created_at timestamptz not null default now()
+);
+
+create table if not exists work_promotion_decision (
+  id uuid primary key default gen_random_uuid(),
+  work_id uuid references work(id) on delete cascade,
+  from_tier public_work_tier,
+  to_tier public_work_tier not null,
+  gate_version text not null,
+  decision jsonb not null,
+  evidence_ids uuid[] not null default '{}',
+  batch_id text,
+  model_provider text,
+  model_name text,
+  reviewer_kind text not null check (reviewer_kind in ('system','ai','human','mixed')),
+  reviewer_id text,
+  created_at timestamptz not null default now()
 );
 
 -- =========
@@ -429,31 +479,125 @@ language sql stable as $$
 $$;
 
 -- =========
--- 13. Public RPCs (name-only)
+-- 13. Public RPCs
 -- =========
 create or replace function public_min_composers(q text default null)
 returns table (id uuid, first_name text, last_name text)
 language sql stable security definer set search_path=public as $$
   select c.id, c.first_name, c.last_name
   from composer c
-  where c.status = 'published'
-    and (q is null or unaccent(lower(c.first_name || ' ' || c.last_name)) like unaccent(lower('%' || q || '%')));
+  where (
+      c.status = 'published'
+      or exists (
+        select 1
+        from work w
+        where w.composer_id = c.id
+          and w.public_tier in ('indexed','verified','canonical')
+      )
+    )
+    and (q is null or norm(c.first_name || ' ' || c.last_name) like norm('%' || q || '%'));
 $$;
 
 create or replace function public_min_works(q text default null, composer_id uuid default null)
-returns table (id uuid, work_name text, composer_id uuid)
+returns table (id uuid, work_name text, composer_id uuid, public_tier public_work_tier)
 language sql stable security definer set search_path=public as $$
-  select w.id, w.work_name, w.composer_id
+  select w.id, w.work_name, w.composer_id, w.public_tier
   from work w
-  where w.status = 'published'
+  where w.public_tier in ('indexed','verified','canonical')
     and (composer_id is null or w.composer_id = composer_id)
-    and (q is null or unaccent(lower(w.work_name)) like unaccent(lower('%' || q || '%')));
+    and (q is null or norm(w.work_name) like norm('%' || q || '%'));
+$$;
+
+create or replace function public_work_detail(p_id uuid)
+returns table (
+  id uuid,
+  work_name text,
+  composer_id uuid,
+  composer_first_name text,
+  composer_last_name text,
+  composition_year smallint,
+  instrumentation_text text,
+  duration_seconds int,
+  public_tier public_work_tier,
+  field_confidence jsonb,
+  evidence_summary jsonb,
+  public_notes text
+)
+language sql stable security definer set search_path=public as $$
+  select
+    w.id,
+    w.work_name,
+    w.composer_id,
+    c.first_name as composer_first_name,
+    c.last_name as composer_last_name,
+    w.composition_year,
+    w.instrumentation_text,
+    w.duration_seconds,
+    w.public_tier,
+    w.field_confidence,
+    w.evidence_summary,
+    w.public_notes
+  from work w
+  left join composer c on c.id = w.composer_id
+  where w.id = p_id
+    and w.public_tier in ('indexed','verified','canonical');
+$$;
+
+create or replace function public_composer_detail(p_id uuid)
+returns table (id uuid, first_name text, last_name text)
+language sql stable security definer set search_path=public as $$
+  select c.id, c.first_name, c.last_name
+  from composer c
+  where c.id = p_id
+    and (
+      c.status = 'published'
+      or exists (
+        select 1
+        from work w
+        where w.composer_id = c.id
+          and w.public_tier in ('indexed','verified','canonical')
+      )
+    );
+$$;
+
+create or replace function public_work_evidence(p_work_id uuid)
+returns table (
+  id uuid,
+  source text,
+  source_display_name text,
+  public_label text,
+  public_url text,
+  confidence confidence_level,
+  supports_fields text[]
+)
+language sql stable security definer set search_path=public as $$
+  select
+    we.id,
+    we.source,
+    we.source_display_name,
+    we.public_label,
+    we.public_url,
+    we.confidence,
+    we.supports_fields
+  from work_evidence we
+  join work w on w.id = we.work_id
+  where we.work_id = p_work_id
+    and w.public_tier in ('indexed','verified','canonical')
+    and we.is_public = true
+    and we.source_terms_status = 'approved'
+  order by we.created_at;
 $$;
 
 revoke all on function public_min_composers(text) from public;
 revoke all on function public_min_works(text, uuid) from public;
+revoke all on function public_work_detail(uuid) from public;
+revoke all on function public_composer_detail(uuid) from public;
+revoke all on function public_work_evidence(uuid) from public;
 grant execute on function public_min_composers(text) to anon;
 grant execute on function public_min_works(text, uuid) to anon;
+grant execute on function public_work_detail(uuid) to anon, authenticated;
+grant execute on function public_composer_detail(uuid) to anon, authenticated;
+grant execute on function public_work_evidence(uuid) to anon, authenticated;
 
 -- =========
 -- 14. Activity view
@@ -523,6 +667,8 @@ order by occurred_at desc;
 -- =========
 alter table composer enable row level security;
 alter table work enable row level security;
+alter table work_evidence enable row level security;
+alter table work_promotion_decision enable row level security;
 alter table admin_comment enable row level security;
 alter table revision enable row level security;
 
@@ -533,6 +679,14 @@ for select using (role_is_contributor_or_above());
 
 drop policy if exists read_work_admin on work;
 create policy read_work_admin on work
+for select using (role_is_contributor_or_above());
+
+drop policy if exists read_work_evidence_admin on work_evidence;
+create policy read_work_evidence_admin on work_evidence
+for select using (role_is_contributor_or_above());
+
+drop policy if exists read_work_promotion_decision_admin on work_promotion_decision;
+create policy read_work_promotion_decision_admin on work_promotion_decision
 for select using (role_is_contributor_or_above());
 
 drop policy if exists read_comment_admin on admin_comment;
@@ -550,7 +704,10 @@ for select using (has_active_subscription() and status='published');
 
 drop policy if exists read_work_members on work;
 create policy read_work_members on work
-for select using (has_active_subscription() and status='published');
+for select using (
+  has_active_subscription()
+  and public_tier in ('indexed','verified','canonical')
+);
 
 -- WRITE: contributors/admins
 drop policy if exists write_composer_admin on composer;
@@ -559,6 +716,14 @@ for all using (role_is_contributor_or_above()) with check (role_is_contributor_o
 
 drop policy if exists write_work_admin on work;
 create policy write_work_admin on work
+for all using (role_is_contributor_or_above()) with check (role_is_contributor_or_above());
+
+drop policy if exists write_work_evidence_admin on work_evidence;
+create policy write_work_evidence_admin on work_evidence
+for all using (role_is_contributor_or_above()) with check (role_is_contributor_or_above());
+
+drop policy if exists write_work_promotion_decision_admin on work_promotion_decision;
+create policy write_work_promotion_decision_admin on work_promotion_decision
 for all using (role_is_contributor_or_above()) with check (role_is_contributor_or_above());
 
 drop policy if exists write_comment_admin on admin_comment;
@@ -595,4 +760,3 @@ on conflict (iso2) do nothing;
 -- =========
 -- Done
 -- =========
-

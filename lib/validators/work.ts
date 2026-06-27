@@ -1,5 +1,6 @@
 // lib/validators/work.ts
 import { z } from "zod";
+import { WORK_PUBLIC_TIERS } from "@/lib/public-index/confidence";
 
 export const Year = z
   .string()
@@ -23,7 +24,7 @@ export const WorkPayload = z.object({
   instrumentation_text: z.string().optional().nullable(),
   duration: z.string().optional().nullable(), // UI only; convert to seconds server-side
   publisher_id: z.string().uuid().optional().nullable(),
-  status: z.enum(["draft", "published"]).optional(),
+  public_tier: z.enum(WORK_PUBLIC_TIERS).optional(),
   sources: z.array(z.object({
     id: z.string().uuid().optional(),
     url: z.string().url(),
@@ -38,4 +39,3 @@ export const WorkPayload = z.object({
 });
 
 export type WorkPayloadType = z.infer<typeof WorkPayload>;
-

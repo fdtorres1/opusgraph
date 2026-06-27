@@ -27,7 +27,7 @@ interface CliArgs {
 
 interface WorkRow {
   id: string;
-  status: string | null;
+  public_tier: string | null;
   work_name: string | null;
   instrumentation_text: string | null;
   external_ids: Record<string, unknown> | null;
@@ -172,7 +172,7 @@ export async function quarantineImslpWorkScope(args: CliArgs) {
     const to = from + args.batchSize - 1;
     const { data, error } = await supabase
       .from("work")
-      .select("id, status, work_name, instrumentation_text, external_ids, extra_metadata")
+      .select("id, public_tier, work_name, instrumentation_text, external_ids, extra_metadata")
       .contains("external_ids", { imslp: {} })
       .order("id", { ascending: true })
       .range(from, to);

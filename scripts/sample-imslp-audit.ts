@@ -38,7 +38,7 @@ interface WorkAuditRow {
   instrumentation_text: string | null;
   duration_seconds: number | null;
   composition_year: number | null;
-  status: string;
+  public_tier: string;
   external_ids: Record<string, unknown> | null;
   extra_metadata: Record<string, unknown> | null;
 }
@@ -229,7 +229,7 @@ async function main() {
     fetchRowsAtOffsets<WorkAuditRow>(async (offset) => {
       const { data, error } = await supabase
         .from("work")
-        .select("id, work_name, composer_id, instrumentation_text, duration_seconds, composition_year, status, external_ids, extra_metadata")
+        .select("id, work_name, composer_id, instrumentation_text, duration_seconds, composition_year, public_tier, external_ids, extra_metadata")
         .eq("id", acceptedWorkIds[offset] ?? "")
         .maybeSingle();
 
@@ -282,7 +282,7 @@ async function main() {
     flagWorkIds.length > 0
       ? supabase
           .from("work")
-          .select("id, work_name, instrumentation_text, status, external_ids")
+          .select("id, work_name, instrumentation_text, public_tier, external_ids")
           .in("id", flagWorkIds)
       : Promise.resolve({ data: [], error: null }),
   ]);
@@ -329,7 +329,7 @@ async function main() {
           compositionYear: row.composition_year,
           instrumentationText: row.instrumentation_text,
           durationSeconds: row.duration_seconds,
-          status: row.status,
+          publicTier: row.public_tier,
           classification: "orchestral",
           classificationReason:
             typeof (

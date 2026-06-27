@@ -224,8 +224,8 @@ export async function quarantineWorkEntity(
   if (currentRow) {
     const updatePayload: Record<string, unknown> = {};
 
-    if (currentRow.status !== "draft") {
-      updatePayload.status = "draft";
+    if (currentRow.public_tier !== "quarantined") {
+      updatePayload.public_tier = "quarantined";
     }
 
     const source = typeof details.source === "string" ? details.source : null;

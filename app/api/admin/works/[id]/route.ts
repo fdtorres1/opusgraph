@@ -4,6 +4,7 @@ import { createServerSupabase } from "@/lib/supabase/server";
 import { WorkPayload } from "@/lib/validators/work";
 import { z } from "zod";
 import { detectRecording } from "@/lib/recording";
+import { isPubliclyVisibleWorkTier, normalizePublicWorkTier } from "@/lib/public-index/confidence";
 
 const Id = z.string().uuid();
 
@@ -16,7 +17,7 @@ export async function GET(_: NextRequest, { params }: { params: Promise<{ id: st
     .select(`
       id, work_name, composition_year, composer_id,
       ensemble_id, instrumentation_text, duration_seconds,
-      publisher_id, status, created_at, updated_at,
+      publisher_id, public_tier, field_confidence, evidence_summary, created_at, updated_at,
       work_source(*),
       work_recording(*),
       composer:composer_id ( id, first_name, last_name ),
@@ -60,6 +61,8 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     duration_seconds = parts.length === 2 ? parts[0]*60 + parts[1] : parts[0]*3600 + parts[1] * 60 + parts[2];
   }
 
+  const publicTier = normalizePublicWorkTier(p.public_tier, "draft");
+
   // Begin: update parent row
   const updateFields: Record<string, any> = {
     work_name: p.work_name ?? undefined,
@@ -69,7 +72,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     instrumentation_text: p.instrumentation_text ?? null,
     duration_seconds: duration_seconds ?? null,
     publisher_id: p.publisher_id ?? null,
-    status: p.status ?? undefined,
+    public_tier: publicTier,
   };
 
   const { data: before } = await supabase.from("work").select("*").eq("id", id).single();
@@ -118,9 +121,11 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   }
 
   // Log revision (publish/unpublish vs update)
+  const beforePublic = isPubliclyVisibleWorkTier(before?.public_tier);
+  const afterPublic = isPubliclyVisibleWorkTier(updated.public_tier);
   const action =
-    before?.status !== updated.status && updated.status === "published" ? "publish" :
-    before?.status !== updated.status && updated.status === "draft" ? "unpublish" :
+    beforePublic !== afterPublic && afterPublic ? "publish" :
+    beforePublic !== afterPublic && !afterPublic ? "unpublish" :
     "update";
 
   await supabase.from("revision").insert({
@@ -177,4 +182,3 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
 
   return NextResponse.json({ ok: true, message: "Work deleted successfully" });
 }
-

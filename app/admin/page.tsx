@@ -6,6 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns/format";
 import AdminDashboardClient from "./dashboard-client";
+import { isPubliclyVisibleWorkTier } from "@/lib/public-index/confidence";
 
 export default async function AdminDashboard() {
   const supabase = await createServerSupabase();
@@ -13,7 +14,7 @@ export default async function AdminDashboard() {
   // Get counts
   const [composersResult, worksResult, reviewFlagsResult, recentActivityResult] = await Promise.all([
     supabase.from("composer").select("id, status"),
-    supabase.from("work").select("id, status"),
+    supabase.from("work").select("id, public_tier"),
     supabase.from("review_flag").select("id").eq("status", "open"),
     supabase.from("activity_event").select("*").order("occurred_at", { ascending: false }).limit(5),
   ]);
@@ -31,8 +32,8 @@ export default async function AdminDashboard() {
     },
     works: {
       total: works.length,
-      draft: works.filter(w => w.status === "draft").length,
-      published: works.filter(w => w.status === "published").length,
+      draft: works.filter(w => w.public_tier === "draft").length,
+      published: works.filter(w => isPubliclyVisibleWorkTier(w.public_tier)).length,
     },
     reviewFlags: {
       open: reviewFlags.length,
@@ -67,7 +68,7 @@ export default async function AdminDashboard() {
             <CardContent>
               <div className="text-2xl font-bold">{stats.works.total}</div>
               <div className="text-xs text-zinc-500 mt-1">
-                {stats.works.published} published, {stats.works.draft} draft
+                {stats.works.published} public, {stats.works.draft} draft
               </div>
             </CardContent>
           </Card>

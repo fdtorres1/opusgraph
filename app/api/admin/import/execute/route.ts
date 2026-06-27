@@ -2,6 +2,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { parseDuration } from "@/lib/duration";
+import { normalizePublicWorkTier, publicTierFromLegacyStatus } from "@/lib/public-index/confidence";
 
 type ImportResult = {
   rowIndex: number;
@@ -235,7 +236,7 @@ export async function POST(req: NextRequest) {
           const workData: any = {
             work_name: workName,
             composer_id: composerId,
-            status: "draft",
+            public_tier: "draft",
           };
 
           if (fieldMapping.composition_year && row[fieldMapping.composition_year]) {
@@ -261,8 +262,10 @@ export async function POST(req: NextRequest) {
             workData.publisher_id = row[fieldMapping.publisher_id];
           }
 
-          if (fieldMapping.status && row[fieldMapping.status]) {
-            workData.status = row[fieldMapping.status] === "published" ? "published" : "draft";
+          if (fieldMapping.public_tier && row[fieldMapping.public_tier]) {
+            workData.public_tier = normalizePublicWorkTier(row[fieldMapping.public_tier], "draft");
+          } else if (fieldMapping.status && row[fieldMapping.status]) {
+            workData.public_tier = publicTierFromLegacyStatus(row[fieldMapping.status]);
           }
 
           // Insert work
@@ -361,4 +364,3 @@ export async function POST(req: NextRequest) {
     );
   }
 }
-

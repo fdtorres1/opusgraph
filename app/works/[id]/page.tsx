@@ -17,13 +17,19 @@ export default async function PublicWorkPage({
   const supabase = await createServerSupabase();
   const { data: { user } } = await supabase.auth.getUser();
   
+  const publicSupabase = createPublicSupabase();
+  const { data: publicDetailRows } = await publicSupabase.rpc("public_work_detail", {
+    p_id: id,
+  });
+  const publicDetail = publicDetailRows?.[0] ?? null;
+
   if (user) {
     // User is authenticated - fetch full details
     const { data: work, error } = await supabase
       .from("work")
       .select(`
         id, work_name, composition_year, composer_id, ensemble_id,
-        instrumentation_text, duration_seconds, publisher_id, status,
+        instrumentation_text, duration_seconds, publisher_id, public_tier,
         work_source(id, url, title, display_order),
         work_recording(id, url, embed_url, display_order),
         composer:composer_id(id, first_name, last_name),
@@ -31,7 +37,7 @@ export default async function PublicWorkPage({
         ensemble:ensemble_id(id, label)
       `)
       .eq("id", id)
-      .eq("status", "published")
+      .in("public_tier", ["indexed", "verified", "canonical"])
       .single();
 
     if (error || !work) {
@@ -64,21 +70,19 @@ export default async function PublicWorkPage({
         : work.ensemble,
     };
 
+    if (!normalizedWork.composer && publicDetail?.composer_id) {
+      normalizedWork.composer = {
+        id: publicDetail.composer_id,
+        first_name: publicDetail.composer_first_name ?? "",
+        last_name: publicDetail.composer_last_name ?? "",
+      };
+    }
+
     return <AuthenticatedWorkDetail work={normalizedWork} />;
   }
 
   // User is not authenticated - show public view with sign-in prompt
-  const publicSupabase = createPublicSupabase();
-
-  // Get minimal work data (public RPC - fetch all and find by ID)
-  const { data: allWorks } = await publicSupabase.rpc("public_min_works", {
-    q: null,
-    composer_id: null,
-  });
-
-  const work = allWorks?.find((w: any) => w.id === id);
-
-  if (!work) {
+  if (!publicDetail) {
     return (
       <div className="container mx-auto px-4 py-8 max-w-4xl">
         <div className="text-center py-12">
@@ -96,16 +100,9 @@ export default async function PublicWorkPage({
 
   // Get composer name if composer_id exists
   let composerName: string | null = null;
-  if (work.composer_id) {
-    const { data: allComposers } = await publicSupabase.rpc("public_min_composers", {
-      q: null,
-    });
-    const composer = allComposers?.find((c: any) => c.id === work.composer_id);
-    if (composer) {
-      composerName = `${composer.first_name} ${composer.last_name}`;
-    }
+  if (publicDetail.composer_first_name || publicDetail.composer_last_name) {
+    composerName = `${publicDetail.composer_first_name ?? ""} ${publicDetail.composer_last_name ?? ""}`.trim();
   }
 
-  return <PublicWorkDetail work={work} composerName={composerName} />;
+  return <PublicWorkDetail work={publicDetail} composerName={composerName} />;
 }
-

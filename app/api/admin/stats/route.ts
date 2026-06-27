@@ -1,6 +1,7 @@
 // app/api/admin/stats/route.ts
 import { NextRequest, NextResponse } from "next/server";
 import { createServerSupabase } from "@/lib/supabase/server";
+import { isPubliclyVisibleWorkTier } from "@/lib/public-index/confidence";
 
 export async function GET(req: NextRequest) {
   const supabase = await createServerSupabase();
@@ -12,7 +13,7 @@ export async function GET(req: NextRequest) {
       .select("id, status", { count: "exact", head: true }),
     supabase
       .from("work")
-      .select("id, status", { count: "exact", head: true }),
+      .select("id, public_tier", { count: "exact", head: true }),
     supabase
       .from("review_flag")
       .select("id", { count: "exact", head: true })
@@ -31,12 +32,12 @@ export async function GET(req: NextRequest) {
   
   const workCounts = await supabase
     .from("work")
-    .select("status");
+    .select("public_tier");
 
   const composerDraft = composerCounts.data?.filter(c => c.status === "draft").length || 0;
   const composerPublished = composerCounts.data?.filter(c => c.status === "published").length || 0;
-  const workDraft = workCounts.data?.filter(w => w.status === "draft").length || 0;
-  const workPublished = workCounts.data?.filter(w => w.status === "published").length || 0;
+  const workDraft = workCounts.data?.filter(w => w.public_tier === "draft").length || 0;
+  const workPublished = workCounts.data?.filter(w => isPubliclyVisibleWorkTier(w.public_tier)).length || 0;
 
   return NextResponse.json({
     composers: {
@@ -55,4 +56,3 @@ export async function GET(req: NextRequest) {
     recentActivity: recentActivity.data || [],
   });
 }
-

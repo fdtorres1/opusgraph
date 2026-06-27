@@ -194,7 +194,7 @@ export async function POST(req: NextRequest) {
           const { data: matches } = await supabase
             .from("work")
             .select("id, work_name, composer(first_name, last_name)")
-            .eq("status", "published")
+            .in("public_tier", ["indexed", "verified", "canonical"])
             .ilike("work_name", `%${title}%`)
             .limit(5);
 

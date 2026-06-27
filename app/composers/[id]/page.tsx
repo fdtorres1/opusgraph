@@ -16,6 +16,7 @@ export default async function PublicComposerPage({
   // Check if user is authenticated
   const supabase = await createServerSupabase();
   const { data: { user } } = await supabase.auth.getUser();
+  const publicSupabase = createPublicSupabase();
   
   if (user) {
     // User is authenticated - fetch full details
@@ -33,6 +34,15 @@ export default async function PublicComposerPage({
       .single();
 
     if (error || !composer) {
+      const { data: publicRows } = await publicSupabase.rpc("public_composer_detail", {
+        p_id: id,
+      });
+      const publicComposer = publicRows?.[0] ?? null;
+
+      if (publicComposer) {
+        return <PublicComposerDetail composer={publicComposer} />;
+      }
+
       return (
         <div className="container mx-auto px-4 py-8 max-w-4xl">
           <div className="text-center py-12">
@@ -69,14 +79,11 @@ export default async function PublicComposerPage({
   }
 
   // User is not authenticated - show public view with sign-in prompt
-  const publicSupabase = createPublicSupabase();
-  
-  // Get minimal composer data (public RPC - fetch all and find by ID)
-  const { data: allComposers } = await publicSupabase.rpc("public_min_composers", {
-    q: null,
+  const { data: composerRows } = await publicSupabase.rpc("public_composer_detail", {
+    p_id: id,
   });
 
-  const composer = allComposers?.find((c: any) => c.id === id);
+  const composer = composerRows?.[0] ?? null;
 
   if (!composer) {
     return (
@@ -96,4 +103,3 @@ export default async function PublicComposerPage({
 
   return <PublicComposerDetail composer={composer} />;
 }
-

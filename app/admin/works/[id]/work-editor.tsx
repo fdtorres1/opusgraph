@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useForm, useFieldArray } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { WorkPayload, type WorkPayloadType } from "@/lib/validators/work";
@@ -11,12 +11,17 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Switch } from "@/components/ui/switch";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, } from "@/components/ui/alert-dialog";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import { useRouter } from "next/navigation";
 import { Trash2 } from "lucide-react";
+import {
+  WORK_PUBLIC_TIERS,
+  WORK_TIER_DESCRIPTIONS,
+  WORK_TIER_LABELS,
+  type PublicWorkTier,
+} from "@/lib/public-index/confidence";
 
 type Props = {
   initial: any | null;
@@ -50,7 +55,7 @@ export default function WorkEditor({ initial, isNew, ensembles }: Props) {
     instrumentation_text: initial?.instrumentation_text ?? "",
     duration: formatDuration(initial?.duration_seconds ?? null),
     publisher_id: initial?.publisher_id ?? undefined,
-    status: initial?.status ?? "draft",
+    public_tier: initial?.public_tier ?? "draft",
     sources: (initial?.work_source ?? []).sort((a: any,b: any)=>a.display_order-b.display_order).map((s: any) => ({
       id: s.id, url: s.url, title: s.title ?? "", display_order: s.display_order ?? 0
     })),
@@ -126,7 +131,7 @@ export default function WorkEditor({ initial, isNew, ensembles }: Props) {
     return () => window.removeEventListener("beforeunload", handler);
   }, [saving]);
 
-  const statusIsPublished = watch("status") === "published";
+  const publicTier = (watch("public_tier") ?? "draft") as PublicWorkTier;
 
   const handleDelete = async () => {
     if (!workId) return;
@@ -169,18 +174,33 @@ export default function WorkEditor({ initial, isNew, ensembles }: Props) {
             </Button>
           )}
           <div className="flex items-center gap-2">
-            <Label htmlFor="status-switch">Draft / Published</Label>
-            <Switch
-              id="status-switch"
-              checked={statusIsPublished}
-              onCheckedChange={(v) => form.setValue("status", v ? "published" : "draft")}
-            />
-            <Badge variant={statusIsPublished ? "default" : "secondary"}>{statusIsPublished ? "Published" : "Draft"}</Badge>
+            <Label htmlFor="public-tier-select">Public Tier</Label>
+            <Select
+              value={publicTier}
+              onValueChange={(value) => form.setValue("public_tier", value as PublicWorkTier)}
+            >
+              <SelectTrigger id="public-tier-select" className="w-[170px]">
+                <SelectValue placeholder="Select tier" />
+              </SelectTrigger>
+              <SelectContent>
+                {WORK_PUBLIC_TIERS.map((tier) => (
+                  <SelectItem key={tier} value={tier}>
+                    {WORK_TIER_LABELS[tier]}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Badge variant={publicTier === "draft" ? "secondary" : publicTier === "quarantined" ? "destructive" : "default"}>
+              {WORK_TIER_LABELS[publicTier]}
+            </Badge>
           </div>
           <Button variant="destructive" onClick={() => setShowDiscard(true)}>Cancel</Button>
           <Button onClick={() => form.trigger() /* manual save happens via autosave cycle */}>Save</Button>
         </div>
       </div>
+      <p className="text-sm text-muted-foreground">
+        {WORK_TIER_DESCRIPTIONS[publicTier]}
+      </p>
 
       <Separator />
 
@@ -314,7 +334,7 @@ export default function WorkEditor({ initial, isNew, ensembles }: Props) {
                   instrumentation_text: lastSavedRef.current.instrumentation_text ?? "",
                   duration: formatDuration(lastSavedRef.current.duration_seconds ?? null),
                   publisher_id: lastSavedRef.current.publisher_id ?? undefined,
-                  status: lastSavedRef.current.status ?? "draft",
+                  public_tier: lastSavedRef.current.public_tier ?? "draft",
                   sources: [],
                   recordings: [],
                 });
@@ -394,4 +414,3 @@ function Typeahead({ endpoint, placeholder, value, onSelect }: {
     </div>
   );
 }
-

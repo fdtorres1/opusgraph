@@ -16,9 +16,9 @@ export async function GET(req: NextRequest) {
   const { data, error } = await supabase
     .from("work")
     .select(
-      "id, work_name, instrumentation_text, duration_seconds, composition_year, composer(first_name, last_name), publisher(name)"
+      "id, work_name, public_tier, instrumentation_text, duration_seconds, composition_year, composer(first_name, last_name), publisher(name)"
     )
-    .eq("status", "published")
+    .in("public_tier", ["indexed", "verified", "canonical"])
     .ilike("work_name", `%${q}%`)
     .order("work_name")
     .limit(20);

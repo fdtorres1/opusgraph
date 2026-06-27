@@ -18,7 +18,7 @@ export default async function WorkPage({ params }: { params: Promise<{ id: strin
       .from("work")
       .select(`
         id, work_name, composition_year, composer_id, ensemble_id,
-        instrumentation_text, duration_seconds, publisher_id, status,
+        instrumentation_text, duration_seconds, publisher_id, public_tier,
         work_source(id, url, title, display_order),
         work_recording(id, url, provider, embed_url, display_order)
       `)
@@ -32,4 +32,3 @@ export default async function WorkPage({ params }: { params: Promise<{ id: strin
     <WorkEditor initial={initial} isNew={isNew} ensembles={ensembles} />
   );
 }
-

@@ -428,7 +428,7 @@ export function ReviewQueue({ initialFlags }: { initialFlags: ReviewFlag[] }) {
                           <p><strong>Name:</strong> {comparisonData.primary?.first_name} {comparisonData.primary?.last_name}</p>
                           <p><strong>Birth Year:</strong> {comparisonData.primary?.birth_year || "N/A"}</p>
                           <p><strong>Death Year:</strong> {comparisonData.primary?.death_year || "N/A"}</p>
-                          <p><strong>Status:</strong> {comparisonData.primary?.status}</p>
+                          <p><strong>Public Tier:</strong> {comparisonData.primary?.public_tier}</p>
                         </>
                       ) : (
                         <>
@@ -456,7 +456,7 @@ export function ReviewQueue({ initialFlags }: { initialFlags: ReviewFlag[] }) {
                             <p><strong>Name:</strong> {comparisonData.duplicates[0]?.first_name} {comparisonData.duplicates[0]?.last_name}</p>
                             <p><strong>Birth Year:</strong> {comparisonData.duplicates[0]?.birth_year || "N/A"}</p>
                             <p><strong>Death Year:</strong> {comparisonData.duplicates[0]?.death_year || "N/A"}</p>
-                            <p><strong>Status:</strong> {comparisonData.duplicates[0]?.status}</p>
+                            <p><strong>Public Tier:</strong> {comparisonData.duplicates[0]?.public_tier}</p>
                           </>
                         ) : (
                           <>

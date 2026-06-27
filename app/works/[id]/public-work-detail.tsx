@@ -3,13 +3,16 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import Link from "next/link";
 import { Lock, ArrowLeft } from "lucide-react";
+import { WORK_TIER_LABELS, type PublicWorkTier } from "@/lib/public-index/confidence";
 
 type Work = {
   id: string;
   work_name: string;
   composer_id: string;
+  public_tier?: PublicWorkTier;
 };
 
 export function PublicWorkDetail({
@@ -29,6 +32,11 @@ export function PublicWorkDetail({
           </Link>
         </Button>
         <h1 className="text-4xl font-bold">{work.work_name || "Untitled Work"}</h1>
+        {work.public_tier && (
+          <Badge className="mt-3" variant="outline">
+            {WORK_TIER_LABELS[work.public_tier]}
+          </Badge>
+        )}
         {composerName && (
           <p className="text-xl text-zinc-600 mt-2">
             by <Link href={`/composers/${work.composer_id}`} className="hover:underline">{composerName}</Link>
@@ -61,4 +69,3 @@ export function PublicWorkDetail({
     </div>
   );
 }
-

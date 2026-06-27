@@ -6,6 +6,8 @@ import Link from "next/link";
 import { ArrowLeft, Calendar, Music, Clock, ExternalLink } from "lucide-react";
 import { detectRecording } from "@/lib/recording";
 import { PublicHeader } from "@/components/public-header";
+import { Badge } from "@/components/ui/badge";
+import { WORK_TIER_LABELS, type PublicWorkTier } from "@/lib/public-index/confidence";
 
 type Work = {
   id: string;
@@ -19,6 +21,7 @@ type Work = {
   publisher_id?: string | null;
   publisher?: { id: string; name: string } | null;
   composer?: { id: string; first_name: string; last_name: string } | null;
+  public_tier?: PublicWorkTier;
   work_source?: Array<{ id: string; url: string; title?: string | null; display_order?: number }>;
   work_recording?: Array<{ id: string; url: string; embed_url?: string | null; display_order?: number }>;
 };
@@ -46,6 +49,11 @@ export function AuthenticatedWorkDetail({ work }: { work: Work }) {
             </Link>
           </Button>
           <h1 className="text-4xl font-bold">{work.work_name || "Untitled Work"}</h1>
+          {work.public_tier && (
+            <Badge className="mt-3" variant="outline">
+              {WORK_TIER_LABELS[work.public_tier]}
+            </Badge>
+          )}
           {work.composer && (
             <p className="text-xl text-zinc-600 mt-2">
               by{" "}
@@ -202,4 +210,3 @@ export function AuthenticatedWorkDetail({ work }: { work: Work }) {
     </>
   );
 }
-

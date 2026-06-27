@@ -4,8 +4,10 @@ import { createServerSupabase } from "@/lib/supabase/server";
 import { PublicHeader } from "@/components/public-header";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import Link from "next/link";
 import { Music, ArrowLeft } from "lucide-react";
+import { WORK_TIER_LABELS, type PublicWorkTier } from "@/lib/public-index/confidence";
 
 export default async function BrowseWorksPage() {
   // Check if user is authenticated
@@ -55,6 +57,7 @@ export default async function BrowseWorksPage() {
           <div className="grid gap-3">
             {works.map((work: any) => {
               const workName = work.work_name?.trim() || "(Untitled Work)";
+              const publicTier = work.public_tier as PublicWorkTier | undefined;
 
               return (
                 <Card key={work.id}>
@@ -66,6 +69,11 @@ export default async function BrowseWorksPage() {
                       <Music className="h-4 w-4 text-zinc-400" />
                       {workName}
                     </Link>
+                    {publicTier && (
+                      <Badge className="mt-2" variant="outline">
+                        {WORK_TIER_LABELS[publicTier]}
+                      </Badge>
+                    )}
                   </CardContent>
                 </Card>
               );
@@ -80,4 +88,3 @@ export default async function BrowseWorksPage() {
     </>
   );
 }
-

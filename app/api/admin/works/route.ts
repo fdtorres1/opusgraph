@@ -11,7 +11,7 @@ export async function POST(req: NextRequest) {
   // minimal draft row
   const { data, error } = await supabase
     .from("work")
-    .insert({ status: "draft" })
+    .insert({ public_tier: "draft" })
     .select("*")
     .single();
 
@@ -28,4 +28,3 @@ export async function POST(req: NextRequest) {
 
   return NextResponse.json({ id: data.id });
 }
-

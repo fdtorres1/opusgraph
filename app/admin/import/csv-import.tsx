@@ -63,7 +63,7 @@ export function CSVImport() {
     { key: "instrumentation_text", label: "Instrumentation", required: false },
     { key: "sources", label: "Sources (comma-separated URLs)", required: false },
     { key: "recordings", label: "Recordings (comma-separated URLs)", required: false },
-    { key: "status", label: "Status (draft/published)", required: false },
+    { key: "public_tier", label: "Public tier (draft/quarantined/indexed/verified/canonical)", required: false },
   ];
 
   const fields = entityType === "composer" ? composerFields : workFields;
@@ -453,4 +453,3 @@ export function CSVImport() {
     </div>
   );
 }
-

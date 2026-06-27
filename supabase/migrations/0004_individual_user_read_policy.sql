@@ -17,7 +17,7 @@ for select using (
         and admin_role in ('super_admin', 'admin', 'contributor')
     )
   )
-  -- Only published content
+  -- Only published composer records; linked draft composers are exposed through public RPCs with minimal fields.
   and status = 'published'
 );
 
@@ -35,7 +35,6 @@ for select using (
         and admin_role in ('super_admin', 'admin', 'contributor')
     )
   )
-  -- Only published content
-  and status = 'published'
+  -- Only public-tier content
+  and public_tier in ('indexed','verified','canonical')
 );
-
