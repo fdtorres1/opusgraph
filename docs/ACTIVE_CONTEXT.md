@@ -27,18 +27,23 @@ Business-strategy side note: the current monetization path as of `2026-06-27` is
 
 - Agent: current Codex session
   - Worktree: current checkout at `/Volumes/Felix-SSD-1/Cursor Projects/opusgraph`
-  - Branch: `codex/imslp-quality-gates`
-  - Scope: add deterministic IMSLP pre-live QA and explicit live recovery gates before resuming offset `3700`
+  - Branch: `codex/public-index-confidence`
+  - Scope: implement the public-index confidence bridge around `work.public_tier`, evidence/confidence metadata, public read paths, and safe promotion scaffolding
   - File ownership:
-    - `scripts/qa-imslp-work-slice.ts`
-    - `scripts/recover-imslp-work-slice.ts`
-    - `scripts/audit-imslp-work-coverage.ts`
+    - `supabase/migrations/0001_init.sql`
+    - `supabase/migrations/0018_public_index_confidence.sql`
+    - `lib/public-index/`
+    - `lib/validators/work.ts`
+    - `app/api/public/search/route.ts`
+    - `app/api/library/reference/search/route.ts`
+    - `app/admin/works/`
+    - `app/api/admin/works/`
+    - `app/works/`
     - `docs/ACTIVE_CONTEXT.md`
     - `docs/ROADMAP.md`
-    - `docs/DECISIONS.md`
     - `docs/WORKLOG.md`
-  - Status: active
-  - Notes: auth/RLS is already signed off; managed daily Supabase physical backups are now available; `0016` and `0017` are applied in the linked cloud; `T4`, `T5`, the IMSLP composer adapter, the IMSLP work adapter, the orchestral-only quarantine flow, the quarantine-review UI, the offset-`2900` duplicate-flag repair, the strict audit helper, the duplicate-review cleanup, and the offset-`3600` handoff are all merged on `main`
+  - Status: active; first bridge and promotion-script chunks committed
+  - Notes: commits `2843559` and `7d19d12` add the `public_tier` bridge migration/app paths and deterministic export/promotion scripts. `work.status` remains physically present only in existing databases for the bridge; fresh work schema uses `public_tier`. Large AI/public-promotion batches are still blocked until the migration is applied and a small dry-run gate report is reviewed.
 
 ## In Progress
 
@@ -54,9 +59,31 @@ Business-strategy side note: the current monetization path as of `2026-06-27` is
   - `docs/specs/monetization-path.md` now records the active monetization thesis plus append-only version history
   - `docs/specs/monetization-run-rate-estimate-2026-06-27.md` preserves the first consolidated low/medium/high annualized run-rate estimate through `2035`
   - `docs/specs/august-1-first-dollars-plan.md` records the 2026-06-27 assessment for reaching first dollars by 2026-08-01
+  - `docs/specs/public-index-confidence-pipeline.md` records the handoff plan for redesigning work public visibility around `public_tier` as the target source of truth, plus field-level confidence, source evidence, AI adjudication packets, deterministic promotion gates, fresh-schema updates, and existing-database backfill/changeover
+  - the public-index plan was tightened after review: implementation must start with a `work.status` usage inventory, resolve composer visibility and library reference-search tier rules before migration, keep `work.status` as a temporary first-rollout bridge, define public-safe evidence boundaries, validate confidence JSON through a helper, and log demotions through promotion decisions
   - `docs/DECISIONS.md` records the durable decision to monetize workflow layers around a free public Works Database
   - `docs/ROADMAP.md` includes monetization validation as a strategy track
   - next step is validation, not implementation: test individual willingness around advanced discovery/planning and organization willingness around private catalog/import/performance-history workflows
+
+- Public index confidence implementation:
+  - committed `2843559 feat: add public index confidence bridge`
+  - committed `7d19d12 feat: add public index promotion gate scripts`
+  - bridge rules now implemented:
+    - work public visibility uses `public_tier in ('indexed','verified','canonical')`
+    - composer minimal public visibility comes from `composer.status = 'published'` or at least one linked public-tier work
+    - library reference lookup/import matching can use all three public tiers
+    - raw `work_evidence` remains admin-only; public evidence is exposed through `public_work_evidence`
+  - deterministic scripts now exist:
+    - `npm run public-index:export -- --from-tier draft --limit 50`
+    - `npm run public-index:promote -- --tier indexed --from-tier draft --limit 50 --apply false`
+  - verification passed:
+    - `npx tsc --noEmit`
+    - `npm run lint` exits with `0` errors and `112` warnings
+    - sandboxed `npm run build` hit the known Turbopack local-port denial; elevated `npm run build` passed
+  - not yet done:
+    - apply/test `supabase/migrations/0018_public_index_confidence.sql` against a local or linked test DB
+    - run a small candidate export/promotion dry run after the migration is applied
+    - review whether `work.status` can be removed from the existing database in a follow-up migration
 
 - Offset `3600` is now operationally closed:
   - initial dry-run row `6ae468d6-98b5-45a1-999f-0914258eb8d9` settled at:

@@ -4,6 +4,23 @@ This file is the current priority view for OpusGraph. Keep it short, current, an
 
 ## Now
 
+### Public index confidence pipeline
+- Status: Bridge implementation committed; DB migration still needs applied/tested before promotion batches
+- Spec: `docs/specs/public-index-confidence-pipeline.md`
+- Current direction:
+  - redesign the work-publication model from scratch around tiered public visibility: `draft`, `quarantined`, `indexed`, `verified`, `canonical`
+  - make `public_tier` the target source of truth for work public visibility rather than layering it indefinitely beside binary `status`
+  - add field-level confidence and stored source evidence so AI can prepare and adjudicate at scale without becoming untraceable truth
+  - use deterministic promotion gates before any AI-reviewed candidate becomes public
+  - include both fresh-install schema updates and a forward backfill/changeover migration for existing databases
+  - start implementation with a status-usage inventory and a bridge migration; do not drop `work.status` until admin, public, library-reference, import, RLS/RPC, and validator dependencies are clean
+  - resolve composer visibility, library reference-search tier eligibility, public-safe evidence fields, and batch audit/demotion thresholds before migration apply
+  - committed bridge implementation:
+    - `2843559` adds `public_tier`, confidence/evidence schema, public-safe RPCs, tier-based app read/write paths, and admin/library/search UI updates
+    - `7d19d12` adds deterministic candidate export and promotion-gate scripts
+  - next engineering step is migration validation: apply `0018_public_index_confidence.sql` to a test DB, then run a small export and dry-run promotion report before any apply-mode promotion
+  - target a large public indexed seed only after the gate, evidence model, and audit/demotion loop exist
+
 ### August 1 first-dollars chargeable beta
 - Status: Assessment recorded
 - Spec: `docs/specs/august-1-first-dollars-plan.md`

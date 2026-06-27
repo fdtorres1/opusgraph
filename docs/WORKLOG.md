@@ -4,6 +4,62 @@ Append-only log for implementation, investigation, and planning sessions. Keep e
 
 ## 2026-06-27
 
+### August 1 first-dollars launch assessment
+- Reviewed the new monetization strategy in `docs/specs/monetization-path.md` and compared it against the live repository and database state.
+- Verified `npm run lint` exits with 0 errors and 117 warnings.
+- Verified `npm run build` passes when rerun with elevated local permissions after the sandbox denied Turbopack helper process binding.
+- Queried the live Supabase database read-only:
+  - `3385` works, all draft
+  - `3151` composers, `11` published and `3140` draft
+  - `0` library entries and `0` performances
+  - `3592` open review flags, including `3305` `orchestral_scope_review` and `287` `possible_duplicate`
+  - public RPC returned `0` works and `11` composers
+- Added `docs/specs/august-1-first-dollars-plan.md` as the focused chargeable-beta plan.
+- Added an AI-accelerated scenario after the user clarified that multiple AI agents and external models can be used heavily over the five-week window:
+  - revised the possible data target from 100-300 reviewed works to 500-1500 reviewed works if quality gates hold
+  - kept the core rule that AI can prepare, classify, normalize, and recommend, but should not directly promote uncertain repertoire facts without deterministic gates and audit trails
+- Added an aggressive public-index scenario after the user pushed on triple-confirmation:
+  - 10000-20000 public work pages may be viable by August 1 only as source-backed indexed records with field-level confidence and visible provenance
+  - 10000-20000 fully normalized, deduped, instrumentation-complete, expert-curated records is not viable in the same window
+  - the required model is AI adjudication over stored source evidence plus deterministic promotion gates, not model-memory truth
+- Added `docs/specs/public-index-confidence-pipeline.md` as the implementation handoff for database/schema changes, confidence tiers, evidence storage, AI review packets, promotion gates, audit/demotion loops, and the recommended first work items for another chat.
+- Revised the confidence-pipeline handoff after the user clarified the plan should design the database as if fresh:
+  - `public_tier` is now the target source of truth for work public visibility
+  - the plan includes updating fresh-install schema and writing a forward backfill/changeover migration for existing databases
+  - long-term dual use of binary `status` and `public_tier` for works is explicitly rejected
+- Reviewed and tightened `docs/specs/public-index-confidence-pipeline.md` before implementation:
+  - added a required `work.status` usage inventory before migration work starts
+  - required composer visibility and library reference-search tier decisions before applying the public-tier migration
+  - changed the first migration posture to a bridge that keeps `work.status` physically present until status dependencies are clean
+  - added public/private evidence boundaries, confidence JSON validation requirements, and explicit batch audit/demotion rules
+  - broadened the first implementation file list to include admin work edit/save paths, validators, import, stats, and library reference lookup, not only public pages/RPCs
+
+### Public index confidence bridge implemented
+- Created branch `codex/public-index-confidence`.
+- Used parallel read-only agents to inventory `work.status` usage and migration/RLS/RPC hazards.
+- Committed `2843559 feat: add public index confidence bridge`:
+  - updated fresh schema and added `0018_public_index_confidence.sql`
+  - added `work.public_tier`, confidence/evidence metadata, `work_evidence`, `work_promotion_decision`, and `source_ingest_candidate`
+  - replaced public work visibility with `public_tier in ('indexed','verified','canonical')`
+  - added public-safe RPCs for work search/detail, composer detail through linked public works, and public evidence
+  - moved admin work edit/create/list/stats, public work/composer pages, search/list UI, library reference lookup/import matching, CSV work import, IMSLP persistence, and IMSLP audit display toward `public_tier`
+  - kept composer `status` binary for the bridge and kept raw evidence admin-only
+- Committed `7d19d12 feat: add public index promotion gate scripts`:
+  - added `npm run public-index:export`
+  - added `npm run public-index:promote`
+  - promotion dry run checks title, composer, evidence, identity confidence, orchestral-scope confidence, open review blockers, and stricter verified/canonical requirements
+  - apply mode writes `work.public_tier`, confidence JSON, evidence summary, `promoted_at`, gate version, and `work_promotion_decision`
+- Verification:
+  - `npx tsc --noEmit` passes
+  - `npm run lint` exits with `0` errors and `112` warnings
+  - sandboxed `npm run build` fails on the known Turbopack helper process/local port restriction
+  - elevated `npm run build` passes
+- Follow-up:
+  - apply/test `0018_public_index_confidence.sql` in a test database before running promotion scripts
+  - run `npm run public-index:export -- --from-tier draft --limit 50`
+  - run `npm run public-index:promote -- --tier indexed --from-tier draft --limit 50 --apply false`
+  - review dry-run blockers before any `--apply true` promotion
+
 ### Pre-ingest cleanup branch started before offset `3700`
 - Started `codex/pre-ingest-cleanup` from current `main` before resuming IMSLP offset `3700`.
 - Hardened ingest job bookkeeping:
@@ -23,18 +79,44 @@ Append-only log for implementation, investigation, and planning sessions. Keep e
   - `npm run lint` exits successfully with warnings
   - `npm run build` passes when run unsandboxed because Turbopack binds a local helper port during CSS processing
 
+### IMSLP quality gates started before offset `3700`
+- Started `codex/imslp-quality-gates` from current `main`.
+- Added the four ingestion-quality tracks to `docs/ROADMAP.md`:
+  - deterministic pre-live QA for each IMSLP work slice
+  - explicit live recovery gates for replay dry-run, QA, post-live coverage, and duplicate hygiene
+  - LLMs as advisory-only review assistance, not database truth
+  - later staging-table architecture if scripts and review flags stop being enough
+- Added `scripts/qa-imslp-work-slice.ts` to produce a deterministic dry-run QA report for every parsed work candidate in a slice.
+- Refactored `scripts/audit-imslp-work-coverage.ts` so the existing CLI behavior remains available while recovery can reuse the exact audit programmatically.
+- Tightened `scripts/recover-imslp-work-slice.ts` so `--run-live true` requires:
+  - a replay dry-run with `0` failed rows
+  - a green pre-live QA gate
+  - a post-live exact coverage audit with `0` uncovered rows
+  - duplicate-flag hygiene with `0` missing source identities and `0` duplicate source-identity collisions
+- Recorded the durable LLM boundary in `docs/DECISIONS.md`.
+- Verification so far:
+  - `npx tsc --noEmit` passes
+  - `npm run lint` exits successfully with the known warning baseline
+
 ### Monetization path documented as a historical strategy track
 - Added `docs/specs/monetization-path.md` as the canonical monetization strategy document.
+- Added `docs/specs/monetization-run-rate-estimate-2026-06-27.md` as the first dated low/medium/high annualized run-rate estimate through `2035`.
 - Recorded the first versioned thesis:
   - keep the public orchestral Works Database broadly free
   - monetize serious-use workflow layers: advanced discovery, saved planning, exports, organization library management, import/data-cleanup services, API/data licensing, and carefully labeled publisher/composer discovery surfaces
   - treat database-only membership as supplemental rather than the primary business engine
+- Expanded the plan in the same doc after follow-on strategy work:
+  - natural-language repertoire search should be a core Pro feature, backed by structured OpusGraph data and provenance rather than model memory
+  - partner availability/referral links can monetize high-intent purchase/rental clicks without hiding factual availability or damaging trust
+  - rental, licensing, and quote workflows are a potential marketplace layer for living composers, small publishers, estates, and hard-to-source repertoire
+  - direct composer/small-publisher storefronts and later integrated checkout are possible but should follow lower-risk partner-link and quote-request validation
 - Added a durable decision to `docs/DECISIONS.md`.
 - Linked monetization validation from `docs/ROADMAP.md`.
 - Updated `docs/ACTIVE_CONTEXT.md` so future sessions can resume from the repo-native handoff instead of chat history.
 - Next validation step:
-  - test willingness to pay for individual advanced discovery around `$49/year`
+  - test willingness to pay for individual natural-language discovery around `$49/year`
   - test organization willingness to pay for private catalog/import/performance-history workflows around `$12-29/month`
+  - validate whether composers, small publishers, retailers, or rental libraries will participate in partner links, quote requests, storefronts, or OpusGraph-hosted transactions
 
 ## 2026-04-07
 
