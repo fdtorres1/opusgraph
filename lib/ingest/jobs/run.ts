@@ -111,6 +111,12 @@ function hasErrorSeverityIssue(issues: IngestIssue[]): boolean {
   return issues.some((item) => item.severity === "error");
 }
 
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => {
+    setTimeout(resolve, ms);
+  });
+}
+
 async function failRunningJob(
   input: RunIngestJobBatchInput,
   runningJob: IngestJobRecord,
@@ -171,6 +177,75 @@ async function updateJobState(
     data: mapIngestJobRow(data),
     issues: [],
   };
+}
+
+async function updateJobStateWithRetry(
+  input: RunIngestJobBatchInput,
+  jobId: string,
+  patch: Record<string, unknown>,
+  options: {
+    attempts?: number;
+    delayMs?: number;
+    issueCode?: string;
+    issueMessage?: string;
+  } = {},
+): Promise<ServiceResult<IngestJobRecord>> {
+  const attempts = options.attempts ?? 3;
+  const delayMs = options.delayMs ?? 750;
+  let lastResult: ServiceResult<IngestJobRecord> | null = null;
+
+  for (let attempt = 1; attempt <= attempts; attempt += 1) {
+    const result = await updateJobState(input, jobId, patch);
+    if (result.ok) {
+      return result;
+    }
+
+    lastResult = result;
+    if (attempt < attempts) {
+      await sleep(delayMs * attempt);
+    }
+  }
+
+  const issues = lastResult?.issues ?? [
+    issue(
+      options.issueCode ?? "update_ingest_job_failed_after_retries",
+      options.issueMessage ?? "Failed to update ingest job after retries.",
+      "error",
+      { jobId, attempts },
+    ),
+  ];
+
+  return {
+    ok: false,
+    issues: [
+      issue(
+        options.issueCode ?? "update_ingest_job_failed_after_retries",
+        options.issueMessage ?? "Failed to update ingest job after retries.",
+        "error",
+        { jobId, attempts },
+      ),
+      ...issues,
+    ],
+  };
+}
+
+async function recordRunningProgress(
+  input: RunIngestJobBatchInput,
+  runningJob: IngestJobRecord,
+  itemResults: CandidatePersistResult[],
+): Promise<void> {
+  if (itemResults.length === 0 || itemResults.length % 10 !== 0) {
+    return;
+  }
+
+  await updateJobState(input, runningJob.id, {
+    last_heartbeat_at: new Date().toISOString(),
+    result_summary: {
+      batchInProgress: true,
+      batchProcessedCount: itemResults.length,
+      dryRun: runningJob.dryRun,
+    },
+  });
 }
 
 async function claimRunningJob(
@@ -413,6 +488,7 @@ export async function runIngestJobBatch(
 
         itemResults.push(result);
         batchIssues.push(...result.issues);
+        await recordRunningProgress(input, runningJob, itemResults);
       } catch (error) {
         itemResults.push({
           outcome: "failed_write",
@@ -426,6 +502,7 @@ export async function runIngestJobBatch(
             ),
           ],
         });
+        await recordRunningProgress(input, runningJob, itemResults);
       }
     }
 
@@ -437,7 +514,7 @@ export async function runIngestJobBatch(
     );
     const finishedAt = summary.status === "completed" ? new Date().toISOString() : null;
 
-    const updated = await updateJobState(input, runningJob.id, {
+    const updated = await updateJobStateWithRetry(input, runningJob.id, {
       status: summary.status,
       cursor: summary.nextCursor ?? null,
       processed_count: summary.processedCount,
@@ -454,6 +531,12 @@ export async function runIngestJobBatch(
       claimed_by: null,
       claimed_at: null,
       finished_at: finishedAt,
+    }, {
+      attempts: 5,
+      delayMs: 1000,
+      issueCode: "finalize_ingest_job_failed_after_writes",
+      issueMessage:
+        "Candidate processing finished, but the ingest job row could not be finalized. Candidate writes may already have landed; verify coverage before rerunning.",
     });
 
     if (!updated.ok || !updated.data) {
