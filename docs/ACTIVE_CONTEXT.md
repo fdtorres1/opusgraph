@@ -4,11 +4,13 @@ This is the canonical handoff file for the next session. Rewrite freely as prior
 
 ## Current Objective
 
-Ship the offset-`3600` recovery handoff, then continue IMSLP work ingestion at offset `3700` from a fresh worktree or a clean follow-on branch.
+Finish the pre-ingest cleanup branch, then continue IMSLP work ingestion at offset `3700` from a clean follow-on branch.
+
+Business-strategy side note: the current monetization path as of `2026-06-27` is now documented in `docs/specs/monetization-path.md`. The current thesis is to keep the public orchestral Works Database broadly free and monetize paid workflow, organization library-management, services, API/data, and carefully labeled publisher/composer discovery layers around it.
 
 ## Current Branch
 
-- `fix/imslp-offset-3600-recovery`
+- `codex/pre-ingest-cleanup`
 
 ## Parallel Work Coordination
 
@@ -24,17 +26,35 @@ Ship the offset-`3600` recovery handoff, then continue IMSLP work ingestion at o
 ### Active Workstreams
 
 - Agent: current Codex session
-  - Worktree: current checkout at `/Users/felixtorres/dev/opusgraph-imslp-3600`
-  - Branch: `fix/imslp-offset-3600-recovery`
-  - Scope: recover offset `3600`, verify exact source-level coverage after the live row settles, and hand off a clean starting point for offset `3700`
+  - Worktree: current checkout at `/Volumes/Felix-SSD-1/Cursor Projects/opusgraph`
+  - Branch: `codex/pre-ingest-cleanup`
+  - Scope: clean up pre-ingest operational risks before resuming offset `3700`
   - File ownership:
+    - `lib/ingest/jobs/run.ts`
+    - `scripts/recover-imslp-work-slice.ts`
+    - `app/layout.tsx`
+    - `app/fonts/`
+    - `eslint.config.mjs`
     - `docs/ACTIVE_CONTEXT.md`
     - `docs/ROADMAP.md`
+    - `docs/DECISIONS.md`
     - `docs/WORKLOG.md`
   - Status: active
-  - Notes: auth/RLS is already signed off; managed daily Supabase physical backups are now available; `0016` and `0017` are applied in the linked cloud; `T4`, `T5`, the IMSLP composer adapter, the IMSLP work adapter, the orchestral-only quarantine flow, the quarantine-review UI, the offset-`2900` duplicate-flag repair, the strict audit helper, and the duplicate-review cleanup are all merged on `main`; this task branch is intentionally separate from the dedicated integration worktree at `/Users/felixtorres/coding/opusgraph`
+  - Notes: auth/RLS is already signed off; managed daily Supabase physical backups are now available; `0016` and `0017` are applied in the linked cloud; `T4`, `T5`, the IMSLP composer adapter, the IMSLP work adapter, the orchestral-only quarantine flow, the quarantine-review UI, the offset-`2900` duplicate-flag repair, the strict audit helper, the duplicate-review cleanup, and the offset-`3600` handoff are all merged on `main`
 
 ## In Progress
+
+- Pre-ingest cleanup before offset `3700`:
+  - operator/job finalization is being hardened so delayed final job bookkeeping no longer looks like inert zero-counter work
+  - local build determinism is being restored by removing the build-time Google Fonts fetch
+  - lint is being restored as a usable nonblocking quality gate
+  - repo-native handoff docs are being refreshed so the active state points to offset `3700`, not older completed slices
+
+- Monetization path documentation:
+  - `docs/specs/monetization-path.md` now records the active monetization thesis plus append-only version history
+  - `docs/DECISIONS.md` records the durable decision to monetize workflow layers around a free public Works Database
+  - `docs/ROADMAP.md` includes monetization validation as a strategy track
+  - next step is validation, not implementation: test individual willingness around advanced discovery/planning and organization willingness around private catalog/import/performance-history workflows
 
 - Offset `3600` is now operationally closed:
   - initial dry-run row `6ae468d6-98b5-45a1-999f-0914258eb8d9` settled at:
@@ -75,7 +95,7 @@ Ship the offset-`3600` recovery handoff, then continue IMSLP work ingestion at o
   - operator note:
     - this slice followed the normal pattern again: composer seeding fixed the failures, the replay dry-run was canonical, and the live row only looked stalled during the initial bookkeeping window
   - next step:
-    - ship this `3600` handoff branch, then continue with the offset-`3700` recovery flow from a fresh worktree
+    - finish the pre-ingest cleanup branch, then continue with the offset-`3700` recovery flow from a clean follow-on branch
 
 - Offset `3500` is now operationally closed:
   - initial dry-run row `41c3d6c1-a613-4fa8-9fb3-d12d3559627e` settled at:
@@ -227,8 +247,8 @@ Ship the offset-`3600` recovery handoff, then continue IMSLP work ingestion at o
     - the migration file is ready in this branch, but it was not applied from this checkout because `supabase link` failed with `Access token not provided`
   - next step:
     - ship this `3300` handoff branch
-    - apply `supabase/migrations/0017_review_flag_duplicate_source_identity.sql` in the linked cloud
-    - then continue with the offset-`3400` recovery flow from a fresh worktree
+    - `supabase/migrations/0017_review_flag_duplicate_source_identity.sql` is now applied in the linked cloud
+    - offset `3400` and later recovery slices are now operationally closed through offset `3600`
 
 - Offset `3200` is now operationally recovered:
   - initial dry-run rows `a1396585-b5ad-437c-b695-968646521b2c` and `49b8e73e-afcf-4a91-a098-188c1dccc691` both eventually settled at:
@@ -1730,16 +1750,19 @@ Ship the offset-`3600` recovery handoff, then continue IMSLP work ingestion at o
 
 ## Next 3 Steps
 
-1. Decide whether to treat the remaining duplicate-review case as acceptable operational debt:
-   - `'Tis but a little faded Flower`
-   - composer `Thomas, John Rogers`
-   - duplicate target `977a660f-ed50-43d1-825f-846ce681d71b`
-2. If that duplicate-review case is acceptable, start a fresh live IMSLP work job at offset `300`.
-3. Keep targeted composer seeding available if the next slice exposes another coverage gap.
+1. Finish and review the `codex/pre-ingest-cleanup` branch:
+   - operator/job finalization and in-progress counters
+   - local Geist font vendoring for deterministic builds
+   - lint severity reset so `npm run lint` exits successfully with visible baseline warnings
+   - handoff/migration-reference cleanup
+2. After review, start a clean offset-`3700` branch and run:
+   - `npx tsx scripts/recover-imslp-work-slice.ts --offset 3700 --batch-size 100 --run-live true`
+   - `npx tsx scripts/audit-imslp-work-coverage.ts --offset-start 3700 --offset-end 3700 --step 100 --batch-size 100`
+3. Keep targeted composer seeding and exact source-level coverage audits as the gate for each subsequent IMSLP work slice.
 
 ## Known Blockers
 
-- This session has no local `.env` file and no running local Supabase stack, so the cloud environment remains the practical verification target.
+- Live IMSLP recovery uses the linked cloud and requires a modern `SUPABASE_SECRET_KEY`; legacy service-role keys are disabled.
 - IMSLP implementation still depends on staying disciplined about the generic adapter boundary so the first IMSLP slice does not collapse back into a one-off importer.
 - Home-network IPv6 routing does not currently reach the Supabase direct DB host, so manual logical backups from this machine require the phone/mobile network until the network issue is fixed.
 

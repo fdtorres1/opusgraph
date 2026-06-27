@@ -2,6 +2,32 @@
 
 Record durable product and architecture decisions here. Keep entries brief and biased toward rationale and consequences.
 
+## 2026-06-27: Keep the historical `00025` migration filename instead of renaming it
+
+- Decision: Do not rename `supabase/migrations/00025_auto_create_user_profile.sql`; treat it as a historical filename wart and correct documentation references to the actual file.
+- Context: The migration sorts earlier than intended and is later superseded by `0015_fix_handle_new_user_search_path.sql`, but it may already be present in applied Supabase migration history.
+- Why:
+  - renaming applied migrations can create drift between repo history and linked-cloud migration history
+  - `0015` is the forward repair that hardens `handle_new_user()` with a pinned search path and schema-qualified slug generation
+  - documentation can remove confusion without rewriting migration history
+- Consequences:
+  - references should use `00025_auto_create_user_profile.sql`, not nonexistent `0002_auto_create_user_profile.sql`
+  - future auth-bootstrap changes should be new forward migrations rather than edits to historical applied files
+
+## 2026-06-27: Monetize workflow layers around a free public Works Database
+
+- Decision: Keep the public orchestral Works Database broadly free and treat paid workflow, organization library management, services, API/data licensing, and carefully labeled publisher/composer discovery as the primary monetization paths.
+- Context: The current product goal is to ingest and normalize as many orchestral works as practical. Existing repertoire data sources are fragmented, but many are free or low-cost, which weakens the case for a database-only paywall.
+- Why:
+  - free public access maximizes reach, trust, source correction, and search/discovery value
+  - willingness to pay is stronger when users need to program, catalog, manage, export, or integrate repertoire data
+  - the already-planned organization-scoped library-management layer has a clearer operational pain point than casual repertoire lookup
+- Consequences:
+  - do not make basic work/composer lookup depend on paid membership by default
+  - package paid individual features around advanced discovery, saved planning, exports, and AI-assisted recommendations with provenance
+  - package paid organization features around private catalogs, imports, performance history, part/copy tracking, roles, comments, and reports
+  - track future monetization changes in `docs/specs/monetization-path.md` instead of overwriting the strategy without history
+
 ## 2026-03-27: IMSLP work ingest is orchestral-only, and out-of-scope works are quarantined instead of discarded
 
 - Decision: Treat IMSLP work ingestion as orchestral-only. Any IMSLP work that is not positively classified as orchestral during ingest should be quarantined via `review_flag.reason = "orchestral_scope_review"` and kept in `draft`, rather than flowing through the normal reference-work ingest path.
