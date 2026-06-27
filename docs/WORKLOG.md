@@ -60,6 +60,20 @@ Append-only log for implementation, investigation, and planning sessions. Keep e
   - run `npm run public-index:promote -- --tier indexed --from-tier draft --limit 50 --apply false`
   - review dry-run blockers before any `--apply true` promotion
 
+### Public index migration-chain guard
+- Continued validation after the bridge commits and found that `0018_public_index_confidence.sql` referenced legacy `work.status` during backfill even though the fresh `0001` work schema now uses `public_tier` without a work-level `status` column.
+- Patched `0018_public_index_confidence.sql` so the backfill checks `information_schema.columns`:
+  - existing databases with legacy `work.status = 'published'` still backfill those works to `verified`
+  - existing or fresh rows with open `orchestral_scope_review` or `possible_duplicate` blockers still backfill to `quarantined`
+  - fresh schemas without `work.status` no longer reference a missing column
+- Verification:
+  - `npx tsc --noEmit` passes
+  - `git diff --check` passes
+  - `supabase status` cannot validate the local stack because Docker/OrbStack is not running
+- Follow-up:
+  - start Docker/OrbStack or use a linked test DB, then apply/test `0018_public_index_confidence.sql`
+  - run the small export and dry-run promotion scripts only after the migration is applied
+
 ### Pre-ingest cleanup branch started before offset `3700`
 - Started `codex/pre-ingest-cleanup` from current `main` before resuming IMSLP offset `3700`.
 - Hardened ingest job bookkeeping:

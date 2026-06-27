@@ -43,7 +43,7 @@ Business-strategy side note: the current monetization path as of `2026-06-27` is
     - `docs/ROADMAP.md`
     - `docs/WORKLOG.md`
   - Status: active; first bridge and promotion-script chunks committed
-  - Notes: commits `2843559` and `7d19d12` add the `public_tier` bridge migration/app paths and deterministic export/promotion scripts. `work.status` remains physically present only in existing databases for the bridge; fresh work schema uses `public_tier`. Large AI/public-promotion batches are still blocked until the migration is applied and a small dry-run gate report is reviewed.
+  - Notes: commits `2843559` and `7d19d12` add the `public_tier` bridge migration/app paths and deterministic export/promotion scripts. A follow-up SQL patch makes the `0018` legacy-status backfill branch on whether `work.status` exists, so existing databases can still backfill legacy published works while fresh schemas that only have `public_tier` do not reference a missing column. Large AI/public-promotion batches are still blocked until the migration is applied and a small dry-run gate report is reviewed.
 
 ## In Progress
 
@@ -76,12 +76,18 @@ Business-strategy side note: the current monetization path as of `2026-06-27` is
   - deterministic scripts now exist:
     - `npm run public-index:export -- --from-tier draft --limit 50`
     - `npm run public-index:promote -- --tier indexed --from-tier draft --limit 50 --apply false`
+  - migration validation follow-up:
+    - `0018_public_index_confidence.sql` now guards the legacy `work.status` backfill path with an information-schema column check
+    - fresh installs keep works in `draft` except rows with open public blockers, which become `quarantined`
+    - existing databases with `work.status = 'published'` still backfill those works to `verified` unless an open public blocker quarantines them first
   - verification passed:
     - `npx tsc --noEmit`
+    - `git diff --check`
     - `npm run lint` exits with `0` errors and `112` warnings
     - sandboxed `npm run build` hit the known Turbopack local-port denial; elevated `npm run build` passed
   - not yet done:
     - apply/test `supabase/migrations/0018_public_index_confidence.sql` against a local or linked test DB
+    - local Supabase CLI validation is currently blocked because Docker/OrbStack is not running (`supabase status` cannot connect to the Docker daemon)
     - run a small candidate export/promotion dry run after the migration is applied
     - review whether `work.status` can be removed from the existing database in a follow-up migration
 

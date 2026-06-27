@@ -22,20 +22,43 @@ alter table work
   add column if not exists promoted_at timestamptz,
   add column if not exists promotion_gate_version text;
 
-update work
-set public_tier = case
-  when exists (
+do $$
+begin
+  if exists (
     select 1
-    from review_flag rf
-    where rf.entity_type = 'work'
-      and rf.entity_id = work.id
-      and rf.status = 'open'
-      and rf.reason in ('orchestral_scope_review', 'possible_duplicate')
-  ) then 'quarantined'::public_work_tier
-  when status = 'published' then 'verified'::public_work_tier
-  else 'draft'::public_work_tier
-end
-where public_tier = 'draft';
+    from information_schema.columns
+    where table_schema = 'public'
+      and table_name = 'work'
+      and column_name = 'status'
+  ) then
+    update work
+    set public_tier = case
+      when exists (
+        select 1
+        from review_flag rf
+        where rf.entity_type = 'work'
+          and rf.entity_id = work.id
+          and rf.status = 'open'
+          and rf.reason in ('orchestral_scope_review', 'possible_duplicate')
+      ) then 'quarantined'::public_work_tier
+      when status = 'published' then 'verified'::public_work_tier
+      else 'draft'::public_work_tier
+    end
+    where public_tier = 'draft';
+  else
+    update work
+    set public_tier = 'quarantined'::public_work_tier
+    where public_tier = 'draft'
+      and exists (
+        select 1
+        from review_flag rf
+        where rf.entity_type = 'work'
+          and rf.entity_id = work.id
+          and rf.status = 'open'
+          and rf.reason in ('orchestral_scope_review', 'possible_duplicate')
+      );
+  end if;
+end $$;
 
 do $$ begin
   alter table work

@@ -5,7 +5,7 @@ This file is the current priority view for OpusGraph. Keep it short, current, an
 ## Now
 
 ### Public index confidence pipeline
-- Status: Bridge implementation committed; DB migration still needs applied/tested before promotion batches
+- Status: Bridge implementation committed; migration-chain SQL guard added; DB migration still needs applied/tested before promotion batches
 - Spec: `docs/specs/public-index-confidence-pipeline.md`
 - Current direction:
   - redesign the work-publication model from scratch around tiered public visibility: `draft`, `quarantined`, `indexed`, `verified`, `canonical`
@@ -18,7 +18,9 @@ This file is the current priority view for OpusGraph. Keep it short, current, an
   - committed bridge implementation:
     - `2843559` adds `public_tier`, confidence/evidence schema, public-safe RPCs, tier-based app read/write paths, and admin/library/search UI updates
     - `7d19d12` adds deterministic candidate export and promotion-gate scripts
+    - follow-up SQL patch guards the `0018` legacy `work.status` backfill so fresh schemas that only have `public_tier` do not reference a missing column
   - next engineering step is migration validation: apply `0018_public_index_confidence.sql` to a test DB, then run a small export and dry-run promotion report before any apply-mode promotion
+  - local Supabase validation is currently blocked until Docker/OrbStack is running
   - target a large public indexed seed only after the gate, evidence model, and audit/demotion loop exist
 
 ### August 1 first-dollars chargeable beta
