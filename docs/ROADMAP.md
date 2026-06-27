@@ -4,6 +4,18 @@ This file is the current priority view for OpusGraph. Keep it short, current, an
 
 ## Now
 
+### Monetization path validation
+- Status: Strategy snapshot recorded
+- Spec: `docs/specs/monetization-path.md`
+- Current direction:
+  - keep the public orchestral Works Database broadly free
+  - monetize paid workflow layers around serious use: advanced discovery, season planning, exports, organization library management, import services, API/data licensing, and carefully labeled publisher/composer discovery surfaces
+  - treat database-only membership as supplemental rather than the primary economic engine
+- Next validation questions:
+  - test whether individuals will pay around `$49/year` for advanced repertoire discovery and saved planning workflows
+  - test whether community orchestras will pay `$12-29/month` for private catalog, import, performance-history, and part/copy tracking workflows
+  - identify the first conversion trigger: advanced search, season planning, private library import, or performance history
+
 ### Generic source-ingestion foundation with IMSLP as the first adapter
 - Status: In progress
 - Why now: Auth/RLS verification is signed off in production, `T0-1` through `T0-4` are codified, `T1-1` is applied in the linked cloud, and the ingest type, persistence, job-service, and first admin API layers are now in place.
@@ -271,8 +283,8 @@ This file is the current priority view for OpusGraph. Keep it short, current, an
       - `0` open duplicate flags missing `details.source_identity`
       - `0` duplicate-source collisions
   - next operator step:
-    - ship the offset-`3600` recovery handoff
-    - then resume at offset `3700` from a fresh worktree
+    - finish the pre-ingest cleanup branch
+    - then resume at offset `3700` from a clean follow-on branch
   - offset `2900` is operationally closed:
     - initial dry-run `386741bb-fe80-49b8-8f95-e42506b22743` settled at:
       - `0` created

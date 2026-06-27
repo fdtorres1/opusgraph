@@ -105,8 +105,27 @@ function summarizeRunResult(result: Awaited<ReturnType<typeof runIngestJob>>) {
   };
 }
 
+function logStage(stage: string, data?: Record<string, unknown>) {
+  console.error(
+    JSON.stringify(
+      {
+        stage,
+        at: new Date().toISOString(),
+        ...(data ?? {}),
+      },
+      null,
+      2,
+    ),
+  );
+}
+
 async function main() {
   const args = parseArgs(process.argv.slice(2));
+
+  logStage("initial_dry_run_started", {
+    offset: args.offset,
+    batchSize: args.batchSize,
+  });
 
   const initialDryRun = await runIngestJob({
     source: "imslp",
@@ -118,6 +137,8 @@ async function main() {
     workerIdentity: `manual:recover-offset-${args.offset}-dry-run`,
     sourceEntityKind: "work",
   });
+
+  logStage("initial_dry_run_finished", summarizeRunResult(initialDryRun));
 
   if (!initialDryRun.ok) {
     console.log(
@@ -140,10 +161,21 @@ async function main() {
     initialDryRun.failedCount > 0 &&
     hasMissingResolvedComposer(initialDryRun.errorSummary)
   ) {
+    logStage("composer_seed_started", {
+      offset: args.offset,
+      batchSize: args.batchSize,
+    });
+
     seedResult = await seedMissingWorkComposers({
       offset: args.offset,
       batchSize: args.batchSize,
       createdBy: args.createdBy,
+    });
+
+    logStage("composer_seed_finished", seedResult as unknown as Record<string, unknown>);
+    logStage("replay_dry_run_started", {
+      offset: args.offset,
+      batchSize: args.batchSize,
     });
 
     replayDryRun = await runIngestJob({
@@ -156,6 +188,8 @@ async function main() {
       workerIdentity: `manual:recover-offset-${args.offset}-dry-run-replay`,
       sourceEntityKind: "work",
     });
+
+    logStage("replay_dry_run_finished", summarizeRunResult(replayDryRun));
   }
 
   if (!replayDryRun.ok) {
@@ -199,6 +233,11 @@ async function main() {
 
   let liveRun: Awaited<ReturnType<typeof runIngestJob>> | null = null;
   if (args.runLive) {
+    logStage("live_run_started", {
+      offset: args.offset,
+      batchSize: args.batchSize,
+    });
+
     liveRun = await runIngestJob({
       source: "imslp",
       entityKind: "work",
@@ -210,18 +249,22 @@ async function main() {
       sourceEntityKind: "work",
     });
 
+    logStage("live_run_finished", summarizeRunResult(liveRun));
+
     if (!liveRun.ok) {
-    console.log(
-      JSON.stringify(
-        {
-          stage: "live_run_failed",
-          initialDryRun: summarizeRunResult(initialDryRun),
-          seedResult,
-          replayDryRun: summarizeRunResult(replayDryRun),
-          liveRun: summarizeRunResult(liveRun),
-        },
-        null,
-        2,
+      console.log(
+        JSON.stringify(
+          {
+            stage: "live_run_failed",
+            note:
+              "If the failure code is finalize_ingest_job_failed_after_writes, verify exact source-level coverage before rerunning this slice.",
+            initialDryRun: summarizeRunResult(initialDryRun),
+            seedResult,
+            replayDryRun: summarizeRunResult(replayDryRun),
+            liveRun: summarizeRunResult(liveRun),
+          },
+          null,
+          2,
         ),
       );
       process.exit(1);

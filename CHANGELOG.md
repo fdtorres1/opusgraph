@@ -185,7 +185,7 @@ OpusGraph is now a dual-purpose platform: the original Works Database plus a mul
   - Admin/Contributor users → `/admin`
 
 ### Added
-- Database migration `0002_auto_create_user_profile.sql` with trigger and backfill
+- Database migration `00025_auto_create_user_profile.sql` with trigger and backfill
 - Auth helper functions in `lib/auth.ts` for role checking
 - Backfill for existing users without profiles (sets them to `admin_role='none'`)
 
@@ -195,7 +195,7 @@ OpusGraph is now a dual-purpose platform: the original Works Database plus a mul
 - Auth callback redirect logic now respects user role
 
 ### Migration Required
-⚠️ **IMPORTANT**: Run `supabase/migrations/0002_auto_create_user_profile.sql` in Supabase Dashboard → SQL Editor to apply the security fix.
+⚠️ **IMPORTANT**: Run `supabase/migrations/00025_auto_create_user_profile.sql` in Supabase Dashboard → SQL Editor to apply the security fix.
 
 ## [1.7.2] - 2025-01-27
 
@@ -401,4 +401,3 @@ OpusGraph is now a dual-purpose platform: the original Works Database plus a mul
 [1.2.0]: https://github.com/fdtorres1/opusgraph/compare/v1.1.0...v1.2.0
 [1.1.0]: https://github.com/fdtorres1/opusgraph/compare/v1.0.0...v1.1.0
 [1.0.0]: https://github.com/fdtorres1/opusgraph/releases/tag/v1.0.0
-
