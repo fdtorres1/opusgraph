@@ -8,7 +8,9 @@
     "start": "next start",
     "lint": "eslint",
     "populate-composers": "tsx scripts/populate-composers.ts",
-    "populate-composers-api": "tsx scripts/populate-composers-api.ts"
+    "populate-composers-api": "tsx scripts/populate-composers-api.ts",
+    "public-index:export": "tsx scripts/export-public-index-candidates.ts",
+    "public-index:promote": "tsx scripts/promote-public-index-candidates.ts"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",
