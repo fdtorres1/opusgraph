@@ -233,16 +233,57 @@ async function recordRunningProgress(
   input: RunIngestJobBatchInput,
   runningJob: IngestJobRecord,
   itemResults: CandidatePersistResult[],
+  batchIssues: IngestIssue[],
 ): Promise<void> {
   if (itemResults.length === 0 || itemResults.length % 10 !== 0) {
     return;
   }
 
+  const deltas = itemResults.reduce(
+    (acc, result) => {
+      const counts = getOutcomeCounts(result);
+      acc.processedCount += counts.processedCount;
+      acc.createdCount += counts.createdCount;
+      acc.updatedCount += counts.updatedCount;
+      acc.flaggedCount += counts.flaggedCount;
+      acc.failedCount += counts.failedCount;
+      acc.skippedCount += counts.skippedCount;
+      return acc;
+    },
+    {
+      processedCount: 0,
+      createdCount: 0,
+      updatedCount: 0,
+      flaggedCount: 0,
+      failedCount: 0,
+      skippedCount: 0,
+    },
+  );
+  const warningIssues = batchIssues.filter((item) => item.severity === "warning");
+  const errorIssues = batchIssues.filter((item) => item.severity === "error");
+
   await updateJobState(input, runningJob.id, {
+    processed_count: runningJob.processedCount + deltas.processedCount,
+    created_count: runningJob.createdCount + deltas.createdCount,
+    updated_count: runningJob.updatedCount + deltas.updatedCount,
+    flagged_count: runningJob.flaggedCount + deltas.flaggedCount,
+    failed_count: runningJob.failedCount + deltas.failedCount,
+    skipped_count: runningJob.skippedCount + deltas.skippedCount,
+    warning_count: runningJob.warningCount + warningIssues.length,
+    error_summary: summarizeIssues(errorIssues),
+    warning_summary: summarizeIssues(warningIssues),
     last_heartbeat_at: new Date().toISOString(),
     result_summary: {
       batchInProgress: true,
       batchProcessedCount: itemResults.length,
+      batchOutcomeCounts: {
+        created: deltas.createdCount,
+        updated: deltas.updatedCount,
+        flagged: deltas.flaggedCount,
+        quarantined: itemResults.filter((item) => item.outcome === "quarantined").length,
+        failed: deltas.failedCount,
+        skipped: deltas.skippedCount,
+      },
       dryRun: runningJob.dryRun,
     },
   });
@@ -488,7 +529,7 @@ export async function runIngestJobBatch(
 
         itemResults.push(result);
         batchIssues.push(...result.issues);
-        await recordRunningProgress(input, runningJob, itemResults);
+        await recordRunningProgress(input, runningJob, itemResults, batchIssues);
       } catch (error) {
         itemResults.push({
           outcome: "failed_write",
@@ -502,7 +543,8 @@ export async function runIngestJobBatch(
             ),
           ],
         });
-        await recordRunningProgress(input, runningJob, itemResults);
+        batchIssues.push(...itemResults[itemResults.length - 1].issues);
+        await recordRunningProgress(input, runningJob, itemResults, batchIssues);
       }
     }
 
