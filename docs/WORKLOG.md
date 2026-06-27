@@ -74,6 +74,33 @@ Append-only log for implementation, investigation, and planning sessions. Keep e
   - start Docker/OrbStack or use a linked test DB, then apply/test `0018_public_index_confidence.sql`
   - run the small export and dry-run promotion scripts only after the migration is applied
 
+### Public index migration applied to production
+- Applied `supabase/migrations/0018_public_index_confidence.sql` to the linked production Supabase project `vszoxfmjkasnjpzieyyd`.
+- `supabase db push --dry-run --linked` was not usable because production has a historical remote `0002` entry that does not match the local `0002_add_activity_view_rls.sql` file:
+  - used `supabase db query --linked --file supabase/migrations/0018_public_index_confidence.sql --output table` to execute only `0018`
+  - then used `supabase migration repair --linked --status applied 0018` to record only `0018` in migration history
+  - final `supabase migration list --linked` shows `0018` present in both local and remote history
+- Pre-apply production checks:
+  - `work.status` existed
+  - `work.public_tier` did not exist
+  - `source_ingest_job` and `review_flag` existed
+  - work status counts: `3385` draft, `0` published
+  - public blocker counts: `3305` open `orchestral_scope_review`, `260` open `possible_duplicate`
+- Post-apply production checks:
+  - `work.public_tier`, `work_evidence`, `work_promotion_decision`, and `source_ingest_candidate` exist
+  - work tier counts: `78` draft, `3307` quarantined
+  - all `3385` work rows have non-empty `field_confidence` and `evidence_summary`
+  - `public_min_works(null, null)` returns `0`
+  - `public_min_composers(null)` returns `11`
+  - `work_evidence`, `work_promotion_decision`, and `source_ingest_candidate` are empty immediately post-migration
+- Operational notes:
+  - two concurrent Supabase CLI checks hit transient pooler SSL/auth errors, but serial reruns succeeded
+  - future `supabase db push` use should first reconcile or document the historical `0002` migration-history mismatch
+- Follow-up:
+  - run `npm run public-index:export -- --from-tier draft --limit 50`
+  - run `npm run public-index:promote -- --tier indexed --from-tier draft --limit 50 --apply false`
+  - review the dry-run blockers before any apply-mode promotion
+
 ### Pre-ingest cleanup branch started before offset `3700`
 - Started `codex/pre-ingest-cleanup` from current `main` before resuming IMSLP offset `3700`.
 - Hardened ingest job bookkeeping:

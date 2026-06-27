@@ -80,15 +80,20 @@ Business-strategy side note: the current monetization path as of `2026-06-27` is
     - `0018_public_index_confidence.sql` now guards the legacy `work.status` backfill path with an information-schema column check
     - fresh installs keep works in `draft` except rows with open public blockers, which become `quarantined`
     - existing databases with `work.status = 'published'` still backfill those works to `verified` unless an open public blocker quarantines them first
+  - production apply:
+    - applied `supabase/migrations/0018_public_index_confidence.sql` to linked production project `vszoxfmjkasnjpzieyyd` on `2026-06-27`
+    - `supabase db push --dry-run --linked` is blocked by a historical remote/local `0002` migration-history mismatch, so `0018` was executed directly with `supabase db query --linked --file ...` and then recorded with `supabase migration repair --linked --status applied 0018`
+    - post-apply production counts: `78` draft works, `3307` quarantined works, `0` public works, `11` public composers through `public_min_composers`
+    - `work_evidence`, `work_promotion_decision`, and `source_ingest_candidate` exist and are empty immediately post-migration
   - verification passed:
     - `npx tsc --noEmit`
     - `git diff --check`
     - `npm run lint` exits with `0` errors and `112` warnings
     - sandboxed `npm run build` hit the known Turbopack local-port denial; elevated `npm run build` passed
   - not yet done:
-    - apply/test `supabase/migrations/0018_public_index_confidence.sql` against a local or linked test DB
-    - local Supabase CLI validation is currently blocked because Docker/OrbStack is not running (`supabase status` cannot connect to the Docker daemon)
+    - run a local migration reset once Docker/OrbStack is running; local Supabase CLI validation is currently blocked because `supabase status` cannot connect to the Docker daemon
     - run a small candidate export/promotion dry run after the migration is applied
+    - reconcile or document the historical remote/local `0002` migration-history mismatch before relying on `supabase db push`
     - review whether `work.status` can be removed from the existing database in a follow-up migration
 
 - Offset `3600` is now operationally closed:
