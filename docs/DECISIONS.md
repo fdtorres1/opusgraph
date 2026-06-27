@@ -2,6 +2,19 @@
 
 Record durable product and architecture decisions here. Keep entries brief and biased toward rationale and consequences.
 
+## 2026-06-27: LLMs may assist ingestion review but must not write source truth
+
+- Decision: Treat LLMs as advisory review assistants only for source ingestion. Deterministic parsers, validators, source identities, review flags, and human-approved promotion remain the only paths that write composer/work truth into the database.
+- Context: IMSLP work ingestion is now mature enough to continue at offset `3700`, but the largest remaining risk is silent data-quality drift from ambiguous instrumentation, years, durations, duplicate matches, redirects, or composer resolution. LLMs can help reviewers notice suspicious cases, but they are not a reliable source of record.
+- Why:
+  - keeps ingestion reproducible and auditable from source payloads, deterministic classifier output, and dry-run results
+  - prevents LLM-derived guesses from becoming canonical title, composer, instrumentation, duration, year, or scope data
+  - still allows LLMs to summarize QA reports or propose review flags when humans need triage help
+- Consequences:
+  - pre-live QA gates must be deterministic and runnable without an LLM
+  - any LLM output belongs in advisory metadata, comments, or review notes, not direct `composer`/`work` writes
+  - future staging-table work should preserve this boundary by requiring reviewed promotion before candidate data becomes canonical
+
 ## 2026-06-27: Keep the historical `00025` migration filename instead of renaming it
 
 - Decision: Do not rename `supabase/migrations/00025_auto_create_user_profile.sql`; treat it as a historical filename wart and correct documentation references to the actual file.

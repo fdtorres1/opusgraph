@@ -4,13 +4,13 @@ This is the canonical handoff file for the next session. Rewrite freely as prior
 
 ## Current Objective
 
-Finish the pre-ingest cleanup branch, then continue IMSLP work ingestion at offset `3700` from a clean follow-on branch.
+Finish IMSLP ingestion quality gates, then continue work ingestion at offset `3700` only through the gated recovery flow.
 
 Business-strategy side note: the current monetization path as of `2026-06-27` is now documented in `docs/specs/monetization-path.md`. The current thesis is to keep the public orchestral Works Database broadly free and monetize paid workflow, organization library-management, services, API/data, and carefully labeled publisher/composer discovery layers around it.
 
 ## Current Branch
 
-- `codex/pre-ingest-cleanup`
+- `codex/imslp-quality-gates`
 
 ## Parallel Work Coordination
 
@@ -27,14 +27,12 @@ Business-strategy side note: the current monetization path as of `2026-06-27` is
 
 - Agent: current Codex session
   - Worktree: current checkout at `/Volumes/Felix-SSD-1/Cursor Projects/opusgraph`
-  - Branch: `codex/pre-ingest-cleanup`
-  - Scope: clean up pre-ingest operational risks before resuming offset `3700`
+  - Branch: `codex/imslp-quality-gates`
+  - Scope: add deterministic IMSLP pre-live QA and explicit live recovery gates before resuming offset `3700`
   - File ownership:
-    - `lib/ingest/jobs/run.ts`
+    - `scripts/qa-imslp-work-slice.ts`
     - `scripts/recover-imslp-work-slice.ts`
-    - `app/layout.tsx`
-    - `app/fonts/`
-    - `eslint.config.mjs`
+    - `scripts/audit-imslp-work-coverage.ts`
     - `docs/ACTIVE_CONTEXT.md`
     - `docs/ROADMAP.md`
     - `docs/DECISIONS.md`
@@ -44,14 +42,18 @@ Business-strategy side note: the current monetization path as of `2026-06-27` is
 
 ## In Progress
 
-- Pre-ingest cleanup before offset `3700`:
-  - operator/job finalization is being hardened so delayed final job bookkeeping no longer looks like inert zero-counter work
-  - local build determinism is being restored by removing the build-time Google Fonts fetch
-  - lint is being restored as a usable nonblocking quality gate
-  - repo-native handoff docs are being refreshed so the active state points to offset `3700`, not older completed slices
+- IMSLP quality gates before offset `3700`:
+  - all four quality-control tracks are now recorded in `docs/ROADMAP.md`
+  - `scripts/qa-imslp-work-slice.ts` is being added as the pre-live deterministic QA report for a work slice
+  - `scripts/recover-imslp-work-slice.ts` is being tightened so live recovery requires a green replay dry-run, green pre-live QA, post-live exact coverage audit, and clean duplicate-flag hygiene
+  - `scripts/audit-imslp-work-coverage.ts` is being refactored to keep the existing CLI output while also exporting a reusable audit function
+  - LLMs are being recorded as advisory-only review assistance for ingestion, not a source of DB truth
+  - staging-table ingestion is tracked as a later architecture option, not part of this branch
 
 - Monetization path documentation:
   - `docs/specs/monetization-path.md` now records the active monetization thesis plus append-only version history
+  - `docs/specs/monetization-run-rate-estimate-2026-06-27.md` preserves the first consolidated low/medium/high annualized run-rate estimate through `2035`
+  - `docs/specs/august-1-first-dollars-plan.md` records the 2026-06-27 assessment for reaching first dollars by 2026-08-01
   - `docs/DECISIONS.md` records the durable decision to monetize workflow layers around a free public Works Database
   - `docs/ROADMAP.md` includes monetization validation as a strategy track
   - next step is validation, not implementation: test individual willingness around advanced discovery/planning and organization willingness around private catalog/import/performance-history workflows
