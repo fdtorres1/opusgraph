@@ -5,7 +5,7 @@ This file is the current priority view for OpusGraph. Keep it short, current, an
 ## Now
 
 ### Public index confidence pipeline
-- Status: Bridge implementation committed; production `0018` migration applied; promotion batches still gated
+- Status: Bridge implementation committed; production `0018` migration applied; private IMSLP evidence backfilled; promotion batches still gated
 - Spec: `docs/specs/public-index-confidence-pipeline.md`
 - Current direction:
   - redesign the work-publication model from scratch around tiered public visibility: `draft`, `quarantined`, `indexed`, `verified`, `canonical`
@@ -22,8 +22,10 @@ This file is the current priority view for OpusGraph. Keep it short, current, an
   - production apply:
     - `0018_public_index_confidence.sql` was applied directly to linked production project `vszoxfmjkasnjpzieyyd` on `2026-06-27`
     - production now has `78` draft works, `3307` quarantined works, `0` public works, and `11` public composers through the minimal public RPC
+    - `77` private IMSLP evidence rows were inserted for draft works; the remaining source-less draft work was skipped
+    - post-evidence promotion dry-run found `36` candidates passing the `indexed` gate and `42` still blocked
     - `supabase db push` still needs migration-history cleanup or a documented workaround because remote/local `0002` histories do not match
-  - next engineering step is a small export and dry-run promotion report before any apply-mode promotion
+  - next engineering step is reviewing the `36` pass candidates and either promoting a tiny clearly orchestral pilot or tightening the gate for borderline instrumentation labels
   - local Supabase reset validation is currently blocked until Docker/OrbStack is running
   - target a large public indexed seed only after the gate, evidence model, and audit/demotion loop exist
 

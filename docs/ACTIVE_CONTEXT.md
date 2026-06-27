@@ -74,6 +74,7 @@ Business-strategy side note: the current monetization path as of `2026-06-27` is
     - library reference lookup/import matching can use all three public tiers
     - raw `work_evidence` remains admin-only; public evidence is exposed through `public_work_evidence`
   - deterministic scripts now exist:
+    - `npm run public-index:backfill-evidence -- --from-tier draft --limit 100 --apply false`
     - `npm run public-index:export -- --from-tier draft --limit 50`
     - `npm run public-index:promote -- --tier indexed --from-tier draft --limit 50 --apply false`
   - migration validation follow-up:
@@ -85,6 +86,12 @@ Business-strategy side note: the current monetization path as of `2026-06-27` is
     - `supabase db push --dry-run --linked` is blocked by a historical remote/local `0002` migration-history mismatch, so `0018` was executed directly with `supabase db query --linked --file ...` and then recorded with `supabase migration repair --linked --status applied 0018`
     - post-apply production counts: `78` draft works, `3307` quarantined works, `0` public works, `11` public composers through `public_min_composers`
     - `work_evidence`, `work_promotion_decision`, and `source_ingest_candidate` exist and are empty immediately post-migration
+  - production evidence/promotion dry-run:
+    - inserted `77` private IMSLP `work_evidence` rows for draft works with stored IMSLP source metadata; `1` draft work was skipped because it has no source metadata
+    - evidence rows are `source_terms_status = 'unverified'` and `is_public = false`; public evidence exposure remains gated separately
+    - post-evidence promotion dry-run across all `78` draft works returned `36` passing `indexed`, `42` blocked
+    - blocker split: `36` pass because they have evidence and IMSLP `orchestral_scope.classification = 'orchestral'`; `41` remain `unknown`; `1` is `non_orchestral`
+    - no apply-mode promotion has been run; public RPC surface is still `0` works and `11` composers
   - verification passed:
     - `npx tsc --noEmit`
     - `git diff --check`
@@ -92,7 +99,7 @@ Business-strategy side note: the current monetization path as of `2026-06-27` is
     - sandboxed `npm run build` hit the known Turbopack local-port denial; elevated `npm run build` passed
   - not yet done:
     - run a local migration reset once Docker/OrbStack is running; local Supabase CLI validation is currently blocked because `supabase status` cannot connect to the Docker daemon
-    - run a small candidate export/promotion dry run after the migration is applied
+    - review the `36` passing `indexed` candidates before public promotion; the list includes some borderline instrumentation labels such as `orchestra (?)`, `keyboard (or orchestra)`, and `voice, orchestra or piano`
     - reconcile or document the historical remote/local `0002` migration-history mismatch before relying on `supabase db push`
     - review whether `work.status` can be removed from the existing database in a follow-up migration
 

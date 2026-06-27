@@ -101,6 +101,33 @@ Append-only log for implementation, investigation, and planning sessions. Keep e
   - run `npm run public-index:promote -- --tier indexed --from-tier draft --limit 50 --apply false`
   - review the dry-run blockers before any apply-mode promotion
 
+### Public index evidence backfill and promotion dry-run
+- Added `scripts/backfill-public-index-evidence.ts` and package script `npm run public-index:backfill-evidence`.
+- Script behavior:
+  - defaults to dry-run unless `--apply true`
+  - reads stored IMSLP source metadata from `work.external_ids.imslp` and `work.extra_metadata.imslp`
+  - inserts private `work_evidence` rows with `source = 'imslp'`, `source_terms_status = 'unverified'`, and `is_public = false`
+  - dedupes by `work_id`, source, source record id, and source URL
+- Production run:
+  - dry-run command: `npm run public-index:backfill-evidence -- --from-tier draft --limit 100 --apply false`
+  - dry-run result: `78` checked, `77` insertable, `0` existing, `1` missing source
+  - apply command: `npm run public-index:backfill-evidence -- --from-tier draft --limit 100 --apply true`
+  - apply result: `77` private IMSLP evidence rows inserted, `1` source-less draft skipped
+  - verification command rerun in dry-run mode returned `0` insertable, `77` existing, `1` missing source
+  - production `work_evidence` summary: `77` `imslp` rows, all `unverified` and non-public
+- Promotion gate results:
+  - before evidence backfill, `npm run public-index:promote -- --tier indexed --from-tier draft --limit 100 --apply false` returned `0` pass, `78` blocked
+  - after evidence backfill, the same dry-run returned `36` pass, `42` blocked
+  - blocker split from production:
+    - `36` pass with IMSLP `orchestral_scope.classification = 'orchestral'`
+    - `41` blocked as `unknown`
+    - `1` blocked as `non_orchestral`
+  - no apply-mode promotion was run
+  - public RPC verification after the evidence backfill still returns `0` public works and `11` public composers
+- Operator note:
+  - the `36` pass list includes plausible but not uniformly clean instrumentation labels such as `orchestra (?)`, `keyboard (or orchestra)`, and `voice, orchestra or piano`
+  - next step should either promote a very small obvious pilot subset or tighten the gate/classifier before any broad `indexed` apply
+
 ### Pre-ingest cleanup branch started before offset `3700`
 - Started `codex/pre-ingest-cleanup` from current `main` before resuming IMSLP offset `3700`.
 - Hardened ingest job bookkeeping:

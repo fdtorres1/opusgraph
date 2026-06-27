@@ -9,6 +9,7 @@
     "lint": "eslint",
     "populate-composers": "tsx scripts/populate-composers.ts",
     "populate-composers-api": "tsx scripts/populate-composers-api.ts",
+    "public-index:backfill-evidence": "tsx scripts/backfill-public-index-evidence.ts",
     "public-index:export": "tsx scripts/export-public-index-candidates.ts",
     "public-index:promote": "tsx scripts/promote-public-index-candidates.ts"
   },
