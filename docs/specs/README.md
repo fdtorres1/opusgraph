@@ -12,3 +12,4 @@ Each spec should answer:
 
 Current active spec:
 - `auth-redirect-and-org-member-rls.md`
+- `public-index-confidence-pipeline.md`
