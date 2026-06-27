@@ -4,9 +4,19 @@ This file is the current priority view for OpusGraph. Keep it short, current, an
 
 ## Now
 
+### August 1 first-dollars chargeable beta
+- Status: Assessment recorded
+- Spec: `docs/specs/august-1-first-dollars-plan.md`
+- Current direction:
+  - aim for first dollars from a founder-led library setup/import beta, not a broad self-serve SaaS launch
+  - use manual payment links or invoices before building full Stripe checkout
+  - prioritize demo data, import reliability, org role/security verification, and a small published reference seed set
+  - defer marketplace, AI search, self-serve billing, and large-scale public database publishing until after the first paid cohort
+
 ### Monetization path validation
 - Status: Strategy snapshot recorded
 - Spec: `docs/specs/monetization-path.md`
+- Estimate snapshot: `docs/specs/monetization-run-rate-estimate-2026-06-27.md`
 - Current direction:
   - keep the public orchestral Works Database broadly free
   - monetize paid workflow layers around serious use: advanced discovery, season planning, exports, organization library management, import services, API/data licensing, and carefully labeled publisher/composer discovery surfaces
@@ -24,6 +34,11 @@ This file is the current priority view for OpusGraph. Keep it short, current, an
   - implement IMSLP as the first source adapter for composer and work seeding
   - use source identity in `external_ids` and raw payloads in `extra_metadata`
   - route ambiguous matches into `review_flag` instead of auto-merging
+- Quality-control tracks before continuing offset `3700`:
+  - pre-live slice QA: add a deterministic dry-run report that lists every candidate that would be created or updated, including parsed title, composer, instrumentation, duration, composition year, source URL, orchestral classification, parser/processor warnings, duplicate ambiguity, redirects, duration normalization, and other risk flags
+  - explicit live recovery gates: require a green replay dry-run, a green pre-live QA gate, a post-live exact coverage audit with `0` uncovered source ids, and clean duplicate-flag hygiene before a live recovery run is considered successful
+  - LLM usage boundary: LLMs, if used at all, are review assistants only; they may help flag suspicious instrumentation or metadata for human review, but they must not directly write composer/work truth into the database
+  - later staging architecture: consider a `source_ingest_candidate` staging table if deterministic scripts and review flags stop being enough; raw source candidates would land in staging and only reviewed/promoted candidates would write into `composer`/`work`
 - Immediate task slice:
   - continue IMSLP work ingestion under the merged orchestral-only correction:
     - the IMSLP work adapter now classifies orchestral scope from instrumentation text
@@ -283,8 +298,8 @@ This file is the current priority view for OpusGraph. Keep it short, current, an
       - `0` open duplicate flags missing `details.source_identity`
       - `0` duplicate-source collisions
   - next operator step:
-    - finish the pre-ingest cleanup branch
-    - then resume at offset `3700` from a clean follow-on branch
+    - finish the IMSLP quality-gates branch
+    - then resume at offset `3700` with the gated recovery script
   - offset `2900` is operationally closed:
     - initial dry-run `386741bb-fe80-49b8-8f95-e42506b22743` settled at:
       - `0` created

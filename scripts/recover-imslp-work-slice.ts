@@ -4,6 +4,14 @@ import { resolve } from "path";
 import { runIngestJob } from "./run-ingest-job";
 import { inspectImslpWorkSlice } from "./inspect-imslp-work-slice";
 import { seedMissingWorkComposers } from "./seed-imslp-work-composers";
+import {
+  auditImslpWorkCoverage,
+  type AuditImslpWorkCoverageCliArgs,
+} from "./audit-imslp-work-coverage";
+import {
+  qaImslpWorkSlice,
+  type QaImslpWorkSliceResult,
+} from "./qa-imslp-work-slice";
 
 config({ path: resolve(process.cwd(), ".env.local") });
 
@@ -12,6 +20,11 @@ interface CliArgs {
   batchSize: number;
   createdBy: string;
   runLive: boolean;
+  requireQa: boolean;
+  allowRiskyAccepted: boolean;
+  requirePostLiveAudit: boolean;
+  postLiveAuditAttempts: number;
+  postLiveAuditDelayMs: number;
 }
 
 function readBoolean(value: string): boolean {
@@ -24,6 +37,11 @@ function parseArgs(argv: string[]): CliArgs {
     batchSize: 100,
     createdBy: "f2ed501c-74ad-4c2e-bb66-c97f5a6aa0ba",
     runLive: true,
+    requireQa: true,
+    allowRiskyAccepted: false,
+    requirePostLiveAudit: true,
+    postLiveAuditAttempts: 3,
+    postLiveAuditDelayMs: 5000,
   };
 
   for (let index = 0; index < argv.length; index += 1) {
@@ -45,6 +63,36 @@ function parseArgs(argv: string[]): CliArgs {
         break;
       case "--run-live":
         defaults.runLive = readBoolean(next ?? String(defaults.runLive));
+        index += 1;
+        break;
+      case "--require-qa":
+        defaults.requireQa = readBoolean(next ?? String(defaults.requireQa));
+        index += 1;
+        break;
+      case "--allow-risky-accepted":
+        defaults.allowRiskyAccepted = readBoolean(
+          next ?? String(defaults.allowRiskyAccepted),
+        );
+        index += 1;
+        break;
+      case "--require-post-live-audit":
+        defaults.requirePostLiveAudit = readBoolean(
+          next ?? String(defaults.requirePostLiveAudit),
+        );
+        index += 1;
+        break;
+      case "--post-live-audit-attempts":
+        defaults.postLiveAuditAttempts = Number.parseInt(
+          next ?? String(defaults.postLiveAuditAttempts),
+          10,
+        );
+        index += 1;
+        break;
+      case "--post-live-audit-delay-ms":
+        defaults.postLiveAuditDelayMs = Number.parseInt(
+          next ?? String(defaults.postLiveAuditDelayMs),
+          10,
+        );
         index += 1;
         break;
       default:
@@ -103,6 +151,81 @@ function summarizeRunResult(result: Awaited<ReturnType<typeof runIngestJob>>) {
     warningSummary: result.warningSummary,
     resultSummary: result.resultSummary,
   };
+}
+
+function summarizeQaResult(result: QaImslpWorkSliceResult) {
+  return {
+    offset: result.offset,
+    batchSize: result.batchSize,
+    gate: result.gate,
+    summary: result.summary,
+    riskyAcceptedSample: result.riskyAcceptedSample,
+    failedSample: result.failedSample,
+    duplicateSample: result.duplicateSample,
+  };
+}
+
+function postLiveAuditGatePassed(
+  result: Awaited<ReturnType<typeof auditImslpWorkCoverage>>,
+): boolean {
+  return (
+    result.summary.uncoveredCount === 0 &&
+    result.duplicateFlagHygiene.missingSourceIdentityCount === 0 &&
+    result.duplicateFlagHygiene.duplicateSourceIdentityCount === 0
+  );
+}
+
+function sleep(ms: number) {
+  return new Promise((resolvePromise) => {
+    setTimeout(resolvePromise, ms);
+  });
+}
+
+async function runPostLiveAuditWithRetries(
+  args: CliArgs,
+): Promise<Awaited<ReturnType<typeof auditImslpWorkCoverage>>> {
+  const auditArgs: AuditImslpWorkCoverageCliArgs = {
+    offsetStart: args.offset,
+    offsetEnd: args.offset,
+    step: args.batchSize,
+    batchSize: args.batchSize,
+    createdBy: args.createdBy,
+  };
+  const attempts = Math.max(1, args.postLiveAuditAttempts);
+  let latest: Awaited<ReturnType<typeof auditImslpWorkCoverage>> | null = null;
+
+  for (let attempt = 1; attempt <= attempts; attempt += 1) {
+    logStage("post_live_audit_started", {
+      offset: args.offset,
+      batchSize: args.batchSize,
+      attempt,
+      attempts,
+    });
+
+    latest = await auditImslpWorkCoverage(auditArgs);
+
+    logStage("post_live_audit_finished", {
+      attempt,
+      attempts,
+      uncoveredCount: latest.summary.uncoveredCount,
+      missingDuplicateSourceIdentityCount:
+        latest.duplicateFlagHygiene.missingSourceIdentityCount,
+      duplicateSourceIdentityCount:
+        latest.duplicateFlagHygiene.duplicateSourceIdentityCount,
+    });
+
+    if (postLiveAuditGatePassed(latest) || attempt === attempts) {
+      return latest;
+    }
+
+    await sleep(Math.max(0, args.postLiveAuditDelayMs));
+  }
+
+  if (!latest) {
+    throw new Error("Post-live audit did not run.");
+  }
+
+  return latest;
 }
 
 function logStage(stage: string, data?: Record<string, unknown>) {
@@ -231,7 +354,47 @@ async function main() {
     process.exit(1);
   }
 
+  let preLiveQa: QaImslpWorkSliceResult | null = null;
+  if (args.runLive && args.requireQa) {
+    logStage("pre_live_qa_started", {
+      offset: args.offset,
+      batchSize: args.batchSize,
+      allowRiskyAccepted: args.allowRiskyAccepted,
+    });
+
+    preLiveQa = await qaImslpWorkSlice({
+      offset: args.offset,
+      batchSize: args.batchSize,
+      createdBy: args.createdBy,
+      allowRiskyAccepted: args.allowRiskyAccepted,
+    });
+
+    logStage("pre_live_qa_finished", {
+      gate: preLiveQa.gate,
+      summary: preLiveQa.summary,
+    });
+
+    if (!preLiveQa.gate.passed) {
+      console.log(
+        JSON.stringify(
+          {
+            stage: "pre_live_qa_gate_failed",
+            initialDryRun: summarizeRunResult(initialDryRun),
+            seedResult,
+            replayDryRun: summarizeRunResult(replayDryRun),
+            preLiveQa: summarizeQaResult(preLiveQa),
+          },
+          null,
+          2,
+        ),
+      );
+      process.exit(1);
+    }
+  }
+
   let liveRun: Awaited<ReturnType<typeof runIngestJob>> | null = null;
+  let postLiveAudit: Awaited<ReturnType<typeof auditImslpWorkCoverage>> | null =
+    null;
   if (args.runLive) {
     logStage("live_run_started", {
       offset: args.offset,
@@ -269,6 +432,29 @@ async function main() {
       );
       process.exit(1);
     }
+
+    if (args.requirePostLiveAudit) {
+      postLiveAudit = await runPostLiveAuditWithRetries(args);
+
+      if (!postLiveAuditGatePassed(postLiveAudit)) {
+        console.log(
+          JSON.stringify(
+            {
+              stage: "post_live_audit_gate_failed",
+              initialDryRun: summarizeRunResult(initialDryRun),
+              seedResult,
+              replayDryRun: summarizeRunResult(replayDryRun),
+              preLiveQa: preLiveQa ? summarizeQaResult(preLiveQa) : null,
+              liveRun: summarizeRunResult(liveRun),
+              postLiveAudit,
+            },
+            null,
+            2,
+          ),
+        );
+        process.exit(1);
+      }
+    }
   }
 
   console.log(
@@ -280,7 +466,9 @@ async function main() {
         initialDryRun: summarizeRunResult(initialDryRun),
         seedResult,
         replayDryRun: summarizeRunResult(replayDryRun),
+        preLiveQa: preLiveQa ? summarizeQaResult(preLiveQa) : null,
         liveRun: liveRun ? summarizeRunResult(liveRun) : null,
+        postLiveAudit,
       },
       null,
       2,

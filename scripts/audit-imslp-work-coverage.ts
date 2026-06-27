@@ -7,7 +7,6 @@ import { createClient } from "@supabase/supabase-js";
 import { ingestAdapterRegistry } from "@/lib/ingest/adapters";
 import { processIngestCandidate } from "@/app/api/admin/ingest/_shared";
 import type { WorkCandidate } from "@/lib/ingest/candidates";
-import type { CandidatePersistResult } from "@/lib/ingest/results";
 import type { IngestJobRecord } from "@/lib/ingest/jobs/types";
 import type { PersistSupabaseClient } from "@/lib/ingest/persist/support";
 
@@ -21,7 +20,7 @@ if (!SUPABASE_URL || !SUPABASE_SECRET_KEY) {
   process.exit(1);
 }
 
-interface CliArgs {
+export interface AuditImslpWorkCoverageCliArgs {
   offsetStart: number;
   offsetEnd: number;
   step: number;
@@ -41,8 +40,8 @@ interface WorkIdentityRow {
   external_ids: Record<string, unknown> | null;
 }
 
-function parseArgs(argv: string[]): CliArgs {
-  const args: CliArgs = {
+function parseArgs(argv: string[]): AuditImslpWorkCoverageCliArgs {
+  const args: AuditImslpWorkCoverageCliArgs = {
     offsetStart: 1700,
     offsetEnd: 2900,
     step: 100,
@@ -83,7 +82,10 @@ function parseArgs(argv: string[]): CliArgs {
   return args;
 }
 
-function buildSyntheticJob(args: CliArgs, offset: number): IngestJobRecord {
+function buildSyntheticJob(
+  args: AuditImslpWorkCoverageCliArgs,
+  offset: number,
+): IngestJobRecord {
   const now = new Date().toISOString();
 
   return {
@@ -248,8 +250,9 @@ async function loadImslpWorkSourceIds(
   return sourceIds;
 }
 
-async function main() {
-  const args = parseArgs(process.argv.slice(2));
+export async function auditImslpWorkCoverage(
+  args: AuditImslpWorkCoverageCliArgs,
+) {
   const supabase = createClient(SUPABASE_URL, SUPABASE_SECRET_KEY, {
     auth: {
       autoRefreshToken: false,
@@ -410,28 +413,35 @@ async function main() {
     }))
     .sort((left, right) => left.sourceId.localeCompare(right.sourceId));
 
+  return {
+    range: {
+      offsetStart: args.offsetStart,
+      offsetEnd: args.offsetEnd,
+      step: args.step,
+      batchSize: args.batchSize,
+    },
+    duplicateFlagHygiene: {
+      openDuplicateFlags: openDuplicates.length,
+      missingSourceIdentityCount: duplicateFlagsMissingSourceIdentity,
+      duplicateSourceIdentityCount: duplicateCollisions.length,
+      duplicateSourceIdentitySample: duplicateCollisions.slice(0, 20),
+    },
+    slices,
+    summary: {
+      auditedSlices: slices.length,
+      uncoveredCount: uncoveredOverall.length,
+      uncoveredSample: uncoveredOverall.slice(0, 20),
+    },
+  };
+}
+
+async function main() {
+  const args = parseArgs(process.argv.slice(2));
+  const result = await auditImslpWorkCoverage(args);
+
   console.log(
     JSON.stringify(
-      {
-        range: {
-          offsetStart: args.offsetStart,
-          offsetEnd: args.offsetEnd,
-          step: args.step,
-          batchSize: args.batchSize,
-        },
-        duplicateFlagHygiene: {
-          openDuplicateFlags: openDuplicates.length,
-          missingSourceIdentityCount: duplicateFlagsMissingSourceIdentity,
-          duplicateSourceIdentityCount: duplicateCollisions.length,
-          duplicateSourceIdentitySample: duplicateCollisions.slice(0, 20),
-        },
-        slices,
-        summary: {
-          auditedSlices: slices.length,
-          uncoveredCount: uncoveredOverall.length,
-          uncoveredSample: uncoveredOverall.slice(0, 20),
-        },
-      },
+      result,
       null,
       2,
     ),
