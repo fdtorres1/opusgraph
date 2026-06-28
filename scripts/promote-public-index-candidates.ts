@@ -4,6 +4,7 @@ import { pathToFileURL } from "url";
 
 import { createClient } from "@supabase/supabase-js";
 
+import { assessImslpWorkOrchestralScope } from "@/lib/ingest/adapters/imslp/work-fields";
 import {
   FIELD_CONFIDENCE_KEYS,
   normalizePublicWorkTier,
@@ -24,6 +25,18 @@ if (!SUPABASE_URL || !SUPABASE_SECRET_KEY) {
 
 const PUBLIC_TARGET_TIERS = new Set<PublicWorkTier>(["indexed", "verified", "canonical"]);
 const BLOCKING_FLAG_REASONS = new Set(["orchestral_scope_review", "possible_duplicate"]);
+const AUTO_INDEX_SCOPE_REASONS = new Set([
+  "explicit_orchestra_signal",
+  "multi_family_orchestral_scoring",
+]);
+const AMBIGUOUS_ORCHESTRAL_PUBLICATION_PATTERNS: Array<[string, RegExp]> = [
+  ["ambiguous_orchestra_question", /\borchestra(?:l)?\s*(?:\(\s*\?\s*\)|\?)/i],
+  ["optional_orchestra_alternative", /(?:\bor\s+orchestra(?:l)?\b|\borchestra(?:l)?\s+or\b)/i],
+  [
+    "weak_orchestral_reference",
+    /\b(?:orchestra(?:l)? accompaniment|version with orchestra(?:l)?|version with orchestra(?:l)? accompaniment|implying orchestra(?:l)? accompaniment|originally orchestra(?:l)?)\b/i,
+  ],
+];
 
 interface CliArgs {
   targetTier: PublicWorkTier;
@@ -67,6 +80,17 @@ interface GateResult {
   blockingIssues: string[];
   evidenceIds: string[];
   fieldConfidence: FieldConfidence;
+}
+
+function readRecord(value: unknown): Record<string, unknown> | null {
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    return null;
+  }
+  return value as Record<string, unknown>;
+}
+
+function readString(value: unknown): string | null {
+  return typeof value === "string" && value.trim() ? value.trim() : null;
 }
 
 function parseBoolean(value: string | undefined): boolean {
@@ -156,6 +180,58 @@ function isConfirmedOrProbable(value: ConfidenceLevel | undefined): boolean {
   return value === "confirmed" || value === "probable";
 }
 
+function getImslpMetadata(work: WorkRow): Record<string, unknown> | null {
+  return readRecord(readRecord(work.extra_metadata)?.imslp);
+}
+
+function getPersistedImslpInstrumentationText(work: WorkRow): string | null {
+  const direct = readString(work.instrumentation_text);
+  if (direct) {
+    return direct;
+  }
+
+  const extractedFields = readRecord(getImslpMetadata(work)?.extracted_fields);
+  return readString(extractedFields?.instrumentation_text);
+}
+
+function getPersistedImslpScope(work: WorkRow): Record<string, unknown> | null {
+  return readRecord(getImslpMetadata(work)?.orchestral_scope);
+}
+
+function indexedScopeBlockers(work: WorkRow): string[] {
+  const imslpMetadata = getImslpMetadata(work);
+  if (!imslpMetadata) {
+    return [];
+  }
+
+  const blockers: string[] = [];
+  const instrumentationText = getPersistedImslpInstrumentationText(work);
+  const reassessment = assessImslpWorkOrchestralScope(instrumentationText);
+  const persistedScope = getPersistedImslpScope(work);
+  const persistedClassification = readString(persistedScope?.classification);
+
+  if (persistedClassification && persistedClassification !== reassessment.classification) {
+    blockers.push("imslp_orchestral_scope_classifier_drift");
+  }
+
+  if (reassessment.classification !== "orchestral") {
+    blockers.push("imslp_orchestral_scope_not_orchestral");
+  }
+
+  if (!AUTO_INDEX_SCOPE_REASONS.has(reassessment.reason)) {
+    blockers.push(`imslp_scope_reason_${reassessment.reason}`);
+  }
+
+  const normalized = reassessment.normalizedInstrumentationText ?? "";
+  for (const [issue, pattern] of AMBIGUOUS_ORCHESTRAL_PUBLICATION_PATTERNS) {
+    if (pattern.test(normalized)) {
+      blockers.push(issue);
+    }
+  }
+
+  return [...new Set(blockers)];
+}
+
 function evaluateGate(
   work: WorkRow,
   targetTier: PublicWorkTier,
@@ -183,6 +259,9 @@ function evaluateGate(
   }
   if (!isConfirmedOrProbable(fieldConfidence.orchestral_scope)) {
     blockingIssues.push("orchestral_scope_not_probable");
+  }
+  if (targetTier === "indexed") {
+    blockingIssues.push(...indexedScopeBlockers(work));
   }
 
   for (const flag of openFlags) {

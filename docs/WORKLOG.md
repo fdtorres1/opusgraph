@@ -2914,3 +2914,37 @@ Append-only log for implementation, investigation, and planning sessions. Keep e
   - live `26b32793-2837-4988-9a0f-065585d17903`
 - Follow-up:
   - continue with the offset-`3100` recovery flow
+
+### 2026-06-28 — Tightened public-index gate and published five-work pilot
+
+- Used two read-only subagent reviews before applying any public promotion:
+  - one reviewed the `36` post-evidence passing candidates and recommended blocking borderline labels such as `orchestra (?)`, `keyboard (or orchestra)`, alternative accompaniment text, weak orchestral references, and classifier reassessment mismatches
+  - one reviewed the IMSLP classifier path and recommended reusing `assessImslpWorkOrchestralScope()` from `lib/ingest/adapters/imslp/work-fields.ts` instead of adding a second classifier
+- Updated `scripts/promote-public-index-candidates.ts` so the `indexed` gate now:
+  - re-runs canonical IMSLP orchestral-scope classification from persisted instrumentation text
+  - prefers `work.instrumentation_text`, with fallback to `extra_metadata.imslp.extracted_fields.instrumentation_text`
+  - blocks classifier drift between persisted IMSLP metadata and current reassessment
+  - requires reassessment classification `orchestral`
+  - requires a strong reason: `explicit_orchestra_signal` or `multi_family_orchestral_scoring`
+  - blocks ambiguous/weak orchestral references such as `orchestra (?)`, `or orchestra`, `orchestra or ...`, `orchestral accompaniment`, `version with orchestra`, `implying orchestral accompaniment`, and `originally orchestra`
+- Verification before production apply:
+  - `git diff --check` passed
+  - `npx tsc --noEmit` passed
+  - tightened production dry-run returned `78` checked, `32` passed, `46` blocked
+  - known borderline rows were blocked after the gate change, including `1913 Medley Blues` via `ambiguous_orchestra_question` and `Twelve Preludes and Fugues, 'Topical'` via `optional_orchestra_alternative`
+- Production pilot apply:
+  - promoted `1812 Overture` (`824fcc01-fe10-4e53-9912-5cd11edaae26`)
+  - promoted `1914 Overture` (`ef2f51b4-f8f9-4f7a-8f05-ceaf515dfbbe`)
+  - promoted `2 Adagi` (`767ebfa2-face-433a-9623-9aa3c7611867`)
+  - promoted `Piano Concerto No.4` (`128008f5-1253-4139-b1f4-89b9ae0ff7c0`)
+  - promoted `Twelve Pieces for Orchestra` (`635a064d-e704-4aa5-8051-48d2084d4410`)
+- Production verification after pilot:
+  - all five pilot works have `public_tier = 'indexed'` and `promotion_gate_version = 'public-index-gate-v1'`
+  - each pilot work has exactly one `work_promotion_decision`
+  - `public_min_works(null, null)` returns `5`
+  - `public_min_composers(null)` returns `16`
+  - `public_work_detail('824fcc01-fe10-4e53-9912-5cd11edaae26')` returns `1812 Overture`, `indexed`, composer `Tchaikovsky`
+- Follow-up:
+  - inspect the five public pages/search behavior in the deployed app
+  - review the remaining `32` passing candidates before any next promotion batch
+  - keep `supabase db push` blocked until the historical remote/local `0002` migration-history mismatch is reconciled or the direct-query workaround is explicitly chosen again

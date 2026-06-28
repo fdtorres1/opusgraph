@@ -4,13 +4,13 @@ This is the canonical handoff file for the next session. Rewrite freely as prior
 
 ## Current Objective
 
-Finish IMSLP ingestion quality gates, then continue work ingestion at offset `3700` only through the gated recovery flow.
+Continue the public index confidence rollout from the tightened `indexed` gate and the five-work production pilot, then return to IMSLP ingestion at offset `3700` only through the gated recovery flow.
 
 Business-strategy side note: the current monetization path as of `2026-06-27` is now documented in `docs/specs/monetization-path.md`. The current thesis is to keep the public orchestral Works Database broadly free and monetize paid workflow, organization library-management, services, API/data, and carefully labeled publisher/composer discovery layers around it.
 
 ## Current Branch
 
-- `codex/imslp-quality-gates`
+- `codex/public-index-confidence`
 
 ## Parallel Work Coordination
 
@@ -42,8 +42,8 @@ Business-strategy side note: the current monetization path as of `2026-06-27` is
     - `docs/ACTIVE_CONTEXT.md`
     - `docs/ROADMAP.md`
     - `docs/WORKLOG.md`
-  - Status: active; first bridge and promotion-script chunks committed
-  - Notes: commits `2843559` and `7d19d12` add the `public_tier` bridge migration/app paths and deterministic export/promotion scripts. A follow-up SQL patch makes the `0018` legacy-status backfill branch on whether `work.status` exists, so existing databases can still backfill legacy published works while fresh schemas that only have `public_tier` do not reference a missing column. Large AI/public-promotion batches are still blocked until the migration is applied and a small dry-run gate report is reviewed.
+  - Status: active; bridge, promotion scripts, production migration/evidence backfill, tightened indexed gate, and five-work production pilot are complete
+  - Notes: commits `2843559`, `7d19d12`, `38fb022`, `2cbf2c7`, and `b9abbd3` add the `public_tier` bridge migration/app paths, deterministic export/promotion scripts, guarded migration backfill, production migration record, and private IMSLP evidence backfill. The follow-up gate-tightening chunk tightens the `indexed` gate after subagent review and applies a tiny production pilot only for clearly orchestral rows. Large AI/public-promotion batches remain blocked until the next candidate review pass.
 
 ## In Progress
 
@@ -89,9 +89,21 @@ Business-strategy side note: the current monetization path as of `2026-06-27` is
   - production evidence/promotion dry-run:
     - inserted `77` private IMSLP `work_evidence` rows for draft works with stored IMSLP source metadata; `1` draft work was skipped because it has no source metadata
     - evidence rows are `source_terms_status = 'unverified'` and `is_public = false`; public evidence exposure remains gated separately
-    - post-evidence promotion dry-run across all `78` draft works returned `36` passing `indexed`, `42` blocked
-    - blocker split: `36` pass because they have evidence and IMSLP `orchestral_scope.classification = 'orchestral'`; `41` remain `unknown`; `1` is `non_orchestral`
-    - no apply-mode promotion has been run; public RPC surface is still `0` works and `11` composers
+    - first post-evidence promotion dry-run across all `78` draft works returned `36` passing `indexed`, `42` blocked
+    - subagent review recommended not promoting the whole `36` set because it included borderline labels such as `orchestra (?)`, `keyboard (or orchestra)`, and alternative accompaniment text
+    - the `indexed` gate now re-runs the canonical IMSLP orchestral-scope classifier from persisted instrumentation, requires a strong orchestral reason, blocks classifier drift, and blocks ambiguous/weak orchestral references
+    - tightened production dry-run returned `32` passing `indexed`, `46` blocked
+  - production pilot promotion:
+    - applied `indexed` promotion for five clearly orchestral works only:
+      - `1812 Overture`
+      - `1914 Overture`
+      - `2 Adagi`
+      - `Piano Concerto No.4`
+      - `Twelve Pieces for Orchestra`
+    - all five use `promotion_gate_version = 'public-index-gate-v1'`
+    - each pilot work has exactly one `work_promotion_decision`
+    - post-pilot public RPC surface is `5` works through `public_min_works(null, null)` and `16` composers through `public_min_composers(null)`
+    - `public_work_detail('824fcc01-fe10-4e53-9912-5cd11edaae26')` returns `1812 Overture`, `indexed`, composer `Tchaikovsky`
   - verification passed:
     - `npx tsc --noEmit`
     - `git diff --check`
@@ -99,7 +111,8 @@ Business-strategy side note: the current monetization path as of `2026-06-27` is
     - sandboxed `npm run build` hit the known Turbopack local-port denial; elevated `npm run build` passed
   - not yet done:
     - run a local migration reset once Docker/OrbStack is running; local Supabase CLI validation is currently blocked because `supabase status` cannot connect to the Docker daemon
-    - review the `36` passing `indexed` candidates before public promotion; the list includes some borderline instrumentation labels such as `orchestra (?)`, `keyboard (or orchestra)`, and `voice, orchestra or piano`
+    - inspect the five published public pages and search/list behavior in the deployed app
+    - review the remaining `32` passing `indexed` candidates after the tightened gate before any next promotion batch
     - reconcile or document the historical remote/local `0002` migration-history mismatch before relying on `supabase db push`
     - review whether `work.status` can be removed from the existing database in a follow-up migration
 
