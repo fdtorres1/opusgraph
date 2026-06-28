@@ -5,7 +5,7 @@ This file is the current priority view for OpusGraph. Keep it short, current, an
 ## Now
 
 ### Public index confidence pipeline
-- Status: Bridge implementation committed; production `0018` migration applied; private IMSLP evidence backfilled; tightened `indexed` gate shipped; five-work production pilot published
+- Status: Bridge implementation committed; production `0018` migration applied; private IMSLP evidence backfilled; tightened `indexed` gate shipped; fifteen-work production seed published
 - Spec: `docs/specs/public-index-confidence-pipeline.md`
 - Current direction:
   - redesign the work-publication model from scratch around tiered public visibility: `draft`, `quarantined`, `indexed`, `verified`, `canonical`
@@ -28,9 +28,12 @@ This file is the current priority view for OpusGraph. Keep it short, current, an
     - the current `indexed` gate re-runs the canonical IMSLP orchestral-scope classifier from persisted instrumentation, blocks classifier drift, requires a strong orchestral reason, and blocks ambiguous/weak orchestral references
     - tightened production dry-run found `32` candidates passing the `indexed` gate and `46` still blocked
     - five clearly orchestral works were promoted as the first production pilot: `1812 Overture`, `1914 Overture`, `2 Adagi`, `Piano Concerto No.4`, and `Twelve Pieces for Orchestra`
-    - post-pilot public RPC surface now exposes `5` works and `16` composers
+    - deployed public smoke tests passed for `/works`, `/works/[id]`, `/search`, `/api/public/search`, and `/composers`
+    - ten more clean, non-duplicate-title candidates with explicit orchestral instrumentation were promoted after individual dry-runs
+    - post-second-batch public RPC surface now exposes `15` works and `25` composers
+    - remaining draft promotion dry-run now has `17` passing and `46` blocked candidates
     - `supabase db push` still needs migration-history cleanup or a documented workaround because remote/local `0002` histories do not match
-  - next engineering step is inspecting the five public pages/search behavior, then reviewing the remaining `32` pass candidates before any next promotion batch
+  - next engineering step is deciding whether public work detail should expose public-safe instrumentation/confidence/evidence for `indexed` works, then reviewing the remaining `17` pass candidates before any next promotion batch
   - local Supabase reset validation is currently blocked until Docker/OrbStack is running
   - target a large public indexed seed only after the gate, evidence model, and audit/demotion loop exist
 

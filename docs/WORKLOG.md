@@ -2948,3 +2948,45 @@ Append-only log for implementation, investigation, and planning sessions. Keep e
   - inspect the five public pages/search behavior in the deployed app
   - review the remaining `32` passing candidates before any next promotion batch
   - keep `supabase db push` blocked until the historical remote/local `0002` migration-history mismatch is reconciled or the direct-query workaround is explicitly chosen again
+
+### 2026-06-28 — Public smoke test and second indexed seed batch
+
+- Used two read-only subagents before continuing:
+  - route inspection identified `/works`, `/works/[id]`, `/search`, `/api/public/search`, `/composers`, composer detail links, and library reference search as the important public-index smoke surfaces
+  - candidate review recommended a small second batch only after clean individual dry-runs, source-backed evidence, obvious orchestral instrumentation, readable public display fields, and no duplicate/alternate/accompaniment ambiguity
+- Deployed public smoke tests passed:
+  - `/works` initially rendered `5 works found`, then after the second batch rendered `15 works found`
+  - `/works/824fcc01-fe10-4e53-9912-5cd11edaae26` rendered `1812 Overture` by `Pyotr Tchaikovsky`
+  - `/search` rendered without console warnings/errors; searching `1812` returned one work result linked to the indexed `1812 Overture`
+  - `/api/public/search?q=1812&type=all` returned indexed `1812 Overture`
+  - `/api/public/search?q=Overture&type=works` returned `1812 Overture` and `1914 Overture`
+  - `/api/public/search?q=Tchaikovsky&type=composers` returned public Tchaikovsky composer rows
+  - `/composers` rendered `25 composers found` after the second batch
+- Product/UI caveat from smoke testing:
+  - unauthenticated work detail pages currently render title/composer and the subscriber upsell only
+  - public-safe instrumentation, confidence, evidence, and public-tier labels are available through RPC/schema work but are not yet rendered in the public detail UI
+- Second production batch:
+  - selected ten non-duplicate-title candidates with explicit orchestral instrumentation and readable public titles
+  - confirmed all ten were still `draft`
+  - individual dry-runs passed with no blockers
+  - applied `indexed` promotion for:
+    - `12 Pieces for Orchestra`
+    - `12 Stücke für kleines Tanz-Orchester`
+    - `12 Symphonies`
+    - `12 Symphonies and 2 Serenatas`
+    - `12 Tonbilder`
+    - `12 Violin Concertos`
+    - `1620 Overture`
+    - `17 Sinfonias pour orchestre`
+    - `2 Blake Songs`
+    - `20 Minuets`
+- Production verification after the second batch:
+  - all ten second-batch works have `public_tier = 'indexed'`
+  - each second-batch work has exactly one `work_promotion_decision`
+  - `public_min_works(null, null)` returns `15`
+  - `public_min_composers(null)` returns `25`
+  - remaining draft dry-run returns `63` checked, `17` passed, `46` blocked
+- Follow-up:
+  - decide whether to make public detail pages show public-safe instrumentation/confidence/evidence for `indexed` works
+  - inspect the remaining `17` clean dry-run candidates before any further production apply
+  - avoid duplicate-title public-list additions until `/works` and search cards show composer context
