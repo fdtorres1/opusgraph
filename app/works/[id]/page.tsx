@@ -22,6 +22,9 @@ export default async function PublicWorkPage({
     p_id: id,
   });
   const publicDetail = publicDetailRows?.[0] ?? null;
+  const { data: publicEvidenceRows } = await publicSupabase.rpc("public_work_evidence", {
+    p_work_id: id,
+  });
 
   if (user) {
     // User is authenticated - fetch full details
@@ -104,5 +107,11 @@ export default async function PublicWorkPage({
     composerName = `${publicDetail.composer_first_name ?? ""} ${publicDetail.composer_last_name ?? ""}`.trim();
   }
 
-  return <PublicWorkDetail work={publicDetail} composerName={composerName} />;
+  return (
+    <PublicWorkDetail
+      work={publicDetail}
+      composerName={composerName}
+      evidence={publicEvidenceRows ?? []}
+    />
+  );
 }

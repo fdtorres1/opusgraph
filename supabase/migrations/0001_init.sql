@@ -499,13 +499,29 @@ language sql stable security definer set search_path=public as $$
 $$;
 
 create or replace function public_min_works(q text default null, composer_id uuid default null)
-returns table (id uuid, work_name text, composer_id uuid, public_tier public_work_tier)
+returns table (
+  id uuid,
+  work_name text,
+  composer_id uuid,
+  composer_first_name text,
+  composer_last_name text,
+  public_tier public_work_tier
+)
 language sql stable security definer set search_path=public as $$
-  select w.id, w.work_name, w.composer_id, w.public_tier
+  select
+    w.id,
+    w.work_name,
+    w.composer_id,
+    c.first_name as composer_first_name,
+    c.last_name as composer_last_name,
+    w.public_tier
   from work w
+  left join composer c on c.id = w.composer_id
   where w.public_tier in ('indexed','verified','canonical')
     and (composer_id is null or w.composer_id = composer_id)
-    and (q is null or norm(w.work_name) like norm('%' || q || '%'));
+    and (q is null or norm(w.work_name) like norm('%' || q || '%'))
+  order by w.work_name
+  limit 50;
 $$;
 
 create or replace function public_work_detail(p_id uuid)

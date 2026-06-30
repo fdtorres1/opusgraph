@@ -9,6 +9,14 @@ import Link from "next/link";
 import { Music, ArrowLeft } from "lucide-react";
 import { WORK_TIER_LABELS, type PublicWorkTier } from "@/lib/public-index/confidence";
 
+type PublicWorkListRow = {
+  id: string;
+  work_name: string | null;
+  composer_first_name?: string | null;
+  composer_last_name?: string | null;
+  public_tier?: PublicWorkTier | null;
+};
+
 export default async function BrowseWorksPage() {
   // Check if user is authenticated
   const supabase = await createServerSupabase();
@@ -55,25 +63,35 @@ export default async function BrowseWorksPage() {
 
         {works && works.length > 0 ? (
           <div className="grid gap-3">
-            {works.map((work: any) => {
+            {(works as PublicWorkListRow[]).map((work) => {
               const workName = work.work_name?.trim() || "(Untitled Work)";
               const publicTier = work.public_tier as PublicWorkTier | undefined;
+              const composerName = [work.composer_first_name, work.composer_last_name]
+                .filter(Boolean)
+                .join(" ");
 
               return (
                 <Card key={work.id}>
                   <CardContent className="p-4">
-                    <Link
-                      href={`/works/${work.id}`}
-                      className="hover:underline font-medium flex items-center gap-2"
-                    >
-                      <Music className="h-4 w-4 text-zinc-400" />
-                      {workName}
-                    </Link>
-                    {publicTier && (
-                      <Badge className="mt-2" variant="outline">
-                        {WORK_TIER_LABELS[publicTier]}
-                      </Badge>
-                    )}
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="min-w-0">
+                        <Link
+                          href={`/works/${work.id}`}
+                          className="hover:underline font-medium flex items-center gap-2"
+                        >
+                          <Music className="h-4 w-4 shrink-0 text-zinc-400" />
+                          <span className="truncate">{workName}</span>
+                        </Link>
+                        {composerName && (
+                          <p className="ml-6 mt-1 text-sm text-zinc-600">{composerName}</p>
+                        )}
+                      </div>
+                      {publicTier && (
+                        <Badge className="shrink-0" variant="outline">
+                          {WORK_TIER_LABELS[publicTier]}
+                        </Badge>
+                      )}
+                    </div>
                   </CardContent>
                 </Card>
               );

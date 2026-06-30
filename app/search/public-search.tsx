@@ -3,8 +3,7 @@
 import * as React from "react";
 import { useState, useEffect } from "react";
 import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import Link from "next/link";
@@ -22,8 +21,44 @@ type WorkResult = {
   id: string;
   work_name: string;
   composer_id: string;
+  composer_first_name?: string | null;
+  composer_last_name?: string | null;
   public_tier?: PublicWorkTier;
 };
+
+function getComposerName(work: WorkResult): string {
+  return [work.composer_first_name, work.composer_last_name].filter(Boolean).join(" ");
+}
+
+function WorkResultCard({ work }: { work: WorkResult }) {
+  const workName = work.work_name || "Untitled Work";
+  const composerName = getComposerName(work);
+
+  return (
+    <Card>
+      <CardContent className="p-4">
+        <div className="flex items-start justify-between gap-4">
+          <div className="min-w-0">
+            <Link
+              href={`/works/${work.id}`}
+              className="hover:underline font-medium"
+            >
+              {workName}
+            </Link>
+            {composerName && (
+              <p className="mt-1 text-sm text-zinc-600">{composerName}</p>
+            )}
+          </div>
+          {work.public_tier && (
+            <Badge className="shrink-0" variant="outline">
+              {WORK_TIER_LABELS[work.public_tier]}
+            </Badge>
+          )}
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
 
 export function PublicSearch() {
   const [query, setQuery] = useState("");
@@ -128,23 +163,7 @@ export function PublicSearch() {
                       Works ({works.length})
                     </h2>
                     <div className="grid gap-3">
-                      {works.map((work) => (
-                        <Card key={work.id}>
-                          <CardContent className="p-4">
-                            <Link
-                              href={`/works/${work.id}`}
-                              className="hover:underline font-medium"
-                            >
-                              {work.work_name || "Untitled Work"}
-                            </Link>
-                            {work.public_tier && (
-                              <Badge className="ml-2" variant="outline">
-                                {WORK_TIER_LABELS[work.public_tier]}
-                              </Badge>
-                            )}
-                          </CardContent>
-                        </Card>
-                      ))}
+                      {works.map((work) => <WorkResultCard key={work.id} work={work} />)}
                     </div>
                   </div>
                 )}
@@ -183,23 +202,7 @@ export function PublicSearch() {
               <TabsContent value="works" className="space-y-4">
                 {works.length > 0 ? (
                   <div className="grid gap-3">
-                    {works.map((work) => (
-                      <Card key={work.id}>
-                        <CardContent className="p-4">
-                          <Link
-                            href={`/works/${work.id}`}
-                            className="hover:underline font-medium"
-                          >
-                            {work.work_name || "Untitled Work"}
-                          </Link>
-                          {work.public_tier && (
-                            <Badge className="ml-2" variant="outline">
-                              {WORK_TIER_LABELS[work.public_tier]}
-                            </Badge>
-                          )}
-                        </CardContent>
-                      </Card>
-                    ))}
+                    {works.map((work) => <WorkResultCard key={work.id} work={work} />)}
                   </div>
                 ) : (
                   <div className="text-center py-12 text-zinc-500">

@@ -812,7 +812,9 @@ Likely files:
 Acceptance:
 
 - public search returns `indexed`, `verified`, and `canonical` works
-- public detail pages show tier/confidence/provenance labels
+- public work list and search cards show composer context alongside titles so duplicate or generic titles are not title-only
+- public detail pages show public tier, confidence labels, public-safe instrumentation/duration/year, and a public source section
+- public source rows come only from `public_work_evidence`, so evidence remains hidden unless `work_evidence.is_public = true` and `source_terms_status = 'approved'`
 - draft/quarantined records remain hidden from public users
 - library reference search follows the decided public-tier rule
 - admin work editor can set or display the tier without collapsing back to binary Draft/Published

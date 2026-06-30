@@ -2990,3 +2990,35 @@ Append-only log for implementation, investigation, and planning sessions. Keep e
   - decide whether to make public detail pages show public-safe instrumentation/confidence/evidence for `indexed` works
   - inspect the remaining `17` clean dry-run candidates before any further production apply
   - avoid duplicate-title public-list additions until `/works` and search cards show composer context
+
+### 2026-06-30 — Public work display upgraded for safer indexed growth
+
+- Added `supabase/migrations/0019_public_min_works_composer_fields.sql` to replace `public_min_works` with a public-safe return shape that includes `composer_first_name` and `composer_last_name`.
+- Updated `supabase/migrations/0001_init.sql` so fresh schemas get the same `public_min_works` return shape.
+- Applied `0019` directly to linked production project `vszoxfmjkasnjpzieyyd`, then recorded it with:
+  - `supabase migration repair --linked --status applied 0019`
+- Production verification:
+  - `public_min_works(null, null)` now returns public work rows with composer first/last names
+- Public UI changes:
+  - `/works` cards now show title, composer name, and public tier
+  - `/search` work cards now show title, composer name, and public tier
+  - unauthenticated `/works/[id]` pages now show:
+    - public visibility tier
+    - identity, composer, and orchestral-scope confidence
+    - composition year, duration, and instrumentation when present
+    - public source section fed only by `public_work_evidence`
+    - subscriber upsell after the public-safe metadata
+  - public evidence remains hidden unless `work_evidence.is_public = true` and `source_terms_status = 'approved'`
+- Verification:
+  - `npx tsc --noEmit` passed
+  - `git diff --check` passed
+  - elevated `npm run build` passed
+  - local browser QA passed at `http://localhost:3000`:
+    - `/works` rendered `15 works found` with composer names and tier badges
+    - `/search` with `1812` returned `1812 Overture`, `Pyotr Tchaikovsky`, and `Indexed`
+    - `/works/824fcc01-fe10-4e53-9912-5cd11edaae26` rendered public metadata for `1812 Overture`
+    - mobile-width detail rendering had no horizontal overflow and no browser console warnings/errors
+- Follow-up:
+  - review the remaining `17` clean dry-run candidates against the upgraded public display before any further production apply
+  - do not expose raw/private evidence; only use `public_work_evidence`
+  - `supabase db push` remains blocked by the historical remote/local `0002` migration-history mismatch, so direct-query migration application must remain explicit until that is reconciled

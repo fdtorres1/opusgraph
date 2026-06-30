@@ -4,7 +4,7 @@ This is the canonical handoff file for the next session. Rewrite freely as prior
 
 ## Current Objective
 
-Continue the public index confidence rollout from the tightened `indexed` gate and the fifteen-work production seed, then return to IMSLP ingestion at offset `3700` only through the gated recovery flow.
+Continue the public index confidence rollout after the public display upgrade and fifteen-work production seed, then return to IMSLP ingestion at offset `3700` only through the gated recovery flow.
 
 Business-strategy side note: the current monetization path as of `2026-06-27` is now documented in `docs/specs/monetization-path.md`. The current thesis is to keep the public orchestral Works Database broadly free and monetize paid workflow, organization library-management, services, API/data, and carefully labeled publisher/composer discovery layers around it.
 
@@ -42,8 +42,8 @@ Business-strategy side note: the current monetization path as of `2026-06-27` is
     - `docs/ACTIVE_CONTEXT.md`
     - `docs/ROADMAP.md`
     - `docs/WORKLOG.md`
-  - Status: active; bridge, promotion scripts, production migration/evidence backfill, tightened indexed gate, five-work production pilot, and ten-work follow-up seed are complete
-  - Notes: commits `2843559`, `7d19d12`, `38fb022`, `2cbf2c7`, `b9abbd3`, and `70f1ee2` add the `public_tier` bridge migration/app paths, deterministic export/promotion scripts, guarded migration backfill, production migration record, private IMSLP evidence backfill, and tightened `indexed` gate. Production now has a conservative fifteen-work public seed. Large AI/public-promotion batches remain blocked until the next candidate review pass and public UI improvements are prioritized.
+  - Status: active; bridge, promotion scripts, production migration/evidence backfill, tightened indexed gate, fifteen-work public seed, and public display upgrade are complete
+  - Notes: commits `2843559`, `7d19d12`, `38fb022`, `2cbf2c7`, `b9abbd3`, `70f1ee2`, and `a0c5e94` add the `public_tier` bridge migration/app paths, deterministic export/promotion scripts, guarded migration backfill, production migration record, private IMSLP evidence backfill, tightened `indexed` gate, and production smoke-test record. Production now has a conservative fifteen-work public seed. The current UI chunk adds composer context to public work cards and public-safe metadata to work detail. Large AI/public-promotion batches remain blocked until the next candidate review pass.
 
 ## In Progress
 
@@ -123,15 +123,24 @@ Business-strategy side note: the current monetization path as of `2026-06-27` is
     - `/api/public/search?q=Overture&type=works` returns `1812 Overture` and `1914 Overture`
     - `/api/public/search?q=Tchaikovsky&type=composers` returns public Tchaikovsky composer rows
     - `/composers` renders `25 composers found`, matching the production RPC count
-    - public work detail pages render title/composer and the subscriber upsell, but do not yet show instrumentation, confidence, evidence, or public-tier badges
+  - public display upgrade:
+    - `supabase/migrations/0019_public_min_works_composer_fields.sql` replaces `public_min_works` so public work list/search results include `composer_first_name` and `composer_last_name`
+    - updated `supabase/migrations/0001_init.sql` so fresh schemas get the same `public_min_works` return shape
+    - applied `0019` directly to linked production project `vszoxfmjkasnjpzieyyd` and recorded it with `supabase migration repair --linked --status applied 0019`
+    - production verification: `public_min_works(null, null)` now returns composer first/last names for public works
+    - `/works` cards now show title, composer name, and tier badge
+    - `/search` work cards now show title, composer name, and tier badge
+    - unauthenticated `/works/[id]` pages now show public tier, identity/composer/orchestral-scope confidence, composition year, duration, instrumentation, and a public source section before the subscriber upsell
+    - public source links remain hidden unless exposed by `public_work_evidence`, which only returns approved public evidence rows
   - verification passed:
     - `npx tsc --noEmit`
     - `git diff --check`
+    - `npm run build`
+    - local browser QA at `http://localhost:3000`: `/works`, `/search` with `1812`, `/works/824fcc01-fe10-4e53-9912-5cd11edaae26`, and mobile-width detail rendering
     - `npm run lint` exits with `0` errors and `112` warnings
     - sandboxed `npm run build` hit the known Turbopack local-port denial; elevated `npm run build` passed
   - not yet done:
     - run a local migration reset once Docker/OrbStack is running; local Supabase CLI validation is currently blocked because `supabase status` cannot connect to the Docker daemon
-    - decide whether public work detail should expose public-safe instrumentation/confidence/evidence for `indexed` works or remain title/composer-only behind the subscriber upsell
     - review the remaining `17` passing `indexed` candidates after the tightened gate before any next promotion batch
     - reconcile or document the historical remote/local `0002` migration-history mismatch before relying on `supabase db push`
     - review whether `work.status` can be removed from the existing database in a follow-up migration

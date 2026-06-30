@@ -5,7 +5,7 @@ This file is the current priority view for OpusGraph. Keep it short, current, an
 ## Now
 
 ### Public index confidence pipeline
-- Status: Bridge implementation committed; production `0018` migration applied; private IMSLP evidence backfilled; tightened `indexed` gate shipped; fifteen-work production seed published
+- Status: Bridge implementation committed; production `0018` and `0019` migrations applied; private IMSLP evidence backfilled; tightened `indexed` gate shipped; fifteen-work production seed published; public display upgraded
 - Spec: `docs/specs/public-index-confidence-pipeline.md`
 - Current direction:
   - redesign the work-publication model from scratch around tiered public visibility: `draft`, `quarantined`, `indexed`, `verified`, `canonical`
@@ -32,8 +32,10 @@ This file is the current priority view for OpusGraph. Keep it short, current, an
     - ten more clean, non-duplicate-title candidates with explicit orchestral instrumentation were promoted after individual dry-runs
     - post-second-batch public RPC surface now exposes `15` works and `25` composers
     - remaining draft promotion dry-run now has `17` passing and `46` blocked candidates
+    - `0019_public_min_works_composer_fields.sql` was applied directly to production and repaired into migration history; `public_min_works` now returns public-safe composer names for work list/search cards
+    - public work cards now show title, composer, and tier; unauthenticated work detail pages now show public tier, confidence labels, public-safe work metadata, and approved public evidence rows when available
     - `supabase db push` still needs migration-history cleanup or a documented workaround because remote/local `0002` histories do not match
-  - next engineering step is deciding whether public work detail should expose public-safe instrumentation/confidence/evidence for `indexed` works, then reviewing the remaining `17` pass candidates before any next promotion batch
+  - next engineering step is reviewing the remaining `17` pass candidates using the upgraded public display, then promoting only another small non-ambiguous batch if the rendered cards/detail pages remain clean
   - local Supabase reset validation is currently blocked until Docker/OrbStack is running
   - target a large public indexed seed only after the gate, evidence model, and audit/demotion loop exist
 
